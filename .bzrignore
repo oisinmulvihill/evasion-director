@@ -1,0 +1,6 @@
+temp/
+*.ini
+dist
+lib/director.egg-info
+build
+*.egg

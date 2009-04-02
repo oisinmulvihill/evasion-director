@@ -1,0 +1,80 @@
+import sys
+import urllib
+import socket
+import logging
+
+from messenger import xulcontrolprotocol
+
+
+class bob(object):
+    
+    def __init__(self):
+        self.log = logging.getLogger()
+        
+    
+    def write(self, data, port, host, RECV=2048):
+        """Do a socket send and wait to receive directly to the xul browser.
+
+        This side steps the broker if its not running already.
+        
+        """
+        rc = ''
+        import socket
+
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((host, int(port)))
+            s.send(data)
+            rc = s.recv(RECV)
+            s.close()
+        except socket.error, e:
+            print("write: socket send error - ")
+
+        return rc
+
+
+    
+    def setBrowserUri(self, uri, port, host='127.0.0.1'):
+        """Called to tell the XUL Browser where to point
+        """
+        # Go to yahoo:
+        control_frame = {
+            'command' : 'set_uri',
+            'args' : {'uri':uri}
+        }
+        d = dict(replyto='no-one', data=control_frame)
+        d = xulcontrolprotocol.dump(d)
+
+        print("setBrowserUri: Sending set uri command:\n%s\n\n" % str(d))
+        rc = self.write(d, port, host)
+        print("setBrowserUri:\n%s\n\n" % str(rc))
+
+
+    def browserPrint(self, msg, port, host='127.0.0.1'):
+        """Called to print to a dive an update in the XUL browsers index.html and provide feedback.
+        """
+        import urllib
+
+        # Modify the content thats been loaded
+        print("browserPrint: printing text '%s'." % (msg))
+        replacement = "<div id='messages'>%s</div>" % str(msg)
+        replacement = urllib.quote(replacement)
+        control_frame = {
+            'command' : 'replace',
+            'args' : {'id':'messages', 'content':replacement}
+        }
+        d = dict(replyto='no-one', data=control_frame)
+        d = xulcontrolprotocol.dump(d)
+
+        print("browserPrint: Sending set replace content:\n%s\n\n" % str(d))
+        rc = self.write(d, port, host)
+        print("browserPrint:\n%s\n\n" % str(rc))
+        
+        
+if __name__ == "__main__":
+    """
+    """
+    b = bob()
+    if len(sys.argv) > 1:
+        b.setBrowserUri(sys.argv[1], 7055)
+    

@@ -1,0 +1,31 @@
+"""
+The script easy install produces isn't very reliable so I'm
+adding this script to run morbid that is now part of the 
+app manager module.
+
+Oisin Mulvihill
+2009-03-10
+
+"""
+import sys
+import logging
+
+from director import utils
+from director import morbid
+
+utils.log_init(logging.INFO)
+
+class FakeStream:
+    def write(self, msg):
+        log = logging.getLogger()
+        log.info('fakestream: %s' % msg)
+
+sys.stdout = FakeStream()
+sys.stderr = FakeStream()
+
+
+if __name__ == "__main__":
+    morbid.main()
+
+
+

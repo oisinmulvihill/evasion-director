@@ -1,0 +1,96 @@
+import sys
+import time
+import urllib
+import logging
+import threading
+
+import messenger
+
+# Set up stdout logging:
+from director import utils
+utils.log_init(logging.DEBUG)
+
+
+# Set once the check is ok.
+CHECK_OK = threading.Event()
+
+
+def appmain(isExit):
+    """Example of doing a transaction via the terminal:
+    """
+    print "AppMain Running"
+    time.sleep(1) # hack to wait for xulcontrol/other code to be ready:
+
+    global CHECK_OK
+    
+    try:
+        # Go to yahoo:
+        control_frame = {
+            'command' : 'set_uri',
+            'args' : {'uri':"http://www.yahoo.com/"}
+        }
+
+        print "Sending set uri command:"
+        rc = messenger.send_await(
+            messenger.EVT("BROWSER_COMMAND"),
+            control_frame,
+            timeout=20,
+        )
+        print "returned:\n%s\n\n" % str(rc)
+
+
+        # Modify the content thats been loaded
+        print "Updating some content in browser:"
+        replacement = """
+<div id="searchbox">
+  <div style='border:5px dashed orange;background-color:blue;padding:8px;color:white;'>
+    <input class="plong inputtext" type="text" id="p" name="p" accesskey="s">
+      <h3>Extra Content</h3>
+      <p>
+         This is some extra I've just put into the DOM tree.
+      </p>
+  </div>
+</div>
+"""
+        replacement = urllib.quote(replacement)
+
+        control_frame = {
+            'command' : 'replace',
+            'args' : {'id':'searchbox', 'content':replacement}
+        }
+
+        rc = messenger.send_await(
+            messenger.EVT("BROWSER_COMMAND"),
+            control_frame,
+            timeout=20,
+        )
+        print "returned:\n%s\n\n" % str(rc)
+
+
+        # Success, no exceptions:
+        CHECK_OK.set()
+
+    except:
+        print "error - ", sys.exc_value
+
+    print "Done."
+    messenger.quit()
+
+    
+
+# Set up the messenger protocols where using:
+print "setting up stomp & xul control access: "
+messenger.stompprotocol.setup(messenger.default_config['stomp'])
+messenger.xulcontrolprotocol.setup(messenger.default_config['xulcontrol'])
+
+
+# Run until exit...
+print "Running"
+messenger.run(appmain)
+
+if CHECK_OK.isSet():
+    print "Check OK"
+    sys.exit(0)
+else:
+    print "Check FAILED"
+    sys.exit(1)

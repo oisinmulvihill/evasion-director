@@ -1,0 +1,50 @@
+================
+Evasion director
+================
+
+.. contents::
+
+
+Introduction
+============
+
+This is the program that runs the deviceaccess, viewpoint, stomper broker 
+and the webapplication if needs be.
+
+
+Development
+===========
+
+To develop this project change into the director folder and then
+do the following command::
+
+  python setup.py develop
+
+
+This will set the director's path up allowing you to run it without 
+neededing to set up the PYTHONPATH.
+
+
+Building the Egg
+----------------
+
+To build the egg you need to run the following command::
+
+  python setup.py bdist_egg
+
+
+Unit Testing
+============
+
+The unit tests can be run by running the following command::
+
+  python setup.py test
+
+
+Installing
+==========
+
+This module is marked as being unsafe to zip. Easy install should automatically
+decompress it. If this doesn't work the you can do::
+
+  easy_install -Z <director egg file>
