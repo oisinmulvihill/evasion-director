@@ -1,16 +1,12 @@
 import sys
 import urllib
 import socket
-import logging
 
 from messenger import xulcontrolprotocol
 
 
-class bob(object):
-    
-    def __init__(self):
-        self.log = logging.getLogger()
-        
+class DirectBrowserCalls(object):
+            
     
     def write(self, data, port, host, RECV=2048):
         """Do a socket send and wait to receive directly to the xul browser.
@@ -19,8 +15,6 @@ class bob(object):
         
         """
         rc = ''
-        import socket
-
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect((host, int(port)))
@@ -31,6 +25,21 @@ class bob(object):
             print("write: socket send error - ")
 
         return rc
+
+    
+    def browserQuit(self, port, host='127.0.0.1'):
+        """Called to recover where the browser is looking currently.
+        """
+        control_frame = {
+            'command' : 'exit',
+            'args' : {}
+        }
+        d = dict(replyto='no-one', data=control_frame)
+        d = xulcontrolprotocol.dump(d)
+
+        print("browserQuit: Sending command:\n%s\n\n" % str(d))
+        rc = self.write(d, port, host)
+        print("browserQuit:\nrc: %s\n\n" % str(rc))
 
     
     def getBrowserUri(self, port, host='127.0.0.1'):
@@ -104,7 +113,7 @@ if __name__ == "__main__":
     
     (options, args) = parser.parse_args()
 
-    b = bob()
+    b = DirectBrowserCalls()
 
     print("Running command '%s' with args '%s'." % (options.cmd, options.args))
     
@@ -116,6 +125,9 @@ if __name__ == "__main__":
 
     elif options.cmd == 'call':
         b.callFunction(options.args, options.port)
+
+    elif options.cmd == 'exit':
+        b.browserQuit(options.port)
 
     else:
         sys.stderr.write("Unknown command '%s'." % options.cmd)

@@ -23,11 +23,11 @@ xulrunner =  xulrunner
 #
 # Hand development mode command lines:
 #
-# browser = "${xulbrowser_path}\\XulBrowser\\application.ini -development 1 -nofullscreen 1 "
-# browser = "${xulbrowser_path}\\XulBrowser\\application.ini -development 1 -nofullscreen 1 -jsconsole "
+# browser = "${viewpoint_path}\\viewpoint\\application.ini -development 1 -nofullscreen 1 "
+# browser = "${viewpoint_path}\\viewpoint\\application.ini -development 1 -nofullscreen 1 -jsconsole "
 #
 # Live command line
-browser = "${xulbrowser_path}\\XulBrowser\\application.ini"
+browser = "${viewpoint_path}\\viewpoint\\application.ini"
 
 # This is the time, in seconds, the app manager waits before 
 # checking that the xul browser or the web presence is still 

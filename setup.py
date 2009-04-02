@@ -41,7 +41,7 @@ if not sys.platform.startswith('win'):
 # to each directory inside XulBrowser. I did this using the following
 # handy command:
 #
-#  find lib/director/XulBrowser -type d -exec touch {}//__init__.py \;
+#  find lib/director/viewpoint -type d -exec touch {}//__init__.py \;
 #
 # If new directories are added then I'll need to rerun this command.
 #

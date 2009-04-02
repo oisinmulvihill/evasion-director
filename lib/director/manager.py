@@ -154,10 +154,10 @@ class Manager(object):
         
         cfg = director.config.get_cfg()
         xulrunner = cfg.get('xulrunner')
-        xulbrowser_app = cfg.get('browser')
+        viewpoint_app = cfg.get('browser')
 
         # Spawn the xul browser using the new configuration:
-        command = "%s %s -startport %s" % (xulrunner, xulbrowser_app, port)
+        command = "%s %s -startport %s" % (xulrunner, viewpoint_app, port)
         if url:
             # Quote it " to spaces don't throw us if they are in the
             # path name given for the start up index.
@@ -376,7 +376,7 @@ class Manager(object):
 
         disable_xul = cfg.get('disable_xul', "no")
         if disable_xul != "no":
-            self.log.warn("main: the XulBrowser has been DISABLED in the configuration by the user.")
+            self.log.warn("main: the viewpoint has been DISABLED in the configuration by the user.")
             
         disable_deviceaccess = cfg.get('disable_deviceaccess', "no")
         if disable_deviceaccess != "no":

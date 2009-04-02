@@ -63,7 +63,7 @@ def create_config(cfg_dict):
     print("Creating initial configuration.")
 
     # Fill in the template information with XUL Browser path:
-    cfg_dict['xulbrowser_path'] = os.path.abspath(director.__path__[0])
+    cfg_dict['viewpoint_path'] = os.path.abspath(director.__path__[0])
 
     def writeout(filename, data):
         # Ok, write the result out to disk:
