@@ -29,10 +29,13 @@ TestSuite = 'director.tests'
 needed = [
     'configobj',
     'mako', 
-    # can be installed if vc /vc express is installed:
-    'twisted', 
-    'messenger',
+    'evasion-messenger',
 ]
+
+import sys
+if not sys.platform.startswith('win'):
+    needed.append('twisted')
+
 
 # Include everything under XulBrowser. I needed to add a __init__.py
 # to each directory inside XulBrowser. I did this using the following

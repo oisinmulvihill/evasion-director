@@ -320,6 +320,28 @@ class Manager(object):
         self.log.info("setBrowserUri: Sending set uri command:\n%s\n\n" % str(d))
         rc = self.write(d, port, host)
         self.log.info("setBrowserUri:\n%s\n\n" % str(rc))
+
+
+    def printToBrowser(self, msg):
+        """Called to tell the XUL Browser where to point
+        """
+        import urllib
+
+        print("printToBrowser: printing text '%s'." % (msg))
+        data = r"""<div id='messages'>%s</div>""" % msg
+        data = urllib.quote(data)
+        
+        # Go to yahoo:
+        control_frame = {
+            'command' : 'replace',
+            'args' : {'content':data}
+        }
+        d = dict(replyto='no-one', data=control_frame)
+        d = xulcontrolprotocol.dump(d)
+        
+        self.log.info("printToBrowser: Sending command:\n%s\n\n" % str(d))
+        rc = self.write(d, port, host)
+        self.log.info("printToBrowser:\n%s\n\n" % str(rc))
         
 
     def appmain(self, isExit):
@@ -377,20 +399,19 @@ class Manager(object):
             # Maintain the XUL Browser if its not disabled:
             if disable_xul == "no" and not self.isRunning('browser'):
                 # No, we must start the XUL Browser.
-                self.browserPort = self.getFreePort()
+                self.browserPort = 7055
                 messenger.xulcontrolprotocol.setup(dict(host=self.browserHost, port=self.browserPort))
 
                 # Recover the file system uri we'll give to browser startup.
-                from pkg_resources import resource_filename
-                filename = resource_filename(director.xulbrowserpage.__name__, 'index.html')
-                start_url = filename.replace('\\','/')
-                self.log.warn("main: recovered xul browser index starturl '%s'." % start_url)
-                self.startBrowser(self.browserPort, start_url)
+                self.startBrowser(self.browserPort)
 
                 if self.isRunning('web'):
+                    starturi = "http://%s:%s" % (self.appHost, self.appPort)
+                    self.printToBrowser("Waiting for app to start on '%s'." % starturi)
+
                     # Redirect the xul browser at the web presence:
                     self.waitForReady(self.appPort)
-                    self.setBrowserUri("http://%s:%s" % (self.appHost, self.appPort), self.browserPort)
+                    self.setBrowserUri(starturi, self.browserPort)
                 
 
             # Maintain the web presence, if its not disabled:
@@ -474,12 +495,6 @@ class Manager(object):
             password=cfg.get('msg_password'),
             channel=cfg.get('msg_channel'),
         ))
-
-
-        # Set up the default messenger protocols we are using:        
-        messenger.xulcontrolprotocol.setup(
-            dict(host="localhost", port=7055)
-        )
 
         try:
             self.log.info("main: Running.")

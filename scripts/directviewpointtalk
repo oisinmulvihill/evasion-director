@@ -32,49 +32,95 @@ class bob(object):
 
         return rc
 
+    
+    def getBrowserUri(self, port, host='127.0.0.1'):
+        """Called to recover where the browser is looking currently.
+        """
+        control_frame = {
+            'command' : 'get_uri',
+            'args' : {}
+        }
+        d = dict(replyto='no-one', data=control_frame)
+        d = xulcontrolprotocol.dump(d)
+
+        print("getBrowserUri: Sending command:\n%s\n\n" % str(d))
+        rc = self.write(d, port, host)
+        print("getBrowserUri:\nrc: %s\n\n" % str(rc))
 
     
-    def setBrowserUri(self, uri, port, host='127.0.0.1'):
+    def setBrowserUri(self, args, port, host='127.0.0.1'):
         """Called to tell the XUL Browser where to point
         """
         # Go to yahoo:
         control_frame = {
             'command' : 'set_uri',
-            'args' : {'uri':uri}
+            'args' : {'uri':args}
         }
         d = dict(replyto='no-one', data=control_frame)
         d = xulcontrolprotocol.dump(d)
 
-        print("setBrowserUri: Sending set uri command:\n%s\n\n" % str(d))
+        print("setBrowserUri: Sending command:\n%s\n\n" % str(d))
         rc = self.write(d, port, host)
         print("setBrowserUri:\n%s\n\n" % str(rc))
 
 
-    def browserPrint(self, msg, port, host='127.0.0.1'):
-        """Called to print to a dive an update in the XUL browsers index.html and provide feedback.
-        """
-        import urllib
-
-        # Modify the content thats been loaded
-        print("browserPrint: printing text '%s'." % (msg))
-        replacement = "<div id='messages'>%s</div>" % str(msg)
-        replacement = urllib.quote(replacement)
+    def callFunction(self, args, port, host='127.0.0.1'):
+        """Call a javascript function in the browser.
+        """        
         control_frame = {
-            'command' : 'replace',
-            'args' : {'id':'messages', 'content':replacement}
+            'command' : 'call',
+            'args' : {'call':args}
         }
         d = dict(replyto='no-one', data=control_frame)
         d = xulcontrolprotocol.dump(d)
 
-        print("browserPrint: Sending set replace content:\n%s\n\n" % str(d))
+        print("callFunction: Sending command:\n%s\n\n" % str(d))
         rc = self.write(d, port, host)
-        print("browserPrint:\n%s\n\n" % str(rc))
+        print("callFunction:\n%s\n\n" % str(rc))
         
         
 if __name__ == "__main__":
     """
     """
+    from optparse import OptionParser
+
+    parser = OptionParser()
+
+    parser.add_option(
+        "-c","--command", action="store", dest="cmd",
+        default='get_uri',
+        help="Command to use. Default: get_uri"
+    )
+    parser.add_option(
+        "-a","--args", action="store", dest="args",
+        default='',
+        help="The comm port the browser is using. Default: Nothing"
+    )
+    parser.add_option(
+        "-p", "--port", action="store", dest="port",
+        default=7055,
+        help="The comm port the browser is using. Default: 7055"
+    )
+    
+    (options, args) = parser.parse_args()
+
     b = bob()
-    if len(sys.argv) > 1:
-        b.setBrowserUri(sys.argv[1], 7055)
+
+    print("Running command '%s' with args '%s'." % (options.cmd, options.args))
+    
+    if options.cmd == 'get_uri':
+        b.getBrowserUri(options.port)
+
+    elif options.cmd == 'set_uri':
+        b.setBrowserUri(options.args, options.port)
+
+    elif options.cmd == 'call':
+        b.callFunction(options.args, options.port)
+
+    else:
+        sys.stderr.write("Unknown command '%s'." % options.cmd)
+        sys.exit(1)
+
+    sys.exit(0)
+        
     
