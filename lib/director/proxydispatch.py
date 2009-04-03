@@ -5,10 +5,11 @@ from twisted.web.resource import Resource
 import messenger
 
 
+
 def forward_event(data):
     """
     """
-    messenger.send()
+    #messenger.send_await() ?
     
     
 
@@ -27,3 +28,11 @@ class Hello(Resource):
 def setup(port):
     site = server.Site(Hello())
     reactor.listenTCP(port, site)
+
+
+if __name__ == "__main__":
+    """
+    """
+    setup(8000)
+    print("started on port 8000")
+    reactor.run()     
