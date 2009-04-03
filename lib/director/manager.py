@@ -478,6 +478,7 @@ class Manager(object):
             self.log.warn("kill: STOPPING WEB PRESENCE.")
             self.winKillPID(self.appProcess.pid)
 
+
                 
     def main(self):
         """Set up the device layer and then start the messenger
@@ -496,6 +497,9 @@ class Manager(object):
             channel=cfg.get('msg_channel'),
         ))
 
+        from director import proxydispatch
+        proxydispatch.setup(1900)
+        
         try:
             self.log.info("main: Running.")
             messenger.run(self.appmain)
