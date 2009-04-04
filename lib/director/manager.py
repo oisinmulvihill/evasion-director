@@ -325,23 +325,6 @@ class Manager(object):
     def printToBrowser(self, msg):
         """Called to tell the XUL Browser where to point
         """
-        import urllib
-
-        print("printToBrowser: printing text '%s'." % (msg))
-        data = r"""<div id='messages'>%s</div>""" % msg
-        data = urllib.quote(data)
-        
-        # Go to yahoo:
-        control_frame = {
-            'command' : 'replace',
-            'args' : {'content':data}
-        }
-        d = dict(replyto='no-one', data=control_frame)
-        d = xulcontrolprotocol.dump(d)
-        
-        self.log.info("printToBrowser: Sending command:\n%s\n\n" % str(d))
-        rc = self.write(d, port, host)
-        self.log.info("printToBrowser:\n%s\n\n" % str(rc))
         
 
     def appmain(self, isExit):
@@ -406,7 +389,7 @@ class Manager(object):
                 self.startBrowser(self.browserPort)
 
                 if self.isRunning('web'):
-                    starturi = "http://%s:%s/demo" % (self.appHost, self.appPort)
+                    starturi = "http://%s:%s" % (self.appHost, self.appPort)
                     self.printToBrowser("Waiting for app to start on '%s'." % starturi)
 
                     # Redirect the xul browser at the web presence:
@@ -438,7 +421,7 @@ class Manager(object):
                 self.waitForReady(self.appPort)
 
                 # Ok, redirect the xul browser at the web presence:
-                self.setBrowserUri("http://%s:%s/demo" % (self.appHost, self.appPort), self.browserPort)
+                self.setBrowserUri("http://%s:%s" % (self.appHost, self.appPort), self.browserPort)
 
                 
             time.sleep(poll_time)
@@ -498,7 +481,7 @@ class Manager(object):
         ))
 
         from director import proxydispatch
-        proxydispatch.setup(1900)
+        proxydispatch.setup(1901)
 
         self.browserPort = 7055
         messenger.xulcontrolprotocol.setup(dict(host='localhost', port=self.browserPort))
