@@ -17,8 +17,7 @@ class XmlRpcServer(xmlrpc.XMLRPC):
         """
         import datetime
         msg = "EvasionDirectorProxyDispatch: %s" % datetime.datetime.now()
-        print(msg)
-        self.log.info("ping received: returning '%s'." % msg)
+        self.log.debug("ping received: returning '%s'." % msg)
         return msg
         
     def xmlrpc_dispatch(self, reply, data):
@@ -28,13 +27,19 @@ class XmlRpcServer(xmlrpc.XMLRPC):
         print("xmlrpc_dispatch: sending reply event '%s' with data '%s'" % (reply_evt, data))
 
         if self.testing:
-            print("xmlrpc_dispatch: Send disabled in testing mode.")
+            self.log.debug("xmlrpc_dispatch: Send disabled in testing mode.")
         else:
             reply = messenger.EVT(reply_evt)
-            print("xmlrpc_dispatch: sending (no reply looked for)")
-#            messenger.send_await(reply, data)
+            
+            #This would require the waiting source to reply confirming receipt:
+            #self.log.debug("xmlrpc_dispatch: sending, waiting for confirmation receipt.")
+            # messenger.send_await(reply, data)
+
+            # This will just send without waiting.
+            self.log.debug("xmlrpc_dispatch: sending (no reply looked for)")
             messenger.send(reply, data)
-            print("xmlrpc_dispatch: sending (no reply looked for - SENT OK")
+            
+            self.log.debug("xmlrpc_dispatch: sending (no reply looked for - SENT OK")
 
         return 0
 
