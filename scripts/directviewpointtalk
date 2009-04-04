@@ -78,7 +78,11 @@ class DirectBrowserCalls(object):
         """        
         control_frame = {
             'command' : 'call',
-            'args' : {'call':args}
+            'args' : {
+                'call':args, 
+                'sessionid':"", 
+                'args':""
+            }
         }
         d = dict(replyto='no-one', data=control_frame)
         d = xulcontrolprotocol.dump(d)

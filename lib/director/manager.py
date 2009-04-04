@@ -406,7 +406,7 @@ class Manager(object):
                 self.startBrowser(self.browserPort)
 
                 if self.isRunning('web'):
-                    starturi = "http://%s:%s" % (self.appHost, self.appPort)
+                    starturi = "http://%s:%s/demo" % (self.appHost, self.appPort)
                     self.printToBrowser("Waiting for app to start on '%s'." % starturi)
 
                     # Redirect the xul browser at the web presence:
@@ -438,7 +438,7 @@ class Manager(object):
                 self.waitForReady(self.appPort)
 
                 # Ok, redirect the xul browser at the web presence:
-                self.setBrowserUri("http://%s:%s" % (self.appHost, self.appPort), self.browserPort)
+                self.setBrowserUri("http://%s:%s/demo" % (self.appHost, self.appPort), self.browserPort)
 
                 
             time.sleep(poll_time)
@@ -499,6 +499,9 @@ class Manager(object):
 
         from director import proxydispatch
         proxydispatch.setup(1900)
+
+        self.browserPort = 7055
+        messenger.xulcontrolprotocol.setup(dict(host='localhost', port=self.browserPort))
         
         try:
             self.log.info("main: Running.")
