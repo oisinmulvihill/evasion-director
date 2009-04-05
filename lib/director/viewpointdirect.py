@@ -1,11 +1,15 @@
 """
 """
 import sys
+import uuid
 import random
 import urllib
 import socket
 import logging
 
+import simplejson
+
+import messenger
 from messenger import xulcontrolprotocol
 
 
@@ -20,43 +24,6 @@ class DirectBrowserCalls(object):
         self.log = logging.getLogger("director.viewpointdirect.DirectBrowserCalls")
         self.port = int(port)
         self.interface = interface
-
-
-    def getFreePort(self):
-        """Called to return a free TCP port that we can use.
-
-        This function gets a random port between 2000 - 40000.
-        A test is done to check if the port is free by attempting
-        to use it. If its not free another port is checked
-        
-        """
-        # copy the value and not the reference:
-        retries = copy.deepcopy(self.PORT_RETRIES)
-
-        def fp():
-            return random.randint(2000, 40000)
-
-        free_port = 0
-        while retries:
-            retries -= 1
-            free_port = fp()
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            try:
-                s.bind(('', free_port))
-                try:
-                    s.close()
-                except:
-                    pass
-            except socket.error, e:
-                # port not free, retry.
-                self.log.info("getFreePort: port not free %s, retrying." % free_port)
-                
-        if not free_port:
-            raise ManagerError, "I can't get a free port and I've tried %s times." % PORT_RETRIES
-
-        self.log.info("getFreePort: Free Port %s." % free_port)
-
-        return free_port
 
     
     def write(self, data, RECV=2048):
@@ -76,6 +43,8 @@ class DirectBrowserCalls(object):
         except socket.error, e:
             self.log.error("write: socket send error - Is browser running? ")
 
+        ##print "rc:",rc
+
         return rc
 
     
@@ -93,6 +62,8 @@ class DirectBrowserCalls(object):
         rc = self.write(d)
         self.log.debug("browserQuit:\nrc: %s\n\n" % str(rc))
 
+        return rc
+
     
     def getBrowserUri(self, replyto='no-one'):
         """Called to recover where the browser is looking currently.
@@ -107,6 +78,8 @@ class DirectBrowserCalls(object):
         self.log.debug("getBrowserUri: Sending command:\n%s\n\n" % str(d))
         rc = self.write(d)
         self.log.debug("getBrowserUri:\nrc: %s\n\n" % str(rc))
+
+        return rc
 
     
     def setBrowserUri(self, args, replyto='no-one', host='127.0.0.1'):
@@ -124,6 +97,8 @@ class DirectBrowserCalls(object):
         rc = self.write(d)
         self.log.debug("setBrowserUri:\n%s\n\n" % str(rc))
 
+        return rc
+
 
     def callFunction(self, args, replyto='no-one'):
         """Call a javascript function in the browser.
@@ -140,6 +115,59 @@ class DirectBrowserCalls(object):
         self.log.debug("callFunction: Sending command:\n%s\n\n" % str(d))
         rc = self.write(d)
         self.log.debug("callFunction:\n%s\n\n" % str(rc))
+
+        return rc
+
+
+    def newSessionId(self):
+        """Generate a sessionid for a callBrowserWaitReply.
+
+        This is used to generate the reply_<...> call back
+        and passed as the first argument to the javascript
+        function.
+        
+        """
+        return 'reply_%s' % str(uuid.uuid4())
+    
+
+    def callBrowserWaitReply(self, sessionid, call_str, timeout=180):
+        """Call the browser and set up the callback handler on which
+        we will receive the browser's response.
+
+        call_str:
+            This must be a valid javascript call in web page which
+            viewpoint is currently displaying.
+
+        timeout:
+            The amount of seconds to wait before giving up on
+            a response.
+
+        Note:
+            If no reponse is received within timeout seconds then
+            a messenger.EventTimeout will be raised.
+            
+        """
+        # Create the reply event and register it before. We do this before sending
+        # the function call and reply event (session id) to the browser. This means
+        # we won't miss the reponse if it happens quickly.
+        #
+        sessionid = simplejson.loads(sessionid)
+        reply_event = messenger.EVT(sessionid)
+        async_reply_catch = messenger.Catcher(reply_event, timeout)        
+        self.log.debug("callBrowserWithReplya: creating reply signal for browser reply: '%s' " % sessionid)
+
+        # Create the call to the browser:
+        #
+        self.log.debug("callBrowserWaitReply: invoking '%s' in the browser " % call_str)
+        self.callFunction(call_str)
+            
+        # Now wait for the reply if it hasn't arrived already.
+        #
+        self.log.debug("callBrowserWaitReply: waiting for browser response '%s'." % sessionid)
+        async_reply_catch.wait()
+        self.log.debug("callBrowserWaitReply: response received '%s'." % async_reply_catch.event)
+
+        return async_reply_catch.event
         
         
 def main():

@@ -8,9 +8,13 @@ import messenger
 
 
 class XmlRpcServer(xmlrpc.XMLRPC):
-
+    """
+    """
+    # Used to prevent actual send of messaging (testing only)
     testing = False
+
     log = logging.getLogger("director.proxydispatch.XmlRpcServer")
+
 
     def xmlrpc_ping(self):
         """Allow others to check we're running.
@@ -19,12 +23,12 @@ class XmlRpcServer(xmlrpc.XMLRPC):
         msg = "EvasionDirectorProxyDispatch: %s" % datetime.datetime.now()
         self.log.debug("ping received: returning '%s'." % msg)
         return msg
+
         
-    def xmlrpc_dispatch(self, reply, data):
+    def xmlrpc_dispatch(self, reply_evt, data):
         """Dispatch the given data as a reply event.
         """
-        reply_evt = reply
-        print("xmlrpc_dispatch: sending reply event '%s' with data '%s'" % (reply_evt, data))
+        self.log.debug("xmlrpc_dispatch: sending reply event '%s' with data '%s'" % (reply_evt, data))
 
         if self.testing:
             self.log.debug("xmlrpc_dispatch: Send disabled in testing mode.")
@@ -48,18 +52,11 @@ def setup(port, testing=False):
     """
     """
     log = logging.getLogger("director.proxydispatch.setup")
-
     x = XmlRpcServer()
     x.testing = testing
     site = server.Site(x)
     reactor.listenTCP(port, site)
     log.info("XML-RPC proxy dispatch server setup ok (port:%s)" % (port))
-
-    print("""
-
-    XML-RPC proxy dispatch server setup ok (port:%s)
-
-    """ % (port))
 
 
 if __name__ == "__main__":
