@@ -154,7 +154,7 @@ class DirectBrowserCalls(object):
         sessionid = simplejson.loads(sessionid)
         reply_event = messenger.EVT(sessionid)
         async_reply_catch = messenger.Catcher(reply_event, timeout)        
-        self.log.debug("callBrowserWithReplya: creating reply signal for browser reply: '%s' " % sessionid)
+        self.log.debug("callBrowserWithReply: creating reply signal for browser reply: '%s' " % sessionid)
 
         # Create the call to the browser:
         #

@@ -5,13 +5,13 @@ logconfig = "${director_log_cfg}"
 logdir = "${log_dir}"
 
 # This is the command line used to launch the web presence:
-app = "${python_exe}"
+app = "${python_exe} ${install_home}\Scripts\paster development.ini"
 
 # This is the directory to run the app from:
-app_dir = "${install_home}\\myapp"
+app_dir = "${install_home}"
 
 # deviceaccess program:
-devicemain = "${python_exe} ${install_home}\\myapp\\manager --config=${da_config} --dmconfig=${manager_config}"
+devicemain = "${python_exe} ${install_home}\Scripts\manager --config=${da_config} --dmconfig=${manager_config}"
 
 # where to run the deviceaccess from:
 devicemaindir = "${install_home}"
@@ -21,13 +21,8 @@ xulrunner =  xulrunner
 
 # This is the XUL browser config xulrunner should be using:
 #
-# Hand development mode command lines:
-#
-# browser = "${viewpoint_path}\\viewpoint\\application.ini -development 1 -nofullscreen 1 "
-# browser = "${viewpoint_path}\\viewpoint\\application.ini -development 1 -nofullscreen 1 -jsconsole "
-#
 # Live command line
-browser = "${viewpoint_path}\\viewpoint\\application.ini"
+browser = "${viewpoint_path}\application.ini"
 
 # This is the time, in seconds, the app manager waits before 
 # checking that the xul browser or the web presence is still 

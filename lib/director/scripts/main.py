@@ -63,7 +63,8 @@ def create_config(cfg_dict):
     print("Creating initial configuration.")
 
     # Fill in the template information with XUL Browser path:
-    cfg_dict['viewpoint_path'] = os.path.abspath(director.__path__[0])
+    import viewpoint
+    cfg_dict['viewpoint_path'] = os.path.abspath(viewpoint.__path__[0])
 
     def writeout(filename, data):
         # Ok, write the result out to disk:
@@ -86,7 +87,7 @@ def create_config(cfg_dict):
     data = Template(cfg_data).render(**cfg_dict)
     writeout(DEFAULT_SERVICESTATION_NAME, data)
 
-    print("Success, '%s', '%s' and '%s' created ok." % (DEFAULT_LOGCONFIG_NAME, DEFAULT_LOGCONFIG_NAME, DEFAULT_SERVICESTATION_NAME))
+    print("Success, '%s', '%s' and '%s' created ok." % (DEFAULT_CONFIG_NAME, DEFAULT_LOGCONFIG_NAME, DEFAULT_SERVICESTATION_NAME))
 
 
 def main():
@@ -135,12 +136,12 @@ def main():
                       help="Used disable the broker.")
                       
     parser.add_option("--dlconfig", action="store", dest="da_config",
-                      default=r"c:\\evasion\\cfg\\director\\deviceaccess.ini",
-                      help="Used by the install and --create to setup where the deviceaccess.ini is.")
+                      default=r"c:\\evasion\\cfg\\director\\devices.cfg",
+                      help="Used by the install and --create to setup where the devices.cfg is.")
                       
     parser.add_option("--dmconfig", action="store", dest="manager_config",
-                      default=r"c:\\evasion\\cfg\\director\\manager.ini",
-                      help="Used by the install and --create to setup where the manager.ini is.")
+                      default=r"c:\\evasion\\cfg\\director\\manager.cfg",
+                      help="Used by the install and --create to setup where the manager.cfg is.")
 
     parser.add_option("--config", action="store", dest="config_filename", default=DEFAULT_CONFIG_NAME,
                       help="This projects config file.")
