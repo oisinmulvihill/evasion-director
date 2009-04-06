@@ -78,8 +78,7 @@ def create_config(cfg_dict):
     writeout(DEFAULT_CONFIG_NAME, data)
 
     logcfg_data = resource_string(director.templatecfg.__name__, 'director-log.cfg.mako')
-    cfg_dict['log_dir'] = cfg_dict['log_dir'].replace("\\","/")
-    
+    #cfg_dict['log_dir'] = cfg_dict['log_dir'].replace("\\","/")
     data = Template(logcfg_data).render(**cfg_dict)
     writeout(DEFAULT_LOGCONFIG_NAME, data)
 
@@ -120,11 +119,11 @@ def main():
                       help="Used by the install and --create to setup the log dir.")
                       
     parser.add_option("--disableapp", action="store", dest="disable_app",
-                      default="yes",
+                      default="no",
                       help="Used disable the web application.")
                       
     parser.add_option("--disablexul", action="store", dest="disable_xul",
-                      default="yes",
+                      default="no",
                       help="Used disable the xul browser.")
                       
     parser.add_option("--disabledevice", action="store", dest="disable_device",

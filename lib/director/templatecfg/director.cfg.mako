@@ -17,7 +17,7 @@ devicemain = "${python_exe} ${install_home}\Scripts\manager --config=${da_config
 devicemaindir = "${install_home}"
 
 # This is the command used to invoke the xulrunner exe:
-xulrunner =  xulrunner 
+xulrunner =  "xulrunner"
 
 # This is the XUL browser config xulrunner should be using:
 #
