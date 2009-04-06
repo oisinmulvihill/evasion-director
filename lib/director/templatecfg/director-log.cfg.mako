@@ -18,7 +18,7 @@ parent=
 
 [handler_default]
 class=handlers.RotatingFileHandler
-args=("director.log", "au", 10 * 1024 * 1024, 2)
+args=("${log_dir}/director.log", "au", 10 * 1024 * 1024, 2)
 level=DEBUG
 formatter=default
 
