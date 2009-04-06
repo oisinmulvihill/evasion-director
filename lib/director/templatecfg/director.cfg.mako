@@ -5,13 +5,13 @@ logconfig = "${director_log_cfg}"
 logdir = "${log_dir}"
 
 # This is the command line used to launch the web presence:
-app = "${python_exe} ${install_home}\Scripts\paster development.ini"
+app = "${python_exe} ${install_home}\Scripts\paster serve development.ini"
 
 # This is the directory to run the app from:
 app_dir = "${install_home}"
 
 # deviceaccess program:
-devicemain = "${python_exe} ${install_home}\Scripts\manager --config=${da_config} --dmconfig=${manager_config}"
+devicemain = "${python_exe} ${install_home}\Scripts\manager --dmlogconfig="${manager_log_cfg}" --config=${da_config} --dmconfig=${manager_config}"
 
 # where to run the deviceaccess from:
 devicemaindir = "${install_home}"
@@ -60,7 +60,8 @@ disable_broker = "${disable_broker}"
 
 # Disable the app.
 #
-disable_apppresence = "${disable_app}"
+disable_app = "${disable_app}"
+fix_port = 5000
 
 
 # Disable the XUL Browser app for testing purposes. If set to 'no'
@@ -69,7 +70,6 @@ disable_apppresence = "${disable_app}"
 # being done.
 #
 disable_xul = "${disable_xul}"
-
 
 # Disable the deviceaccess app for testing purposes. If set 
 # to 'no' then the director will start and manage the 

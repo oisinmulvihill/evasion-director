@@ -141,6 +141,10 @@ def main():
     parser.add_option("--dmconfig", action="store", dest="manager_config",
                       default=r"c:\\evasion\\cfg\\director\\manager.cfg",
                       help="Used by the install and --create to setup where the manager.cfg is.")
+                      
+    parser.add_option("--dmlogconfig", action="store", dest="manager_log_cfg",
+                      default=r"c:\\evasion\\cfg\\director\\manager-log.cfg",
+                      help="Used by the install and --create to setup where the manager.cfg is.")
 
     parser.add_option("--config", action="store", dest="config_filename", default=DEFAULT_CONFIG_NAME,
                       help="This projects config file.")
@@ -167,6 +171,7 @@ def main():
             director_log_cfg=options.director_log_cfg,
             da_config=options.da_config,
             manager_config=options.manager_config,
+            manager_log_cfg=options.manager_log_cfg,
             servicestation_workingdir=options.servicestation_workingdir,
         )
         create_config(cfg)
