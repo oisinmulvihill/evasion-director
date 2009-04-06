@@ -11,7 +11,7 @@ app = "${python_exe} ${install_home}\Scripts\paster serve development.ini"
 app_dir = "${install_home}"
 
 # deviceaccess program:
-devicemain = "${python_exe} ${install_home}\Scripts\manager --dmlogconfig="${manager_log_cfg}" --config=${da_config} --dmconfig=${manager_config}"
+devicemain = "${python_exe} ${install_home}\Scripts\manager --logconfig="${manager_log_cfg}" --config=${da_config} --dmconfig=${manager_config}"
 
 # where to run the deviceaccess from:
 devicemaindir = "${install_home}"
