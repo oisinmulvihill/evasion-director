@@ -378,9 +378,6 @@ class Manager(object):
             # Start viewpoint and wait until its ready.
             self.log.info("main: starting viewpoint...")
             self.startBrowser(self.browserPort)
-            # Wait for it to be ready:
-            self.log.info("main: waiting for viewpoint readiness...")
-            return self.viewpoint.waitForReady()
             
         def repoint_viewpoint():
             # Point the viewpoint at the app.
@@ -417,19 +414,20 @@ class Manager(object):
             if self.isRunning('browser'):
                 # Check its looking at the web app:
                 self.viewpointUp = True
-                try:
-                    data = self.viewpoint.getBrowserUri()
-                except socket.error, e:
-                    self.viewpointUp = False
-                else:
-                    # no data is socket close.
-                    if data:
-                        rc = simplejson.loads(data)
-                        uri = rc['data']
-                        if not uri.startswith(self.startURI):
-                            # Were not looking at app. Repointing...
-                            self.log.error("main: viewpoint is not look at base URI '%s'! Repointing..." % self.startURI)            
-                            repoint_viewpoint()
+                if self.isRunning('web'):
+                    try:
+                        data = self.viewpoint.getBrowserUri()
+                    except socket.error, e:
+                        self.viewpointUp = False
+                    else:
+                        # no data is socket close.
+                        if data:
+                            rc = simplejson.loads(data)
+                            uri = rc['data']
+                            if not uri.startswith(self.startURI):
+                                # Were not looking at app. Repointing...
+                                self.log.error("main: viewpoint is not look at base URI '%s'! Repointing..." % self.startURI)            
+                                repoint_viewpoint()
             else:
                 if self.viewpointUp:
                     self.log.error("main: viewpoint interface went down!")            
@@ -438,11 +436,9 @@ class Manager(object):
             # Maintain the viewpoint process if its not disabled:
             if disable_xul == "no" and not self.isRunning('browser'):
                 # Start it and wait for it to be ready:
+                print "viewpoint starting"
                 start_viewpoint()
-                
-                # Point it at the web app:
-                if result and self.isRunning('web'):
-                    repoint_viewpoint()                                           
+                print "viewpoint started ok"
 
             # Don't busy wait if nothing needs doing:
             time.sleep(poll_time)

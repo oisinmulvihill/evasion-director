@@ -133,9 +133,9 @@ class DirectBrowserCalls(object):
         d = dict(replyto='no-one', data=control_frame)
         d = xulcontrolprotocol.dump(d)
 
-        self.log.debug("browserQuit: Sending command:\n%s\n\n" % str(d))
+        self.log.debug("browserQuit: Sending command: %s " % str(d))
         rc = self.write(d)
-        self.log.debug("browserQuit:\nrc: %s\n\n" % str(rc))
+        self.log.debug("browserQuit: rc %s" % str(rc))
 
         return rc
 
@@ -150,9 +150,9 @@ class DirectBrowserCalls(object):
         d = dict(replyto='no-one', data=control_frame)
         d = xulcontrolprotocol.dump(d)
 
-        self.log.debug("getBrowserUri: Sending command:\n%s\n\n" % str(d))
+        self.log.debug("getBrowserUri: Sending command %s" % str(d))
         rc = self.write(d)
-        self.log.debug("getBrowserUri:\nrc: %s\n\n" % str(rc))
+        self.log.debug("getBrowserUri: rc %s" % str(rc))
 
         return rc
 
@@ -168,9 +168,9 @@ class DirectBrowserCalls(object):
         d = dict(replyto=replyto, data=control_frame)
         d = xulcontrolprotocol.dump(d)
 
-        self.log.debug("setBrowserUri: Sending command:\n%s\n\n" % str(d))
+        self.log.debug("setBrowserUri: Sending command: %s " % str(d))
         rc = self.write(d)
-        self.log.debug("setBrowserUri:\n%s\n\n" % str(rc))
+        self.log.debug("setBrowserUri: rc %s " % str(rc))
 
         return rc
 
@@ -187,9 +187,9 @@ class DirectBrowserCalls(object):
         d = dict(replyto=replyto, data=control_frame)
         d = xulcontrolprotocol.dump(d)
 
-        self.log.debug("callFunction: Sending command:\n%s\n\n" % str(d))
+        self.log.debug("callFunction: Sending command: %s " % str(d))
         rc = self.write(d)
-        self.log.debug("callFunction:\n%s\n\n" % str(rc))
+        self.log.debug("callFunction: rc %s " % str(rc))
 
         return rc
 
