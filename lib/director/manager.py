@@ -52,6 +52,7 @@ class Manager(object):
         self.browserPort = '7055'
         self.browserHost = '127.0.0.1'        
         self.viewpoint = viewpointdirect.DirectBrowserCalls(self.browserPort, self.browserHost)
+        self.viewpointUp = False
         
         # True is the app has been start or restarted. If this is the case
         # then the browser should be repointed at the running appl
@@ -391,28 +392,22 @@ class Manager(object):
                 self.viewpoint.setBrowserUri(self.startURI) 
         
                 
-        self.viewpointUp = True
-        self.repointed = False
-                
         self.log.info("appmain: Running.")
         while not isExit():
             # Maintain the stomp broker, if its not disabled:
             if disable_broker == "no" and not self.isRunning('broker'):
-                print "start broker"
                 start_broker()
                 
             # Maintain the deviceaccess manager, if its not disabled:
             if disable_deviceaccess == "no" and not self.isRunning('device'):
                 self.log.info("main: restarting device layer.")
-                print "start devices"
-                self.startdeviceaccess()
+                self.startDeviceAccess()
 
             # Maintain the web application, if its not disabled:
             if disable_app == "no" and not self.isRunning('web'):
                 # start and wait for it to be ready. This should
                 # set the self.appRestarted to True. This will 
                 # cause the xul browser to be repointed at the app. 
-                print "start app"
                 start_app()
 
             # Check if viewpoint interface is up. This could mean the
@@ -439,33 +434,18 @@ class Manager(object):
                 if self.viewpointUp:
                     self.log.error("main: viewpoint interface went down!")            
                 self.viewpointUp = False
-                self.repointed = False
 
-
-            # If the web app has been restarted redirect viewpoint at it:
-            if self.viewpointUp and self.isRunning('web'):
-                print 4.1
-                if not self.repointed:
-                    print "repointing"
-                    repoint_viewpoint()
-                    self.repointed = True
-                print 4.2
-                self.appRestarted = False
-
-
-            # Maintain the XUL Browser if its not disabled:
+            # Maintain the viewpoint process if its not disabled:
             if disable_xul == "no" and not self.isRunning('browser'):
                 # Start it and wait for it to be ready:
-                start_viewpoint()                    
+                start_viewpoint()
+                
                 # Point it at the web app:
                 if result and self.isRunning('web'):
                     repoint_viewpoint()                                           
-                else:
-                    self.log.error("main: browser failed to start. Retrying...")            
 
             # Don't busy wait if nothing needs doing:
             time.sleep(poll_time)
-            print("appmain: tick")
 
         self.log.info("appmain: Finished.")
             
@@ -521,8 +501,10 @@ class Manager(object):
             password=cfg.get('msg_password'),
             channel=cfg.get('msg_channel'),
         ))
-        self.log.info("main: setting up reply proxy dispatch http://127.0.0.1:1901/ .")
-        proxydispatch.setup(1901)
+        
+        port = int(cfg.get('proxy_dispatch_port', 1901))
+        self.log.info("main: setting up reply proxy dispatch http://127.0.0.1:%s/ ." % port)
+        proxydispatch.setup(port)
 
         try:
             self.log.info("main: Running.")
