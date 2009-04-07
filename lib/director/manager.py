@@ -437,9 +437,9 @@ class Manager(object):
                 self.viewpointUp = False
                 self.repointed = False
 
-            print 4
+
             # If the web app has been restarted redirect viewpoint at it:
-            if self.viewpointUp:
+            if self.viewpointUp and self.isRunning('web'):
                 print 4.1
                 if not self.repointed:
                     print "repointing"
@@ -449,7 +449,6 @@ class Manager(object):
                 self.appRestarted = False
 
 
-            print 5
             # Maintain the XUL Browser if its not disabled:
             if disable_xul == "no" and not self.isRunning('browser'):
                 # Start it and wait for it to be ready:
@@ -458,10 +457,7 @@ class Manager(object):
                 if result and self.isRunning('web'):
                     repoint_viewpoint()                                           
                 else:
-                    self.log.error("main: browser failed to start. Retrying...")
-
-            print 5.1
-            
+                    self.log.error("main: browser failed to start. Retrying...")            
 
             print 6
             # Don't busy wait if nothing needs doing:
