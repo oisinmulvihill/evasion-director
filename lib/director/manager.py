@@ -14,6 +14,7 @@ import socket
 import os.path
 import logging
 import StringIO
+import simplejson
 import subprocess
 
 import director
@@ -44,7 +45,9 @@ class Manager(object):
         self.brokerProcess = None
         self.appPort = '9808'
         self.appHost = '127.0.0.1'
-        
+
+        self.startURI = "http://%s:%s" % (self.appHost, self.appPort)
+
         # The viewpoint access details:
         self.browserPort = '7055'
         self.browserHost = '127.0.0.1'        
@@ -206,7 +209,7 @@ class Manager(object):
         return pid
 
 
-    def startdeviceaccess(self):
+    def startDeviceAccess(self):
         """Called to spawn the deviceaccess process.
         """
         cfg = director.config.get_cfg()
@@ -270,7 +273,7 @@ class Manager(object):
             if not returned:
                 # Just check if its actually running outside of the
                 # director i.e. I can connect to its command interface.
-                returned = self.viewpoint.waitForReady(retries=30)                
+                returned = self.viewpoint.waitForReady(retries=1)                
 
         return returned
 
@@ -348,26 +351,14 @@ class Manager(object):
 
 
         def start_broker():
-            cfg = director.config.get_cfg()
-
-            # Set up the messenger protocols where using:        
-            messenger.stompprotocol.setup(dict(
-                host=cfg.get('msg_host'),
-                port=int(cfg.get('msg_port')),
-                username=cfg.get('msg_username'),
-                password=cfg.get('msg_password'),
-                channel=cfg.get('msg_channel'),
-            ))
-            proxydispatch.setup(1901)
-            
-            self.log.info("main: restarting broker.")
+            self.log.info("main: starting broker.")
             print "start devices"
             self.startBroker()
-        
-
+                    
         def start_app():
             # Start the app and wait for it to be ready:
             self.appPort = cfg.get('fix_port', 5000)
+            self.startURI = "http://%s:%s" % (self.appHost, self.appPort)
             self.log.warn("main: [director] fix_port = %s " % self.appPort)
             self.startapp(self.appPort)
             while not self.isRunning('web'):
@@ -393,12 +384,11 @@ class Manager(object):
         def repoint_viewpoint():
             # Point the viewpoint at the app.
             self.log.info("main: waiting for web app to be ready for connections.")
-            starturi = "http://%s:%s" % (self.appHost, self.appPort)
             result = self.waitForReady(self.appPort)
             if result:
                 # Point viewpoint at the web app's uri:
                 self.log.info("main: point viewpoint at web app.")
-                self.viewpoint.setBrowserUri(starturi) 
+                self.viewpoint.setBrowserUri(self.startURI) 
         
                 
         self.viewpointUp = True
@@ -406,20 +396,17 @@ class Manager(object):
                 
         self.log.info("appmain: Running.")
         while not isExit():
-            print 1
             # Maintain the stomp broker, if its not disabled:
             if disable_broker == "no" and not self.isRunning('broker'):
                 print "start broker"
                 start_broker()
                 
-            print 2
             # Maintain the deviceaccess manager, if its not disabled:
             if disable_deviceaccess == "no" and not self.isRunning('device'):
                 self.log.info("main: restarting device layer.")
                 print "start devices"
                 self.startdeviceaccess()
 
-            print 3
             # Maintain the web application, if its not disabled:
             if disable_app == "no" and not self.isRunning('web'):
                 # start and wait for it to be ready. This should
@@ -428,12 +415,29 @@ class Manager(object):
                 print "start app"
                 start_app()
 
-            # Check if viewpoint interface is up:
-            if self.viewpoint.waitForReady(retries=1):
-                print "viewpoint up"
+            # Check if viewpoint interface is up. This could mean the
+            # user has started viewpoint outside of the manager. Point
+            # It at the webapp if its running.
+            #
+            if self.isRunning('browser'):
+                # Check its looking at the web app:
                 self.viewpointUp = True
+                try:
+                    data = self.viewpoint.getBrowserUri()
+                except socket.error, e:
+                    self.viewpointUp = False
+                else:
+                    # no data is socket close.
+                    if data:
+                        rc = simplejson.loads(data)
+                        uri = rc['data']
+                        if not uri.startswith(self.startURI):
+                            # Were not looking at app. Repointing...
+                            self.log.error("main: viewpoint is not look at base URI '%s'! Repointing..." % self.startURI)            
+                            repoint_viewpoint()
             else:
-                print "viewpoint down"
+                if self.viewpointUp:
+                    self.log.error("main: viewpoint interface went down!")            
                 self.viewpointUp = False
                 self.repointed = False
 
@@ -459,7 +463,6 @@ class Manager(object):
                 else:
                     self.log.error("main: browser failed to start. Retrying...")            
 
-            print 6
             # Don't busy wait if nothing needs doing:
             time.sleep(poll_time)
             print("appmain: tick")
@@ -506,6 +509,21 @@ class Manager(object):
         
         """
         self.log.info("main: setting up stomp connection.")        
+
+        cfg = director.config.get_cfg()
+        
+        # Set up the messenger protocols where using:        
+        self.log.info("main: setting up stomp connection to broker.")
+        messenger.stompprotocol.setup(dict(
+            host=cfg.get('msg_host'),
+            port=int(cfg.get('msg_port')),
+            username=cfg.get('msg_username'),
+            password=cfg.get('msg_password'),
+            channel=cfg.get('msg_channel'),
+        ))
+        self.log.info("main: setting up reply proxy dispatch http://127.0.0.1:1901/ .")
+        proxydispatch.setup(1901)
+
         try:
             self.log.info("main: Running.")
             messenger.run(self.appmain)

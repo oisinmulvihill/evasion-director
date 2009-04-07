@@ -14,6 +14,11 @@ import messenger
 from messenger import xulcontrolprotocol
 
 
+class BrowserCallReplyTimeout(Exception):
+    """Raised when the call callBrowserWaitReply() when the timeout for a reply occurs.
+    """
+    
+
 class DirectBrowserCalls(object):
     """This directly instructs the browser to act on instructions
     via its control port 7055 (default).
@@ -234,7 +239,11 @@ class DirectBrowserCalls(object):
         # Now wait for the reply if it hasn't arrived already.
         #
         self.log.debug("callBrowserWaitReply: waiting for browser response '%s'." % sessionid)
-        async_reply_catch.wait()
+        try:
+            async_reply_catch.wait()
+        except messenger.EventTimeout, e:
+            raise BrowserCallReplyTimeout("No the reply '%s' was not received withing '%s' seconds." % (reply_event, timeout))
+        
         self.log.debug("callBrowserWaitReply: response received '%s'." % async_reply_catch.event)
 
         return async_reply_catch.event
