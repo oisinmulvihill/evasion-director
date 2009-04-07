@@ -1,6 +1,7 @@
 """
 """
 import sys
+import time
 import uuid
 import random
 import urllib
@@ -22,8 +23,77 @@ class DirectBrowserCalls(object):
         """Give the post an host we should talk too.
         """
         self.log = logging.getLogger("director.viewpointdirect.DirectBrowserCalls")
+        self.port = 7055
+        self.interface = '127.0.0.1'
+        
+        # validate and store what we've been given
+        self.update(port, interface)
+
+
+    def update(self, port, interface):
+        """Update the direct browser communications details for a different location.
+        
+        port:
+            This is the viewpoint TCP port (default: 7055)
+        
+        interface:
+            This is the viewpoint interface (default: '127.0.0.1')
+        
+        """
         self.port = int(port)
         self.interface = interface
+
+
+    def waitForReady(self, retries=0, retry_period=5.0):
+        """Called to invoke the crossbow interfaces ping() method.
+
+        retries: (default: 0)
+           The number of attempts before giving up on 
+           connecting to the browser.
+           
+           If this is 0 then we will wait forever for 
+           the browser to appear.
+           
+        retry_period: (default: 5.0)
+           The amount of seconds to wait before the next
+           connection attempt.
+
+        returned:
+
+            True: success
+            Failed: failed to connect after maximum retries.
+            
+        """
+        returned = False
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        retries = int(retries)
+        retry_period = float(retry_period)
+
+        def check():
+            try:
+                s.connect((self.interface, self.port))
+            except socket.error, e:
+                return False
+            else:
+                # success!
+                try:
+                    s.close()
+                except:
+                    pass
+                return True
+    
+        if not retries:
+            # Keep connecting until its present:
+            while True:
+                returned = check()
+                time.sleep(retry_period)
+        else:
+            # Give up after 'retries' attempts:
+            for i in range(0, retries):
+                returned = check()
+                time.sleep(retry_period)
+
+        return returned
 
     
     def write(self, data, RECV=2048):

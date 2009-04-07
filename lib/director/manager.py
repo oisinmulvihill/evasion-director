@@ -20,6 +20,8 @@ import director
 import messenger
 import deviceaccess
 import director.config
+from director import proxydispatch
+from director import viewpointdirect
 from messenger import xulcontrolprotocol
 
 
@@ -42,8 +44,15 @@ class Manager(object):
         self.brokerProcess = None
         self.appPort = '9808'
         self.appHost = '127.0.0.1'
+        
+        # The viewpoint access details:
         self.browserPort = '7055'
-        self.browserHost = '127.0.0.1'
+        self.browserHost = '127.0.0.1'        
+        self.viewpoint = viewpointdirect.DirectBrowserCalls(self.browserPort, self.browserHost)
+        
+        # True is the app has been start or restarted. If this is the case
+        # then the browser should be repointed at the running appl
+        self.appRestarted = False
 
 
     def getFreePort(self):
@@ -239,21 +248,29 @@ class Manager(object):
         if part not in ['web','browser', 'device', 'broker']:
             raise ValueError, "Unknown part <%s> to check." % part
 
+        def check(proc):
+            # Check the proccess is running:
+            returned = False
+            if proc and proc.poll() is None:
+                returned = True
+            return returned
+
         if part == "web":
-            process = self.appProcess
-            
+            returned = check(self.appProcess)
+                    
         elif part == "device":
-            process = self.deviceMainProcess
+            returned = check(self.deviceMainProcess)
             
         elif part == "broker":
-            process = self.brokerProcess
+            returned = check(self.brokerProcess)
             
         else:
             # xul browser is the default:
-            process = self.browserProcess
-
-        if process and process.poll() is None:
-            returned = True
+            returned = check(self.browserProcess)
+            if not returned:
+                # Just check if its actually running outside of the
+                # director i.e. I can connect to its command interface.
+                returned = self.viewpoint.waitForReady(retries=30)                
 
         return returned
 
@@ -261,7 +278,12 @@ class Manager(object):
     def waitForReady(self, port):
         """Called to wait for the web presence to respond to
         normal get requests, then the browser can be started.
+        
+        returned:
+            True: success web app ready.
+        
         """
+        returned = False
         URI = "http://localhost:%s" % port
         
         # copy the value and not the reference:
@@ -272,8 +294,6 @@ class Manager(object):
             retries -= 1
             try:
                 urllib.urlopen(URI)
-                # success, its ready.
-                break;
             except IOError, e:
                 # Not ready yet. I should check the exception to
                 # make sure its socket error or we could be looping
@@ -281,51 +301,15 @@ class Manager(object):
                 # prototype works. For now I'm taking the "head in
                 # the sand" approach.
                 pass
+            else:
+                # success, its ready.
+                returned = True
+                break;
             
             time.sleep(0.8)
+            
+        return returned
 
-
-    def write(self, data, port, host, RECV=2048):
-        """Do a socket send and wait to receive directly to the xul browser.
-
-        This side steps the broker if its not running already.
-        
-        """
-        rc = ''
-        import socket
-
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((host, int(port)))
-            s.send(data)
-            rc = s.recv(RECV)
-            s.close()
-        except socket.error, e:
-            self.log.exception("write: socket send error - ")
-
-        return rc
-
-
-    def setBrowserUri(self, uri, port, host='127.0.0.1'):
-        """Called to tell the XUL Browser where to point
-        """
-        # Go to yahoo:
-        control_frame = {
-            'command' : 'set_uri',
-            'args' : {'uri':uri}
-        }
-        d = dict(replyto='no-one', data=control_frame)
-        d = xulcontrolprotocol.dump(d)
-
-        self.log.info("setBrowserUri: Sending set uri command:\n%s\n\n" % str(d))
-        rc = self.write(d, port, host)
-        self.log.info("setBrowserUri:\n%s\n\n" % str(rc))
-
-
-    def printToBrowser(self, msg):
-        """Called to tell the XUL Browser where to point
-        """
-        
 
     def appmain(self, isExit):
         """I need to implement a state machine to do this properly...
@@ -344,9 +328,6 @@ class Manager(object):
         cfg = director.config.get_cfg()
         poll_time = float(cfg.get('poll_time'))
 
-        self.log.info("appmain: Running.")
-
-
         # Recover the options to disable/enable the various parts:
         #
         disable_app = cfg.get('disable_app', "no")
@@ -364,68 +345,128 @@ class Manager(object):
         disable_deviceaccess = cfg.get('disable_deviceaccess', "no")
         if disable_deviceaccess != "no":
             self.log.warn("main: the deviceaccess has been DISABLED in the configuration by the user.")
+
+
+        def start_broker():
+            cfg = director.config.get_cfg()
+
+            # Set up the messenger protocols where using:        
+            messenger.stompprotocol.setup(dict(
+                host=cfg.get('msg_host'),
+                port=int(cfg.get('msg_port')),
+                username=cfg.get('msg_username'),
+                password=cfg.get('msg_password'),
+                channel=cfg.get('msg_channel'),
+            ))
+            proxydispatch.setup(1901)
+            
+            self.log.info("main: restarting broker.")
+            print "start devices"
+            self.startBroker()
         
+
+        def start_app():
+            # Start the app and wait for it to be ready:
+            self.appPort = cfg.get('fix_port', 5000)
+            self.log.warn("main: [director] fix_port = %s " % self.appPort)
+            self.startapp(self.appPort)
+            while not self.isRunning('web'):
+                self.log.info("main: waiting for web app to start")
+                time.sleep(2)
+            active = False
+            while not active:
+                self.log.info("main: waiting for web app to respond to requests")
+                active = self.waitForReady(self.appPort)
+            self.appRestarted = True
+            
+        def start_viewpoint():
+            # Set up the xulcontrolprotocol point at the right direction:
+            self.browserPort = 7055
+            messenger.xulcontrolprotocol.setup(dict(host='127.0.0.1', port=self.browserPort))
+            # Start viewpoint and wait until its ready.
+            self.log.info("main: starting viewpoint...")
+            self.startBrowser(self.browserPort)
+            # Wait for it to be ready:
+            self.log.info("main: waiting for viewpoint readiness...")
+            return self.viewpoint.waitForReady()
+            
+        def repoint_viewpoint():
+            # Point the viewpoint at the app.
+            self.log.info("main: waiting for web app to be ready for connections.")
+            starturi = "http://%s:%s" % (self.appHost, self.appPort)
+            result = self.waitForReady(self.appPort)
+            if result:
+                # Point viewpoint at the web app's uri:
+                self.log.info("main: point viewpoint at web app.")
+                self.viewpoint.setBrowserUri(starturi) 
         
+                
+        self.viewpointUp = True
+        self.repointed = False
+                
         self.log.info("appmain: Running.")
         while not isExit():
-
+            print 1
             # Maintain the stomp broker, if its not disabled:
             if disable_broker == "no" and not self.isRunning('broker'):
-                self.log.info("main: restarting broker.")
-                self.startBroker()
-
-            # Maintain the hardware abstraction layer, if its not disabled:
+                print "start broker"
+                start_broker()
+                
+            print 2
+            # Maintain the deviceaccess manager, if its not disabled:
             if disable_deviceaccess == "no" and not self.isRunning('device'):
                 self.log.info("main: restarting device layer.")
+                print "start devices"
                 self.startdeviceaccess()
-                
+
+            print 3
+            # Maintain the web application, if its not disabled:
+            if disable_app == "no" and not self.isRunning('web'):
+                # start and wait for it to be ready. This should
+                # set the self.appRestarted to True. This will 
+                # cause the xul browser to be repointed at the app. 
+                print "start app"
+                start_app()
+
+            # Check if viewpoint interface is up:
+            if self.viewpoint.waitForReady(retries=1):
+                print "viewpoint up"
+                self.viewpointUp = True
+            else:
+                print "viewpoint down"
+                self.viewpointUp = False
+                self.repointed = False
+
+            print 4
+            # If the web app has been restarted redirect viewpoint at it:
+            if self.viewpointUp:
+                print 4.1
+                if not self.repointed:
+                    print "repointing"
+                    repoint_viewpoint()
+                    self.repointed = True
+                print 4.2
+                self.appRestarted = False
+
+
+            print 5
             # Maintain the XUL Browser if its not disabled:
             if disable_xul == "no" and not self.isRunning('browser'):
-                # No, we must start the XUL Browser.
-                self.browserPort = 7055
-                messenger.xulcontrolprotocol.setup(dict(host=self.browserHost, port=self.browserPort))
-
-                # Recover the file system uri we'll give to browser startup.
-                self.startBrowser(self.browserPort)
-
-                if self.isRunning('web'):
-                    starturi = "http://%s:%s" % (self.appHost, self.appPort)
-                    self.printToBrowser("Waiting for app to start on '%s'." % starturi)
-
-                    # Redirect the xul browser at the web presence:
-                    self.waitForReady(self.appPort)
-                    self.setBrowserUri(starturi, self.browserPort)
-                
-
-            # Maintain the web presence, if its not disabled:
-            if disable_app == "no" and not self.isRunning('web'):
-                # Get a random free port to run the web presence on and use this
-                # to point the XUL browser at it initially. If the fix_port option
-                # is present in the configuration then the user wants us to always
-                # use a specific port.
-                #
-                fix_port = cfg.get('fix_port', None)
-                if fix_port:
-                    self.appPort = fix_port # Start the web presence on the same port.
-                    self.log.warn("main: the user has fixed the port (%s) that the web presence and browser will use in configuration." % fix_port)
+                # Start it and wait for it to be ready:
+                start_viewpoint()                    
+                # Point it at the web app:
+                if result and self.isRunning('web'):
+                    repoint_viewpoint()                                           
                 else:
-                    self.appPort = self.getFreePort()
+                    self.log.error("main: browser failed to start. Retrying...")
 
-                # Start the web presence on this port and then make sure its
-                # ready for requests, before starting the browser:
-                self.startapp(self.appPort)
-                while not self.isRunning('web'):
-                    self.log.info("main: waiting for web presence to start")
-                    time.sleep(2)
-
-                self.waitForReady(self.appPort)
-
-                # Ok, redirect the xul browser at the web presence:
-                self.setBrowserUri("http://%s:%s" % (self.appHost, self.appPort), self.browserPort)
-
-                
-            time.sleep(poll_time)
+            print 5.1
             
+
+            print 6
+            # Don't busy wait if nothing needs doing:
+            time.sleep(poll_time)
+            print("appmain: tick")
 
         self.log.info("appmain: Finished.")
             
@@ -468,24 +509,7 @@ class Manager(object):
         layer running with the app main.
         
         """
-        self.log.info("main: setting up stomp connection.")
-        cfg = director.config.get_cfg()
-
-        # Set up the messenger protocols where using:        
-        messenger.stompprotocol.setup(dict(
-            host=cfg.get('msg_host'),
-            port=int(cfg.get('msg_port')),
-            username=cfg.get('msg_username'),
-            password=cfg.get('msg_password'),
-            channel=cfg.get('msg_channel'),
-        ))
-
-        from director import proxydispatch
-        proxydispatch.setup(1901)
-
-        self.browserPort = 7055
-        messenger.xulcontrolprotocol.setup(dict(host='localhost', port=self.browserPort))
-        
+        self.log.info("main: setting up stomp connection.")        
         try:
             self.log.info("main: Running.")
             messenger.run(self.appmain)
