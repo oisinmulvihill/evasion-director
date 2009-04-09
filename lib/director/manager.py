@@ -188,7 +188,8 @@ class Manager(object):
         app_dir = cfg.get('app2_dir','')
 
         if not os.path.isdir(app_dir):
-            raise ValueError("The app2 directory to run from '%s' does not exist!" % app_dir)
+            self.log.error("The app2 directory to run from '%s' does not exist!" % app_dir)
+            return
 
         command = "%s" % (app)
         self.log.debug("startOptionalApp: running <%s>" % command)
