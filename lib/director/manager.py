@@ -157,23 +157,35 @@ class Manager(object):
 
 
     def startBrowser(self, port, url=None):
-        """Called to spawn the optional app process if it is present in the config.
+        """Called to spawn the xul browser as process.
 
-        The config should contain app2 and app2_dir for this program.
-        
+        This is a two step process:
+
+           1. Update the pref.js with the new URI of the
+           web presence.
+
+           2. Then spawn the xul browser.
+
         """
+        self.winKill('xulrunner.exe')
+
         cfg = director.config.get_cfg()
-        app2 = cfg.get('app2')
-        app2_dir = cfg.get('app2_dir')
+        xulrunner = cfg.get('xulrunner')
+        viewpoint_app = cfg.get('browser')
 
-        self.log.debug("startBrowser: spawning <%s>" % app2)
+        # Spawn the xul browser using the new configuration:
+        command = "%s %s -startport %s" % (xulrunner, viewpoint_app, port)
+        if url:
+            # Quote it " to spaces don't throw us if they are in the
+            # path name given for the start up index.
+            command = '%s -starturi "file:///%s" ' % (command, url)
+        self.log.debug("startBrowser: spawning <%s>" % command)
 
-        self.app2 = subprocess.Popen(
-                args = app2,
+        self.browserProcess = subprocess.Popen(
+                args = command,
                 shell=True,
-                cwd=app2_dir,
                 )
-        pid = self.app2.pid
+        pid = self.browserProcess.pid
 
         self.log.debug("startBrowser: done.")
         return pid
@@ -184,8 +196,12 @@ class Manager(object):
         app2 is present.
         """
         cfg = director.config.get_cfg()
-        app = cfg.get('app2','')
+        app = cfg.get('app2')
         app_dir = cfg.get('app2_dir','')
+
+        if not app_dir:
+            self.log.error("The app2 command is empty!")
+            return
 
         if not os.path.isdir(app_dir):
             self.log.error("The app2 directory to run from '%s' does not exist!" % app_dir)

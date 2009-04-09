@@ -22,7 +22,7 @@ fix_port = 5000
 #app2 = "c:\FDS\services\crossbow_core\crossbow_core.exe"
 #app2_dir = "c:\FDS\services\crossbow_core"
 #
-app2 = " ${install_home}\..\crossbow_core\crossbow_core.exe"
+app2 = "${install_home}\..\crossbow_core\crossbow_core.exe"
 app2_dir = "${install_home}\..\crossbow_core"
 
 
