@@ -58,6 +58,10 @@ class Manager(object):
         # then the browser should be repointed at the running appl
         self.appRestarted = False
 
+        # Used in case we need to run another app in addtion to current set.
+        self.optionalAppProcess = None
+        self.optionalAppStarted = False
+
 
     def getFreePort(self):
         """Called to return a free TCP port that we can use.
@@ -153,42 +157,56 @@ class Manager(object):
 
 
     def startBrowser(self, port, url=None):
-        """Called to spawn the xul browser as process.
+        """Called to spawn the optional app process if it is present in the config.
 
-        This is a two step process:
-
-           1. Update the pref.js with the new URI of the
-           web presence.
-
-           2. Then spawn the xul browser.
+        The config should contain app2 and app2_dir for this program.
         
         """
-        self.winKill('xulrunner.exe')
-        
         cfg = director.config.get_cfg()
-        xulrunner = cfg.get('xulrunner')
-        viewpoint_app = cfg.get('browser')
+        app2 = cfg.get('app2')
+        app2_dir = cfg.get('app2_dir')
 
-        # Spawn the xul browser using the new configuration:
-        command = "%s %s -startport %s" % (xulrunner, viewpoint_app, port)
-        if url:
-            # Quote it " to spaces don't throw us if they are in the
-            # path name given for the start up index.
-            command = '%s -starturi "file:///%s" ' % (command, url)           
-        self.log.debug("startBrowser: spawning <%s>" % command)
+        self.log.debug("startBrowser: spawning <%s>" % app2)
 
-        self.browserProcess = subprocess.Popen(
-                args = command,
+        self.app2 = subprocess.Popen(
+                args = app2,
                 shell=True,
+                cwd=app2_dir,
                 )
-        pid = self.browserProcess.pid
+        pid = self.app2.pid
 
         self.log.debug("startBrowser: done.")
         return pid
 
 
-    def startapp(self, port):
-        """Called to spawn the web presence as process on the given port.
+    def startOptionalApp(self):
+        """Called to spawn another program if the configuration is present for
+        app2 is present.
+        """
+        cfg = director.config.get_cfg()
+        app = cfg.get('app2','')
+        app_dir = cfg.get('app2_dir','')
+
+        if not os.path.isdir(app_dir):
+            raise ValueError("The app2 directory to run from '%s' does not exist!" % app_dir)
+
+        command = "%s" % (app)
+        self.log.debug("startOptionalApp: running <%s>" % command)
+
+        self.optionalAppProcess = subprocess.Popen(
+                args = command,
+                shell=True,
+                cwd=app_dir,
+                )
+        pid = self.optionalAppProcess.pid
+
+        self.log.debug("startOptionalApp: done.")
+        
+        return pid
+
+
+    def startApp(self, port):
+        """Called to spawn the web app as process on the given port.
         """
         cfg = director.config.get_cfg()
         app = cfg.get('app')
@@ -198,7 +216,7 @@ class Manager(object):
             raise ValueError("The app directory to run from '%s' does not exist!" % app_dir)
 
         command = "%s" % (app)
-        self.log.debug("startapp: running <%s>" % command)
+        self.log.debug("startApp: running <%s>" % command)
 
         self.appProcess = subprocess.Popen(
                 args = command,
@@ -249,7 +267,7 @@ class Manager(object):
         returned = False
 
         # Prevent multiple process spawns if the part is specified wrongly.
-        if part not in ['web','browser', 'device', 'broker']:
+        if part not in ['web','browser', 'device', 'broker','app2']:
             raise ValueError, "Unknown part <%s> to check." % part
 
         def check(proc):
@@ -268,12 +286,17 @@ class Manager(object):
         elif part == "broker":
             returned = check(self.brokerProcess)
             
+        elif part == "app2":
+            returned = check(self.optionalAppProcess)
+            
         else:
-            # xul browser is the default:
+            # check if the managed xul browser running:
             returned = check(self.browserProcess)
             if not returned:
-                # Just check if its actually running outside of the
-                # director i.e. I can connect to its command interface.
+                # Just check if its running outside of the director
+                # i.e. I can connect to its command interface. If
+                # so its considered as running and should be repointed
+                # at the web app if it needs to be.
                 returned = self.viewpoint.waitForReady(retries=1)                
 
         return returned
@@ -338,6 +361,10 @@ class Manager(object):
         if disable_app != "no":
             self.log.warn("main: the Web Presence has been DISABLED in configuration.")
 
+        disable_app2 = cfg.get('disable_app2', "no")
+        if disable_app2 != "no":
+            self.log.warn("main: the optional app has been DISABLED in configuration.")
+
         disable_broker = cfg.get('disable_broker', "no")
         if disable_broker != "no":
             self.log.warn("main: the Broker has been DISABLED in configuration.")
@@ -361,7 +388,7 @@ class Manager(object):
             self.appPort = cfg.get('fix_port', 5000)
             self.startURI = "http://%s:%s" % (self.appHost, self.appPort)
             self.log.warn("main: [director] fix_port = %s " % self.appPort)
-            self.startapp(self.appPort)
+            self.startApp(self.appPort)
             while not self.isRunning('web'):
                 self.log.info("main: waiting for web app to start")
                 time.sleep(2)
@@ -390,11 +417,11 @@ class Manager(object):
         
                 
         self.log.info("appmain: Running.")
-        while not isExit():
+        while not isExit():            
             # Maintain the stomp broker, if its not disabled:
             if disable_broker == "no" and not self.isRunning('broker'):
                 start_broker()
-                
+
             # Maintain the deviceaccess manager, if its not disabled:
             if disable_deviceaccess == "no" and not self.isRunning('device'):
                 self.log.info("main: restarting device layer.")
@@ -406,6 +433,10 @@ class Manager(object):
                 # set the self.appRestarted to True. This will 
                 # cause the xul browser to be repointed at the app. 
                 start_app()
+
+            # Maintain the web application, if its not disabled:
+            if disable_app2 == "no" and not self.isRunning('app2'):
+                self.startOptionalApp()
 
             # Check if viewpoint interface is up. This could mean the
             # user has started viewpoint outside of the manager. Point
@@ -461,21 +492,30 @@ class Manager(object):
         """
         if self.isRunning('browser'):
             self.log.warn("kill: STOPPING BROWSER.")
-            self.winKillPID(self.browserProcess.pid)
-            self.winKill('xulrunner.exe')
+            if self.browserProcess:
+                self.winKillPID(self.browserProcess.pid)
+                self.winKill('xulrunner.exe')
 
         if self.isRunning('device'):
             self.log.warn("kill: STOPPING deviceaccess.")
-            self.winKillPID(self.deviceMainProcess.pid)
+            if self.deviceMainProcess:
+                self.winKillPID(self.deviceMainProcess.pid)
 
         if self.isRunning('broker'):
             self.log.warn("kill: STOPPING BROKER.")
-            self.winKillPID(self.brokerProcess.pid)
-            self.winKill('morbidsvr')
+            if self.brokerProcess:
+                self.winKillPID(self.brokerProcess.pid)
+                self.winKill('morbidsvr')
 
         if self.isRunning('web'):
-            self.log.warn("kill: STOPPING WEB PRESENCE.")
-            self.winKillPID(self.appProcess.pid)
+            self.log.warn("kill: STOPPING WEB APP.")
+            if self.appProcess:
+                self.winKillPID(self.appProcess.pid)
+
+        if self.isRunning('app2'):
+            self.log.warn("kill: STOPPING OPTIONAL APP.")
+            if self.appProcess:
+                self.winKillPID(self.optionalAppProcess.pid)
 
 
                 

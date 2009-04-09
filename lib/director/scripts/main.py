@@ -122,6 +122,10 @@ def main():
                       default="no",
                       help="Used disable the web application.")
                       
+    parser.add_option("--disableapp2", action="store", dest="disable_app2",
+                      default="no",
+                      help="Used disable the optional application.")
+                      
     parser.add_option("--disablexul", action="store", dest="disable_xul",
                       default="no",
                       help="Used disable the xul browser.")
@@ -163,6 +167,7 @@ def main():
             install_home= options.install_home,
             disable_xul = options.disable_xul,
             disable_app = options.disable_app,
+            disable_app2 = options.disable_app2,
             disable_broker = options.disable_broker,
             disable_device = options.disable_device,
             python_exe=options.python_exe,
