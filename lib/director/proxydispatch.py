@@ -51,7 +51,8 @@ class XmlRpcServer(xmlrpc.XMLRPC):
         """Broadcasts a quit message to the director to quit the application
         """
         self.log.debug("xmlrpc_kill: sending EXIT ALL to manager")
-        messenger.send(messenger.EVT('EXIT_ALL', {})
+        messenger.send(messenger.EVT('EXIT_ALL'), {})
+        self.log.debug("xmlrpc_kill: sent EXIT ALL OK.")
         return 0
 
 

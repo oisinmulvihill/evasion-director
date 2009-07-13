@@ -6,6 +6,7 @@ Created by Oisin Mulvihill on 2007-05-18.
 
 """
 import os
+import sys
 import time
 import copy
 import urllib
@@ -21,6 +22,7 @@ import agency
 import director
 import messenger
 import director.config
+from pydispatch import dispatcher
 from director import proxydispatch
 from director import viewpointdirect
 from messenger import xulcontrolprotocol
@@ -107,7 +109,12 @@ class Manager(object):
         and on the port. I could then instruct it where to go to.
         
         """
-        cmd = "taskkill.exe /F /T /IM %s " % cmd
+        
+        if sys.platform.startswith('win'):
+            cmd = "taskkill.exe /F /T /IM %s " % cmd
+        else:
+            cmd = "pkill -9 %s" % cmd
+            
         try:
             retcode = subprocess.call(cmd, shell=True)
             self.log.info("winKill: taskkill return code <%s>" % retcode)
@@ -115,19 +122,26 @@ class Manager(object):
             self.log.warn("winKill: didn't run <%s> Not on winxp?" % str(e))
 
 
-    def winKillPID(self, pid):
+    def killPID(self, pid):
         """Attempt to call taskkill.exe to clean up any old xulrunner instance.
         This will only work on winxp. The more correct approach would be to
         re use an existing xul browser. It should actuall check if xul is up
         and on the port. I could then instruct it where to go to.
         
         """
-        cmd = "taskkill.exe /F /T /PID %s " % pid
-        try:
-            retcode = subprocess.call(cmd, shell=True)
-            self.log.info("winKillPID: taskkill return code <%s>" % retcode)
-        except OSError, e:
-            self.log.warn("winKillPID: didn't run <%s> Not on winxp?" % str(e))
+        if sys.platform.startswith('win'):
+            cmd = "taskkill.exe /F /T /PID %s " % pid            
+            try:
+                retcode = subprocess.call(cmd, shell=True)
+                self.log.info("killPID: taskkill return code <%s>" % retcode)
+            except OSError, e:
+                self.log.warn("killPID: didn't run <%s> Not on winxp?" % str(e))
+                
+        else:
+            pgid = os.getpgid(pid)
+            import signal
+            self.log.info("killPID: killing process group <%s> for pid <%s>" % (pgid, pid))
+            os.killpg(pgid, signal.SIGHUP)
 
 
     def startBroker(self):
@@ -518,29 +532,29 @@ class Manager(object):
         if self.isRunning('browser'):
             self.log.warn("kill: STOPPING BROWSER.")
             if self.browserProcess:
-                self.winKillPID(self.browserProcess.pid)
+                self.killPID(self.browserProcess.pid)
                 self.winKill('xulrunner.exe')
 
         if self.isRunning('agency'):
             self.log.warn("kill: STOPPING Agency.")
             if self.agencyMainProcess:
-                self.winKillPID(self.agencyMainProcess.pid)
+                self.killPID(self.agencyMainProcess.pid)
 
         if self.isRunning('broker'):
             self.log.warn("kill: STOPPING BROKER.")
             if self.brokerProcess:
-                self.winKillPID(self.brokerProcess.pid)
+                self.killPID(self.brokerProcess.pid)
                 self.winKill('morbidsvr')
 
         if self.isRunning('web'):
             self.log.warn("kill: STOPPING WEB APP.")
             if self.appProcess:
-                self.winKillPID(self.appProcess.pid)
+                self.killPID(self.appProcess.pid)
 
         if self.isRunning('app2'):
             self.log.warn("kill: STOPPING OPTIONAL APP.")
             if self.appProcess:
-                self.winKillPID(self.optionalAppProcess.pid)
+                self.killPID(self.optionalAppProcess.pid)
 
 
                 
