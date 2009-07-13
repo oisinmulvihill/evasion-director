@@ -394,6 +394,14 @@ class Manager(object):
         if disable_agency != "no":
             self.log.warn("main: the Agency has been DISABLED in the configuration by the user.")
 
+        # Register messenger hook for kill()
+        def signal_exit(signal, sender, **data) :
+            self.log.warn("main: signal_exit called")
+            self.exit()
+        dispatcher.connect(
+          signal_exit,
+          signal=messenger.EVT("EXIT_ALL")
+        )
 
         def start_broker():
             self.log.info("main: starting broker.")
