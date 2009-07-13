@@ -17,9 +17,9 @@ import StringIO
 import simplejson
 import subprocess
 
+import agency
 import director
 import messenger
-import deviceaccess
 import director.config
 from director import proxydispatch
 from director import viewpointdirect
@@ -41,7 +41,7 @@ class Manager(object):
         self.log = logging.getLogger("director.manager.Manager")
         self.browserProcess = None
         self.appProcess = None
-        self.deviceMainProcess = None
+        self.agencyMainProcess = None
         self.brokerProcess = None
         self.appPort = '9808'
         self.appHost = '127.0.0.1'
@@ -245,24 +245,24 @@ class Manager(object):
         return pid
 
 
-    def startDeviceAccess(self):
-        """Called to spawn the deviceaccess process.
+    def startAgency(self):
+        """Called to spawn the Agency process.
         """
         cfg = director.config.get_cfg()
-        devicemain = cfg.get('devicemain')
-        devicemaindir = cfg.get('devicemaindir')
+        agency = cfg.get('agency')
+        agencydir = cfg.get('agencydir')
 
-        if not os.path.isdir(devicemaindir):
-            raise ValueError("The deviceaccess directory to run from '%s' does not exist!" % devicemaindir)
+        if not os.path.isdir(agencydir):
+            raise ValueError("The Agency directory to run from '%s' does not exist!" % agencydir)
 
-        self.log.debug("startdeviceaccess: running <%s> from <%s>" % (devicemain, devicemaindir))
+        self.log.debug("startAgency: running <%s> from <%s>" % (agency, agencydir))
 
-        self.deviceMainProcess = subprocess.Popen(
-                args = devicemain,
+        self.agencyMainProcess = subprocess.Popen(
+                args = agency,
                 shell=True,
-                cwd=devicemaindir,
+                cwd=agencydir,
                 )
-        pid = self.deviceMainProcess.pid
+        pid = self.agencyMainProcess.pid
         
         return pid
 
@@ -271,7 +271,7 @@ class Manager(object):
         """Called to test the web presence or browser is running.
 
         part:
-            'web' | 'browser' | 'device' | 'broker'
+            'web' | 'browser' | 'agency' | 'broker'
 
             Note : if the part isn't one of these the
             ValueError will be raised.
@@ -284,7 +284,7 @@ class Manager(object):
         returned = False
 
         # Prevent multiple process spawns if the part is specified wrongly.
-        if part not in ['web','browser', 'device', 'broker','app2']:
+        if part not in ['web','browser', 'agency', 'broker','app2']:
             raise ValueError, "Unknown part <%s> to check." % part
 
         def check(proc):
@@ -297,8 +297,8 @@ class Manager(object):
         if part == "web":
             returned = check(self.appProcess)
                     
-        elif part == "device":
-            returned = check(self.deviceMainProcess)
+        elif part == "agency":
+            returned = check(self.agencyMainProcess)
             
         elif part == "broker":
             returned = check(self.brokerProcess)
@@ -390,14 +390,14 @@ class Manager(object):
         if disable_xul != "no":
             self.log.warn("main: the viewpoint has been DISABLED in the configuration by the user.")
             
-        disable_deviceaccess = cfg.get('disable_deviceaccess', "no")
-        if disable_deviceaccess != "no":
-            self.log.warn("main: the deviceaccess has been DISABLED in the configuration by the user.")
+        disable_agency = cfg.get('disable_agency', "no")
+        if disable_agency != "no":
+            self.log.warn("main: the Agency has been DISABLED in the configuration by the user.")
 
 
         def start_broker():
             self.log.info("main: starting broker.")
-            print "start devices"
+            print "start agencys"
             self.startBroker()
                     
         def start_app():
@@ -439,10 +439,10 @@ class Manager(object):
             if disable_broker == "no" and not self.isRunning('broker'):
                 start_broker()
 
-            # Maintain the deviceaccess manager, if its not disabled:
-            if disable_deviceaccess == "no" and not self.isRunning('device'):
-                self.log.info("main: restarting device layer.")
-                self.startDeviceAccess()
+            # Maintain the Agency manager, if its not disabled:
+            if disable_agency == "no" and not self.isRunning('agency'):
+                self.log.info("main: restarting agency layer.")
+                self.startAgency()
 
             # Maintain the web application, if its not disabled:
             if disable_app == "no" and not self.isRunning('web'):
@@ -513,10 +513,10 @@ class Manager(object):
                 self.winKillPID(self.browserProcess.pid)
                 self.winKill('xulrunner.exe')
 
-        if self.isRunning('device'):
-            self.log.warn("kill: STOPPING deviceaccess.")
-            if self.deviceMainProcess:
-                self.winKillPID(self.deviceMainProcess.pid)
+        if self.isRunning('agency'):
+            self.log.warn("kill: STOPPING Agency.")
+            if self.agencyMainProcess:
+                self.winKillPID(self.agencyMainProcess.pid)
 
         if self.isRunning('broker'):
             self.log.warn("kill: STOPPING BROKER.")
@@ -537,7 +537,7 @@ class Manager(object):
 
                 
     def main(self):
-        """Set up the device layer and then start the messenger
+        """Set up the agency layer and then start the messenger
         layer running with the app main.
         
         """
