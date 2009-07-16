@@ -1,13 +1,16 @@
 import logging
 
-from twisted.internet import reactor
-from twisted.web import xmlrpc, static, server
-from twisted.web.resource import Resource
+# Lazy import as this causes autodoc and other tools problems on windows:
+#from twisted.internet import reactor
+#from twisted.web import static, server
+#from twisted.web.resource import Resource
+#from twisted.web import xmlrpc
+
 
 import messenger
 
 
-class XmlRpcServer(xmlrpc.XMLRPC):
+class XmlRpcServer:
     """
     """
     # Used to prevent actual send of messaging (testing only)
@@ -59,10 +62,22 @@ class XmlRpcServer(xmlrpc.XMLRPC):
 def setup(port, testing=False):
     """
     """
+    from twisted.internet import reactor
+    from twisted.web import static, server
+    from twisted.web.resource import Resource
+
     log = logging.getLogger("director.proxydispatch.setup")
-    x = XmlRpcServer()
+
+    from twisted.web import xmlrpc    
+    
+    class Tw(xmlrpc.XMLRPC, XmlRpcServer):
+        """Hack, to avoid import time select install in twisted"""
+        pass
+    
+    x = Tw()
     x.testing = testing
     site = server.Site(x)
+    
     reactor.listenTCP(port, site)
     log.info("XML-RPC proxy dispatch server setup ok (port:%s)" % (port))
 
@@ -77,4 +92,6 @@ if __name__ == "__main__":
     
     setup(9001, testing=True)
     log.info("started on port 9001")
+    
+    from twisted.internet import reactor
     reactor.run()     

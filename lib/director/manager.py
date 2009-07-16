@@ -1,8 +1,21 @@
 """
-This class handles the running and management of both the XUL
-Browser and the evasion web presence.
 
-Created by Oisin Mulvihill on 2007-05-18.
+:mod:`manager` -- Main control code
+=======================================
+
+.. module:: directorX
+   :platform: Unix, MacOSX, Windows
+   :synopsis: Main control code for the director
+.. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
+
+
+This module provides the Manager class which is the main director
+code logic. The Manager handles the running and management of both 
+the XUL Browser and the web presence.
+
+.. autoclass:: director.manager.Manager
+   :members:
+   :undoc-members:
 
 """
 import os
@@ -34,6 +47,7 @@ def get_log():
 
 class Manager(object):
     """Manage the running of both the XUL Browser and Web Presence services.
+
     """
     PORT_RETRIES = 40
     
