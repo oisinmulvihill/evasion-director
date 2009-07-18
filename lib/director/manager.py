@@ -175,12 +175,30 @@ class Manager(object):
         command = app
         self.log.debug("startBroker: running <%s>" % command)
 
-        self.brokerProcess = subprocess.Popen(
-                args = command,
-                shell=True,
-                cwd=app_dir,
-                )
+        
+        def go():
+            import sys
+            import logging
+            from director import utils
+            from director import morbid
+
+            utils.log_init(logging.INFO)
+
+            class FakeStream:
+                def write(self, msg):
+                    log = logging.getLogger()
+                    log.info('fakestream: %s' % msg)
+
+            sys.stdout = FakeStream()
+            sys.stderr = FakeStream()
+
+            morbid.main()
+                
+        self.brokerProcess = Process(target=f, args=('bob',))
+        self.brokerProcess.start()
+        
         pid = self.brokerProcess.pid
+        
         return pid
 
 
