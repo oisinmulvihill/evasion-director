@@ -16,4 +16,5 @@ The director provides a number of modules:
 from director import config
 from director import scripts
 from director import manager
+from director import controllers
 

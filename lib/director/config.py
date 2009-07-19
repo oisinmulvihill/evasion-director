@@ -200,26 +200,15 @@ def load(config):
                 
                 # Check I can at least import the stated module.
                 try:
-                    # absolute imports only:
-                    print """
-section[key]:
-
-%s
-
-
-fromlist=section[key].split('.'):
-
-%s
-
-key
-%s
-                    """ % (section[key], section[key].split('.'), key)
-
-                    imported_agent = __import__(section[key], fromlist=section[key].split('.'), level=0)
+                    importmod = section[key]
+                    fromlist = section[key].split('.')
+                    # absolute imports only (level=0):
+                    imported_agent = __import__(importmod, fromlist=fromlist, level=0)
+                    
                 except ImportError, e:
                      raise ImportError("The controller '%s' from section '%s' was not found! %s" % (
-                         section[key],
-                         pprint.pformat(section),
+                         importmod,
+                         section,
                          traceback.format_exc()
                      ))
 
