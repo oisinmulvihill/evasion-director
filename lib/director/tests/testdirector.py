@@ -7,7 +7,7 @@ class DirectorTC(unittest.TestCase):
 
 
     def testTestTheOrder(self):
-        """
+        """Test the container instances which should be setup from configuration.
         """
         test_config = """
         [checkdir]
