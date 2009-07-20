@@ -18,8 +18,9 @@ import os
 import logging
 import subprocess
 
+import agency
 import director
-from director.tools import proc
+from agency.manager import Manager
 from director.controllers import base
 
 
@@ -33,37 +34,12 @@ class Controller(base.Controller):
         order = 1
         controller = 'director.controllers.agencyhq'
 
-        # Command Line specific options:
-        command = 'mycommand -someoption -anotheroption=abc'
-        workingdir = '/tmp'
-
-    The command is the shell based command you would call if
-    you were running the command out side of the director.
-
-    The workingdir is the place on the file system in which
-    the process wil be run. You could place files your command
-    needs there and it will find them in the current path.
+    The agency uses the raw director config to look for
+    agents to load and run. It will recover the configuration
+    using director.config.get_cfg().raw
 
     """
     log = logging.getLogger('director.controllers.commandline')
-
-    pid = None
-    commandProc = None
-
-
-    def check(self):
-        """
-        Called to check if the process is currently running.
-
-        :returns: True for process is running otherwise False.
-        
-        """
-        returned = False
-
-        if self.commandProc and self.commandProc.poll() is None:
-            returned = True
-
-        return returned
         
         
     def setUp(self, config):
@@ -82,18 +58,15 @@ class Controller(base.Controller):
         """
         base.Controller.setUp(self, config)
 
-        self.command = self.config.get('command')
-        if not self.command:
-            raise ValueError("No valid command recovered from config!")
-            
-        self.workingdir = self.config.get('workingdir')
-        if not self.command:
-            raise ValueError("No valid workingdir recovered from config!")
-        
-        if not os.path.isdir(self.workingdir):
-            raise ValueError("The directory to run from '%s' does not exist!" % self.workingdir)
+        self.isRunning = False
 
-        self.log.debug("setUp: command <%s> workingdir <%s>" % (self.command, self.workingdir))
+        # Get the raw config and recover the agents we'll be using:
+        self.log.debug("setUp: setting up the agency and recovering agents.")
+        self.manager = Manager()
+        cfg = director.config.get_cfg().raw
+        self.manager.load(cfg)
+        self.manager.setUp()        
+
 
 
     def start(self):
@@ -107,16 +80,8 @@ class Controller(base.Controller):
         :return: None
         
         """
-        if not self.check():
-            self.commandProc = subprocess.Popen(
-                args = self.command,
-                shell=True,
-                cwd=self.workingdir,
-                )
-            self.pid = self.commandProc.pid
-
-        else:
-            self.log.warn("start: The process '%s' is running, please call stop first!" % self.pid)
+        self.manager.start()
+        self.isRunning = True
 
 
     def isStarted(self):
@@ -130,7 +95,7 @@ class Controller(base.Controller):
         :return: True if the process is running otherwise False
         
         """
-        return self.check()
+        return self.isRunning
     
 
     def stop(self):
@@ -144,13 +109,9 @@ class Controller(base.Controller):
         :return: None
         
         """
-        if not self.check():
-            self.log.info("stop: stopping the process and all its children.")
-            proc.kill(self.pid)
-            
-        else:
-            self.log.warn("stop: The no process is running please call start first!")
-            
+        self.manager.stop()
+        self.isRunning = False
+        
 
     def isStopped(self):
         """
@@ -162,12 +123,15 @@ class Controller(base.Controller):
         :return: True if the process has stopped otherwise False
         
         """
-        return self.check()
+        return self.isRunning
 
 
     def tearDown(self):
         """
+        Close the agency down, shot all the agents in the head. The
+        calls the agency manager shutdown which
         
         :return: None
         
         """
+        self.manager.shutdown()

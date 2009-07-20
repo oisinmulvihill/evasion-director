@@ -1,5 +1,4 @@
 """
-
 :mod:`manager` -- Main control code
 =======================================
 
@@ -46,14 +45,13 @@ def get_log():
 
 
 class Manager(object):
-    """Manage the running of both the XUL Browser and Web Presence services.
+    """Manages the running services determined by the configuration
+    that was loaded.
 
     """
     log = logging.getLogger("director.manager.Manager")
 
     def __init__(self):
-        """
-        """
         self.controllers = []
         
 
@@ -118,17 +116,12 @@ class Manager(object):
             # Don't busy wait if nothing needs doing:
             time.sleep(poll_time)
 
-        # Teardown all enabled controllers:
-        for order, ctl in controllers:
-            if ctl.disabled == 'no':
-                ctl.controller.tearDown()
-
-
         self.log.info("appmain: Finished.")
         
 
     def exit(self):
-        """Called by the windows service to stop the director service and
+        """
+        Called by the windows service to stop the director service and
         all its children.
         
         """
@@ -138,14 +131,20 @@ class Manager(object):
 
 
     def shutdown(self):
-        """Shutdown any remaining services with winKill()
         """
+        Shutdown any remaining services and call there tearDown methods.
+        """
+        # Stop all enabled controllers:
+        for order, ctl in self.controllers:
+            ctl.controller.stop()
+
+        # Teardown all enabled controllers:
+        for order, ctl in self.controllers:
+            ctl.controller.tearDown()
 
                 
     def main(self):
-        """Set up the agency layer and then start the messenger
-        layer running with the app main.
-        
+        """
         """
         self.log.info("main: setting up stomp connection.")        
 

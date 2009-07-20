@@ -9,7 +9,7 @@
 
 This provides the interface to command line processes.
 
-.. autoclass:: director.controllers.Controller
+.. autoclass:: director.controllers.commandline.Controller
    :members:
    :undoc-members:
 
