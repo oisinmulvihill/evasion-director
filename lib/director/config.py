@@ -15,6 +15,9 @@ This module provides the director configuration parsing and handling.
 
 .. exception:: director.config.ConfigError
 
+.. autoclass:: director.config.ConfigStore
+   :members:
+
 .. autofunction:: director.config.clear()
 
 .. autofunction:: director.config.get_cfg()
@@ -55,7 +58,24 @@ class ConfigError(Exception):
     """
 
 
+# Private: represents the current ConfigStore instance
+# holding the config and configobj instance.
+#
 __config = None
+
+
+class ConfigStore:
+    """
+    An instance of this is used to store the original raw config and the ConfigObj instance.
+
+    The original config data is stored as the 'raw' member variable.
+
+    The ConfigObj instance is stored as the 'cfg' member variable.
+    
+    """
+    def __init__(self, raw, cfg):
+        self.raw = raw
+        self.cfg = cfg
 
 
 def clear():
@@ -71,38 +91,28 @@ def clear():
 def get_cfg():
     """Called to return a reference to the currenlty set up configuration.
     
-    If no config has been set up, via a call to set_config,
-    then ConfigNotSetup will be raised to indicate so.
-
-    Note: the configuration only returns the configobj
-    information from the 'director' section and not
-    any others that could be present in the config.
+    If no config has been set up, via a call to set_config, then
+    ConfigNotSetup will be raised to indicate so.
     
     """
     if not __config:
-        raise ConfigNotSetup, "No configuration has been setup."        
-    return __config['director']
+        raise ConfigNotSetup("No configuration has been setup.")
+    
+    return __config
 
 
-def set_cfg(the_config):
+def set_cfg(raw):
     """Called to set up the configuration used for the project.
     
-    the_config:
+    :param raw: this is a string representing the raw
+    configuration data read from the config file.
     
     """
     global __config
-    cfg = ConfigObj(infile=the_config)
-    try:
-        cfg['director']
-    except KeyError,e:
-        raise ConfigInvalid, "No [director] section was found in the given configuration (case is important)."
-        
-    #print "cfg: ", cfg
-    __config = cfg
+    fd = StringIO.StringIO(raw)
+    cfg = ConfigObj(infile=fd)
+    __config = ConfigStore(raw, cfg)
     
-
-c = property(get_cfg, set_cfg)
-
 
 class Container(object):
     """This represents a configuration sections as recoverd from the configuration.    
@@ -126,6 +136,7 @@ class Container(object):
     
     """
     reserved = ()
+    
     def __init__(self):
         self.name = None
         self.order = None
@@ -181,7 +192,7 @@ def load(config):
     def recover(section, key):        
         # If the section does not have and 'agent' then it is not considered and ignored.
         if 'controller' not in section:
-            get_log().info("The config section '%s' does not appear to be an controller key. Ignoring." % key)
+            #get_log().info("The config section '%s' does not appear to be an controller key. Ignoring." % key)
             return
     
         value = section[key]
@@ -215,6 +226,7 @@ def load(config):
                 # Now see if it contains a Agent category all agent must have to load:
                 if hasattr(imported_agent, 'Controller'):
                     returned = getattr(imported_agent, 'Controller')
+                    returned = returned()
                     
                 return returned
 

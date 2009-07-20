@@ -1,15 +1,15 @@
 """
-:mod:`commandline` -- This provides the interface to command line processes.
-=============================================================================
+:mod:`agencyhq` -- This runs the agency without needing to spawnit under another python process.
+=================================================================================================
 
-.. module:: config
+.. module:: agencyhq
    :platform: Unix, MacOSX, Windows
    :synopsis: This provides the interface to command line processes.
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
 
-This provides the interface to command line processes.
+This runs the agency without needing to spawnit under another python process.
 
-.. autoclass:: director.controllers.Controller
+.. autoclass:: director.controllers.agencyhq.Controller
    :members:
    :undoc-members:
 
@@ -25,17 +25,13 @@ from director.controllers import base
 
 class Controller(base.Controller):
     """
-    This is the command line controller that implements the
-    launching of processes via pythons subprocess module.
+    This controller typically has the following configuration::
 
-    This controller typically adds two extra options to the
-    standard controller configuration::
-
-        [my_proc_name]
+        [agencyhq]
         # Standard options example:
         disabled = 'no'
         order = 1
-        controller = ...
+        controller = 'director.controllers.agencyhq'
 
         # Command Line specific options:
         command = 'mycommand -someoption -anotheroption=abc'
@@ -175,4 +171,3 @@ class Controller(base.Controller):
         :return: None
         
         """
-

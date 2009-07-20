@@ -2,9 +2,41 @@ import unittest
 
 import director
 
+testcfg = """
+[director] 
+somevalue = 123
+"""
 
 class DirectorTC(unittest.TestCase):
+    def testRequiredConfigSection(self):
+        """Test that the evasion section is present in the given config file.
+        """
+        # Check that no setup done is caught:
+        self.assertRaises(director.config.ConfigNotSetup, director.config.get_cfg)
 
+        # Check we don't get and problems with files...
+        testcfg = """
+[director] 
+somevalue = 123
+"""
+        director.config.set_cfg(testcfg)
+        c = director.config.get_cfg()
+
+        self.assertEquals(c.raw, testcfg)
+        self.assertEquals(c.cfg['director']['somevalue'], '123')
+
+        
+    def testdirectorConfig(self):
+        """Test the configuration set and machinery
+        """
+        # Reset and Check that no setup done is caught:
+        director.config.clear()
+        self.assertRaises(director.config.ConfigNotSetup, director.config.get_cfg)
+
+        # Check we don't get and problems with files...
+        director.config.set_cfg(testcfg)
+        director.config.get_cfg()
+        
 
     def testTestTheOrder(self):
         """Test the container instances which should be setup from configuration.
@@ -31,7 +63,6 @@ class DirectorTC(unittest.TestCase):
         self.assertEquals(order, '1')
         self.assertEquals(ctl.order, '1')
         self.assertEquals(ctl.disabled, 'no')
-        self.assertEquals(ctl.controller.__name__, 'Controller')
         self.assertEquals(ctl.command, 'ls')
         self.assertEquals(ctl.workingdir, '/tmp')
 
@@ -39,7 +70,6 @@ class DirectorTC(unittest.TestCase):
         self.assertEquals(order, '2')
         self.assertEquals(ctl.order, '2')
         self.assertEquals(ctl.disabled, 'yes')
-        self.assertEquals(ctl.controller.__name__, 'Controller')
         self.assertEquals(ctl.command, "echo 'hello' > /tmp/hello.txt")
         self.assertEquals(ctl.workingdir, '/tmp')
 

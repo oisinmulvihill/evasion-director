@@ -189,22 +189,20 @@ def main():
         sys.exit(1)
 
     else:    
-        # I need to set the locale before I import the director,
-        # as this uses the __G_LANG_ID__ which won't have been set
-        # yet.
-        cfg = ConfigObj(infile=options.config_filename)
-
         # Ok, clear to import:
         import director.config
-        director.config.set_cfg(options.config_filename)
+
+        fd = file(options.config_filename)
+        raw = fd.read()
+        fd.close()
+        director.config.set_cfg(raw)
 
         # Set up python logging if a config file is given:
-        cfg = director.config.get_cfg()
-        log_cfg = cfg.get('logconfig')
-        
+        cfg = director.config.get_cfg().cfg
+        log_cfg = cfg.get('logconfig', '')
         if os.path.isfile(log_cfg):
             logging.config.fileConfig(log_cfg)
-
+            
         else:
             # No log configuration file given or it has been overidden
             # by the user, just print out to console instead:
@@ -213,8 +211,7 @@ def main():
             hdlr.setFormatter(formatter)
             log.addHandler(hdlr)
             log.setLevel(logging.DEBUG)
-            log.propagate = False
-
+            log.propagate = False        
 
         from director import manager
         manager.Manager().main()

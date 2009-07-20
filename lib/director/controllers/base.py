@@ -70,6 +70,7 @@ class Controller:
         :return: None
         
         """
+        self.config = config
         
 
     def start(self):
