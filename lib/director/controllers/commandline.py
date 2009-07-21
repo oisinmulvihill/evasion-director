@@ -50,26 +50,10 @@ class Controller(base.Controller):
 
     """
     log = logging.getLogger('director.controllers.commandline')
-
     pid = None
     commandProc = None
+    
 
-
-    def check(self):
-        """
-        Called to check if the process is currently running.
-
-        :returns: True for process is running otherwise False.
-        
-        """
-        returned = False
-
-        if self.commandProc and self.commandProc.poll() is None:
-            returned = True
-
-        return returned
-        
-        
     def setUp(self, config):
         """
         This looks in the configuration and recovers the command and
@@ -111,7 +95,7 @@ class Controller(base.Controller):
         :return: None
         
         """
-        if not self.check():
+        if not proc.check(self.commandProc):
             self.commandProc = subprocess.Popen(
                 args = self.command,
                 shell=True,
@@ -134,7 +118,7 @@ class Controller(base.Controller):
         :return: True if the process is running otherwise False
         
         """
-        return self.check()
+        return proc.check(self.commandProc)
     
 
     def stop(self):
@@ -148,7 +132,7 @@ class Controller(base.Controller):
         :return: None
         
         """
-        if not self.check():
+        if not proc.check(self.commandProc):
             self.log.info("stop: stopping the process and all its children.")
             proc.kill(self.pid)
             
@@ -166,7 +150,7 @@ class Controller(base.Controller):
         :return: True if the process has stopped otherwise False
         
         """
-        return self.check()
+        return proc.check(self.commandProc)
 
 
     def tearDown(self):

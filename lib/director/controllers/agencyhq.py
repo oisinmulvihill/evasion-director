@@ -61,12 +61,13 @@ class Controller(base.Controller):
         self.isRunning = False
 
         # Get the raw config and recover the agents we'll be using:
-        self.log.debug("setUp: setting up the agency and recovering agents.")
+        self.log.info("setUp: setting up the agency and recovering agents.")
         self.manager = Manager()
         cfg = director.config.get_cfg().raw
         self.manager.load(cfg)
         self.manager.setUp()        
 
+        self.log.info("setUp: agents loaded '%d'." % self.manager.agents)
 
 
     def start(self):

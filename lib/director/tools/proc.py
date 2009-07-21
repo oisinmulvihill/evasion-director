@@ -58,14 +58,14 @@ def kill(pid):
 
     """
     if sys.platform.startswith('win'):
-        cmd = "taskkill.exe /F /T /PID %s " % pid            
-        try:
-            retcode = subprocess.call(cmd, shell=True)
-            get_log().info("kill: taskkill return code <%s>" % retcode)
-            
-        except OSError, e:
-            get_log().warn("kill: didn't run <%s> Not on winxp?" % str(e))
-
+       cmd = "taskkill.exe /F /T /PID %s " % pid            
+       try:
+           retcode = subprocess.call(cmd, shell=True)
+           get_log().info("kill: taskkill return code <%s>" % retcode)
+           
+       except OSError, e:
+           get_log().warn("kill: didn't run <%s> Not on winxp?" % str(e))
+           
     else:
         import signal
         pgid = os.getpgid(pid)
@@ -73,4 +73,21 @@ def kill(pid):
         os.killpg(pgid, signal.SIGHUP)
 
 
+def check(subproc):
+    """
+    Called to check if the process is currently running.
 
+    :param subproc: This is an instance of a running
+    subprocess.Popen instance.
+
+    :returns: True for process is running otherwise False.
+    
+    """
+    returned = False
+
+    if subproc and subproc.poll() is None:
+        returned = True
+        
+    return returned
+        
+        

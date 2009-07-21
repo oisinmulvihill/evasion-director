@@ -1,34 +1,19 @@
 """
-:mod:`manager` -- Main control code
-=======================================
+:mod:`manager` -- Main director control code.
+==============================================
 
 .. module:: directorX
    :platform: Unix, MacOSX, Windows
-   :synopsis: Main control code for the director
+   :synopsis: Main director control code.
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
-
-
-This module provides the Manager class which is the main director
-code logic. The Manager handles the running and management of both 
-the XUL Browser and the web presence.
 
 .. autoclass:: director.manager.Manager
    :members:
    :undoc-members:
 
 """
-import os
-import sys
 import time
-import copy
-import urllib
-import random
-import socket
-import os.path
 import logging
-import StringIO
-import simplejson
-import subprocess
 
 import agency
 import director
@@ -47,6 +32,32 @@ def get_log():
 class Manager(object):
     """Manages the running services determined by the configuration
     that was loaded.
+
+    The manager expects to find a [director] section in the configuration::
+
+        [director]
+        # The broker connection details. Required if nobroker = 'no' (default):
+        msg_host = "127.0.0.1"
+        msg_port = 61613
+        msg_username = ''
+        msg_password = ''
+        msg_channel = 'evasion'
+
+        # (OPTIONAL): Set this to 'yes' if you wish to stop the director connecting to the broker.
+        nobroker = 'no'
+
+        # (OPTIONAL) Prevent director busy waiting. This just limits the time between maintenances checks.
+        poll_time = 0.1
+
+        # (OPTIONAL): Default log to stdout if this isn't present of log file not found:
+        logconfig = "log.cfg"
+        logdir = "."
+
+        # (OPTIONAL): To disable the special proxy dispatch set this to 'yes'
+        noproxydispatch = 'no'
+
+        # (OPTIONAL): Web app local reply dispatch XML-RPC service i.e. http://localhost:<this port>/RPC2.
+        proxy_dispatch_port = 1901
 
     """
     log = logging.getLogger("director.manager.Manager")
@@ -97,7 +108,7 @@ class Manager(object):
         """
         c = director.config.get_cfg()
         cfg = c.cfg['director']
-        poll_time = float(cfg.get('poll_time'))
+        poll_time = float(cfg.get('poll_time', '0.1'))
 
         # Recover the controllers from director configuration.
         self.controllerSetup()
@@ -121,9 +132,8 @@ class Manager(object):
 
     def exit(self):
         """
-        Called by the windows service to stop the director service and
-        all its children.
-        
+        Called after shutdown() to tell twisted to exit causing the program
+        to quit normally.
         """
         self.log.warn("exit: the director is shutting down.")
         messenger.quit()
@@ -132,7 +142,10 @@ class Manager(object):
 
     def shutdown(self):
         """
-        Shutdown any remaining services and call there tearDown methods.
+        Shutdown any remaining services and call their tearDown methods.
+
+        This is called before exit() is called.
+        
         """
         # Stop all enabled controllers:
         for order, ctl in self.controllers:
@@ -145,25 +158,37 @@ class Manager(object):
                 
     def main(self):
         """
+        The main thread in which twisted and the messagin system runs. The
+        manager main run inside its own thread. The appman(...) is the
+        main of the director.
+        
         """
         self.log.info("main: setting up stomp connection.")        
 
         cfg = director.config.get_cfg().cfg
         cfg = cfg['director']
         
-        # Set up the messenger protocols where using:        
-        self.log.info("main: setting up stomp connection to broker.")
-        messenger.stompprotocol.setup(dict(
-            host=cfg.get('msg_host'),
-            port=int(cfg.get('msg_port')),
-            username=cfg.get('msg_username'),
-            password=cfg.get('msg_password'),
-            channel=cfg.get('msg_channel'),
-        ))
-        
-        port = int(cfg.get('proxy_dispatch_port', 1901))
-        self.log.info("main: setting up reply proxy dispatch http://127.0.0.1:%s/ ." % port)
-        proxydispatch.setup(port)
+        nobroker = cfg.get('nobroker', 'no')
+        if nobroker == 'no':
+            # Set up the messenger protocols where using:
+            self.log.info("main: setting up stomp connection to broker.")
+            messenger.stompprotocol.setup(dict(
+                host=cfg.get('msg_host'),
+                port=int(cfg.get('msg_port')),
+                username=cfg.get('msg_username'),
+                password=cfg.get('msg_password'),
+                channel=cfg.get('msg_channel'),
+            ))
+        else:
+            self.log.warn("main: the director's broker connection is disabled (nobroker = 'yes').")
+            
+        noproxydispatchbroker = cfg.get('noproxydispatch', 'no')
+        if noproxydispatchbroker == 'no':
+            port = int(cfg.get('proxydispatch_port', 1901))
+            self.log.info("main: setting up reply proxy dispatch http://127.0.0.1:%s/ ." % port)
+            proxydispatch.setup(port)
+        else:
+            self.log.warn("main: the director's proxydispatch is disabled (noproxydispatch = 'yes').")
 
         try:
             self.log.info("main: Running.")
