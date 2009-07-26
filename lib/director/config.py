@@ -9,11 +9,11 @@
 
 This module provides the director configuration parsing and handling. 
 
-.. exception:: director.config.ConfigInvalid
+.. autoexception:: director.config.ConfigInvalid
 
-.. exception:: director.config.ConfigNotSetup
+.. autoexception:: director.config.ConfigNotSetup
 
-.. exception:: director.config.ConfigError
+.. autoexception:: director.config.ConfigError
 
 .. autoclass:: director.config.ConfigStore
    :members:
@@ -29,7 +29,6 @@ This module provides the director configuration parsing and handling.
    :undoc-members:
 
 .. autofunction:: director.config.load(config)
-
 
 """
 import pprint
@@ -196,6 +195,7 @@ def load(config):
             return
     
         value = section[key]
+        disabled = section.get('disabled','no')
         c = processed.get(section.name, Container())            
         
         if not c.name:
@@ -204,7 +204,7 @@ def load(config):
         if not c.config:
             c.config = section
                         
-        elif key == 'controller':
+        elif key == 'controller' and disabled == 'no':
             def recover_agent():
                 # default: nothing found.
                 returned = None
@@ -233,9 +233,11 @@ def load(config):
             value = recover_agent()
             if not value:
                 raise ConfigError("I was unable to import '%s' from '%s'." % (item, current))
-                        
-        setattr(c, key, value)
-        processed[section.name] = c
+
+        # Only store if this section isn't disabled
+        if  disabled == 'no':
+            setattr(c, key, value)
+            processed[section.name] = c
         
     # Process all the config sections creating config containers.
     cfg.walk(recover)

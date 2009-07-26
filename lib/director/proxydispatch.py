@@ -52,17 +52,16 @@ class XmlRpcServer:
         return 0
 
     def xmlrpc_shutdown(self):
-        """Broadcasts a quit message to the director to shutdown all parts.
+        """Broadcasts a exit message to the director to quit the application.
         """
-        # allow xmlrpc to return straight away, while we start a shutdown.
-        # this should allow client connection to close nicely without exceptions.
-        def doshutdown(data=0):
-            self.log.debug("xmlrpc_shutdown: sending EVT_EXIT_ALL to manager")
+        def sendexit(data):
+            self.log.debug("xmlrpc_shutdown: sending EVT_EXIT_ALL to the director.")
             messenger.send(messenger.EVT('EVT_EXIT_ALL'), {})
             self.log.debug("xmlrpc_shutdown: sent EVT_EXIT_ALL OK.")
-        
-        thread.start_new_thread(doshutdown, (0,))
-            
+
+        # be nice, return so otherside can close without errors.
+        thread.start_new_thread(sendexit, (0,))
+
         return 0
 
 

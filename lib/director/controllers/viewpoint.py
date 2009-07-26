@@ -21,6 +21,7 @@ import agency
 import director
 from director.tools import proc
 from agency.manager import Manager
+from director import viewpointdirect
 from director.controllers import base
 
 
@@ -39,15 +40,15 @@ class Controller(base.Controller):
         # The xulrunner exe to use (command and/or path to exe):
         xulrunner = 'xulrunner'
 
+        # This is the control port which will be listened on for
+        # command requests on. 7055 is the default if not given.
+        port = '7055'
+        
         # Director to run the application from:
         workingdir = '.'
 
         # Viewpoint command line arguments to use. Currently
         # you can use:
-        #
-        # -startport 7055
-        #    This is the control port which will be listened on for
-        #    command requests on. 7055 is the default if not given.
         #
         # -starturi chrome://viewpoint/content/static/startup.html
         #    The URI to display on start up. By default it uses
@@ -65,12 +66,6 @@ class Controller(base.Controller):
 
     """
     log = logging.getLogger('director.controllers.viewpointctrl.Controller')
-    pid = None
-    commandProc = None
-    xulrunner = None
-    args = None
-    command = None
-    
 
     def setUp(self, config):
         """
@@ -85,12 +80,19 @@ class Controller(base.Controller):
         """
         base.Controller.setUp(self, config)
 
+        self.pid = None
+        self.commandProc = None
+
         self.xulrunner = self.config.get('xulrunner')
         if not self.xulrunner:
             raise ValueError("No valid 'xulrunner' recovered from config!")
 
         self.workingdir = self.config.get('workingdir', '.')
             
+        self.port = self.config.get('port', '7055')
+
+        self.dbc = viewpointdirect.DirectBrowserCalls(self.port)
+        
         self.args = self.config.get('args', '')
 
         self.log.debug("setUp: xulrunner <%s> args <%s>" % (self.xulrunner, self.args))
@@ -101,8 +103,9 @@ class Controller(base.Controller):
         self.viewpointPath = pkg_resources.resource_filename('viewpoint','application.ini')
         self.log.info("setUp: using xulrunner '%s'." % self.xulrunner)
         self.log.info("setUp: using viewpoint from '%s'." % self.viewpointPath)
+        self.log.info("setUp: viewpoint port '%s'." % self.port)
         self.log.info("setUp: using args '%s'." % self.args)
-        self.command = "%s %s %s" % (self.xulrunner, self.viewpointPath, self.args)
+        self.command = "%s %s -startport %s %s" % (self.xulrunner, self.viewpointPath, self.port, self.args)
 
 
     def start(self):
@@ -136,7 +139,8 @@ class Controller(base.Controller):
         :return: True if the process is running otherwise False
         
         """
-        return proc.check(self.commandProc)
+        rc = self.dbc.waitForReady(retries=10)
+        return rc
     
 
     def stop(self):
@@ -150,12 +154,16 @@ class Controller(base.Controller):
         :return: None
         
         """
-        if not proc.check(self.commandProc):
-            self.log.info("stop: stopping the viewpoint and all its children.")
+        if self.pid:
+            # Ask the viewpoint nicely to shutdown:
+            self.log.info("stop: asking viewpoint to shutdown.")
+            rc = self.dbc.browserQuit()
+
+            self.log.info("stop: stopping the viewpoint PID:'%s' and all its children." % self.pid)
             proc.kill(self.pid)
-            
         else:
-            self.log.warn("stop: The no viewpoint is running please call start first!")
+            self.log.warn("stop: viewpoint not running to stop it.")
+
             
 
     def isStopped(self):
@@ -166,7 +174,12 @@ class Controller(base.Controller):
         :return: True if the process has stopped otherwise False
         
         """
-        return proc.check(self.commandProc)
+        rc = proc.check(self.commandProc)
+        if rc:
+            # Check if the comms port is closed:
+            rc = self.dbc.waitForReady(retries=1)
+
+        return rc
 
 
     def tearDown(self):

@@ -49,10 +49,7 @@ class Controller(base.Controller):
     needs there and it will find them in the current path.
 
     """
-    log = logging.getLogger('director.controllers.commandline')
-    pid = None
-    commandProc = None
-    
+    log = logging.getLogger('director.controllers.commandline')    
 
     def setUp(self, config):
         """
@@ -69,6 +66,9 @@ class Controller(base.Controller):
         
         """
         base.Controller.setUp(self, config)
+
+        self.pid = None
+        self.commandProc = None
 
         self.command = self.config.get('command')
         if not self.command:
@@ -101,7 +101,9 @@ class Controller(base.Controller):
                 shell=True,
                 cwd=self.workingdir,
                 )
+            
             self.pid = self.commandProc.pid
+            self.log.info("start:  '%s' running. PID %s" % (self.command, self.pid))
 
         else:
             self.log.warn("start: The process '%s' is running, please call stop first!" % self.pid)
@@ -132,12 +134,11 @@ class Controller(base.Controller):
         :return: None
         
         """
-        if not proc.check(self.commandProc):
-            self.log.info("stop: stopping the process and all its children.")
+        if self.pid:
+            self.log.info("stop: stopping the process PID:'%s' and all its children." % self.pid)
             proc.kill(self.pid)
-            
         else:
-            self.log.warn("stop: The no process is running please call start first!")
+            self.log.warn("stop: process not running to stop it.")
             
 
     def isStopped(self):

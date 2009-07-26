@@ -57,14 +57,18 @@ def kill(pid):
     :param pid: This the process id we wish to stop. 
 
     """
+    get_log().info("kill: pid <%s>" % pid)
+
     if sys.platform.startswith('win'):
-       cmd = "taskkill.exe /F /T /PID %s " % pid            
-       try:
-           retcode = subprocess.call(cmd, shell=True)
-           get_log().info("kill: taskkill return code <%s>" % retcode)
+        cmd = "taskkill.exe /F /T /PID %s " % pid            
+        get_log().info("kill: cmd <%s>" % cmd)
+       
+        try:
+            retcode = subprocess.call(cmd, shell=True)
+            get_log().info("kill: taskkill return code <%s>" % retcode)
            
-       except OSError, e:
-           get_log().warn("kill: didn't run <%s> Not on winxp?" % str(e))
+        except OSError, e:
+            get_log().warn("kill: didn't run <%s> Not on winxp?" % str(e))
            
     else:
         import signal

@@ -51,11 +51,7 @@ class Controller:
     This class is really an interface which all who wish to be loaded
     must derive from.
     
-    """
-    # The config section belonging to this program.
-    config = None
-
-        
+    """        
     def setUp(self, config):
         """
         This is called after the controller has been created to perform

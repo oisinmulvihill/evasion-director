@@ -50,8 +50,16 @@ somevalue = 123
         workingdir = "/tmp"
 
         [echodir]
+        # disabled = yes means module won't be loaded.
         disabled = 'yes'
         order = 2
+        controller = 'director.controllers.commandline'
+        command = "echo 'hello' > /tmp/hello.txt"
+        workingdir = "/tmp"        
+
+        [echodir-active]
+        disabled = 'no'
+        order = 3
         controller = 'director.controllers.commandline'
         command = "echo 'hello' > /tmp/hello.txt"
         workingdir = "/tmp"        
@@ -67,9 +75,9 @@ somevalue = 123
         self.assertEquals(ctl.workingdir, '/tmp')
 
         order, ctl = programs[1]
-        self.assertEquals(order, '2')
-        self.assertEquals(ctl.order, '2')
-        self.assertEquals(ctl.disabled, 'yes')
+        self.assertEquals(order, '3')
+        self.assertEquals(ctl.order, '3')
+        self.assertEquals(ctl.disabled, 'no')
         self.assertEquals(ctl.command, "echo 'hello' > /tmp/hello.txt")
         self.assertEquals(ctl.workingdir, '/tmp')
 
@@ -91,7 +99,7 @@ somevalue = 123
         workingdir = "/tmp"
 
         [echodir]
-        disabled = 'yes'
+        disabled = 'no'
         order = 2
         controller = 'director.controllers.commandline'
         command = "echo 'hello' > /tmp/hello.txt"

@@ -63,6 +63,8 @@ class Manager(object):
     log = logging.getLogger("director.manager.Manager")
 
     def __init__(self):
+        """
+        """
         self.controllers = []
         
 
@@ -85,22 +87,21 @@ class Manager(object):
         cfg = director.config.get_cfg().raw
         
         self.controllers = director.config.load(cfg)
-        if not self.controllers:
-            self.log.warn("controllerSetup: no controllers found in config.")
-            
-        else:
+        if self.controllers:
             # Setup all enabled controllers:
             for order, ctl in self.controllers:
                 if ctl.disabled == 'no':
                     ctl.controller.setUp(ctl.config)
+        else:
+            self.log.warn("controllerSetup: no controllers found in config.")
 
 
     def appmain(self, isExit):
-        """I need to implement a state machine to do this properly...
+        """
+        Run the main program loop.
 
-        isExit:
-            This is a function that will return true
-            when its time to exit.
+        :param isExit: This is a function that will return true
+        when its time to exit.
 
         Note: this is a thread which we are running in and the
         messenger will determine when its time to exit.
@@ -127,13 +128,12 @@ class Manager(object):
         while not isExit():
             # Check the controllers are alive and restat if needs be:
             for order, ctl in self.controllers:
-
                 if ctl.disabled == 'no':
                     if not ctl.controller.isStarted():
-                        self.log.info("The controller '%s' needs to be (re)started." % (ctl))
+                        self.log.info("The controller '%s' needs to be started." % (ctl))
                         ctl.controller.start()
                         rc = ctl.controller.isStarted()
-                        self.log.info("(Re)started ok '%s'? '%s'" % (ctl, rc))            
+                        self.log.info("Started ok '%s'? '%s'" % (ctl.name, rc))            
             
             # Don't busy wait if nothing needs doing:
             time.sleep(poll_time)
