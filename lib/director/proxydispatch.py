@@ -1,3 +1,4 @@
+import thread
 import logging
 
 # Lazy import as this causes autodoc and other tools problems on windows:
@@ -50,12 +51,18 @@ class XmlRpcServer:
 
         return 0
 
-    def xmlrpc_kill(self):
-        """Broadcasts a quit message to the director to quit the application
+    def xmlrpc_shutdown(self):
+        """Broadcasts a quit message to the director to shutdown all parts.
         """
-        self.log.debug("xmlrpc_kill: sending EXIT ALL to manager")
-        messenger.send(messenger.EVT('EXIT_ALL'), {})
-        self.log.debug("xmlrpc_kill: sent EXIT ALL OK.")
+        # allow xmlrpc to return straight away, while we start a shutdown.
+        # this should allow client connection to close nicely without exceptions.
+        def doshutdown(data=0):
+            self.log.debug("xmlrpc_shutdown: sending EVT_EXIT_ALL to manager")
+            messenger.send(messenger.EVT('EVT_EXIT_ALL'), {})
+            self.log.debug("xmlrpc_shutdown: sent EVT_EXIT_ALL OK.")
+        
+        thread.start_new_thread(doshutdown, (0,))
+            
         return 0
 
 

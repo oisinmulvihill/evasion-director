@@ -27,9 +27,14 @@ fd.close()
 TestSuite = 'director.tests'
 
 needed = [
+    # third party deps:
     'configobj',
     'mako', 
+    
+    # evasion deps:
     'evasion-messenger',
+    'evasion-agency',
+    'evasion-viewpoint',
 ]
 
 import sys
