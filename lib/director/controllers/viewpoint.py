@@ -13,12 +13,16 @@
 
 """
 import os
+import socket
 import logging
 import subprocess
 import pkg_resources
 
+import simplejson
+
 import agency
 import director
+from director.tools import net
 from director.tools import proc
 from agency.manager import Manager
 from director import viewpointdirect
@@ -39,6 +43,10 @@ class Controller(base.Controller):
         #
         # The xulrunner exe to use (command and/or path to exe):
         xulrunner = 'xulrunner'
+
+        # The URI to connect to when the URI is present and the viewpoint
+        # is ready to recieve requests:
+        uri = "http://myhost:myport/myapp"        
 
         # This is the control port which will be listened on for
         # command requests on. 7055 is the default if not given.
@@ -87,6 +95,8 @@ class Controller(base.Controller):
         if not self.xulrunner:
             raise ValueError("No valid 'xulrunner' recovered from config!")
 
+        self.uri = self.config.get('uri', None)
+
         self.workingdir = self.config.get('workingdir', '.')
             
         self.port = self.config.get('port', '7055')
@@ -104,6 +114,7 @@ class Controller(base.Controller):
         self.log.info("setUp: using xulrunner '%s'." % self.xulrunner)
         self.log.info("setUp: using viewpoint from '%s'." % self.viewpointPath)
         self.log.info("setUp: viewpoint port '%s'." % self.port)
+        self.log.info("setUp: URI '%s'." % self.uri)
         self.log.info("setUp: using args '%s'." % self.args)
         self.command = "%s %s -startport %s %s" % (self.xulrunner, self.viewpointPath, self.port, self.args)
 
@@ -131,6 +142,48 @@ class Controller(base.Controller):
             self.log.warn("start: The viewpoint '%s' is running, please call stop first!" % self.pid)
 
 
+    def checkForURIReadiness(self, uri):
+        """
+        Called to see if the given uri is available for the viewpoint 
+        to load.
+        
+        If the URI is present I.E. we go a get and get 200 back
+        then it is considered as available.
+        
+        :param uri: this is the resource to check if its available. 
+
+        :returns: True if the URI is responding to get requests,
+        otherwise False.
+        
+        """
+        return net.wait_for_ready(uri, retries=1)
+
+
+    def setURI(self, uri):
+        """
+        Called to set the URI the viewpoint should be looking at.
+        
+        This also checks that the app hasn't browsed away from the
+        application and repoints it back at the original URI. If
+        the browser URI doesn't start with the URI mentioned in the
+        config then the repointing is done.
+        
+        """
+        try:
+            data = self.dbc.getBrowserUri()
+        except socket.error, e:
+            self.log.error("setURI: socket connection to viewpoint failed! Error: %s" % str(e))            
+        else:
+            # no data is socket close.
+            if data:
+                rc = simplejson.loads(data)
+                vp_uri = rc['data']
+                if not vp_uri.startswith(uri):
+                    # Were not looking at app. Repointing...
+                    self.log.info("setURI: old URI:'%s', new URI:'%s'." % (vp_uri, uri))            
+                    self.dbc.setBrowserUri(uri) 
+                    
+
     def isStarted(self):
         """
         Check the xulrunner process is running and then attempt to connect
@@ -139,9 +192,17 @@ class Controller(base.Controller):
         :return: True if the process is running otherwise False
         
         """
-        rc = self.dbc.waitForReady(retries=10)
-        return rc
+        rc = proc.check(self.commandProc)
+        if rc:
+            self.log.info("isStarted: The viewpoint '%s' is running. Checking its readiness..." % self.uri)
+            if self.dbc.waitForReady(retries=1):
+                self.log.info("isStarted: Yes its ready. Now check if URI:'%s' is too..." % self.uri)
+                if self.checkForURIReadiness(self.uri):
+                    self.log.info("isStarted: Yes its ready, pointing viewpoint at the URI:'%s'." % self.uri)
+                    self.setURI(self.uri)            
     
+        return rc
+        
 
     def stop(self):
         """

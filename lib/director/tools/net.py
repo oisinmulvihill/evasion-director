@@ -72,14 +72,13 @@ def get_free_port(retries=PORT_RETRIES):
     return free_port
 
 
-def wait_for_ready(self, port, host='localhost', retries=PORT_RETRIES):
+def wait_for_ready(uri, retries=PORT_RETRIES):
     """
     Called to wait for a web application to respond to
     normal get requests.
 
-    :param port: the port the web application is listening on.
-
-    :param host: the host the web application is running on. 
+    :param uri: the URI of the web application on which
+    it will receive requests.
 
     :param retries: The amount of attempts to try finding
     a free port.
@@ -89,7 +88,7 @@ def wait_for_ready(self, port, host='localhost', retries=PORT_RETRIES):
     """
     returned = False
     
-    URI = "http://%s:%s" % (host, port)
+    URI = uri
 
     while retries:
         get_log().info("wait_for_ready: (reties left:%d) check if we can get <%s>." % (retries, URI))

@@ -127,7 +127,7 @@ class Manager(object):
 
         while not isExit():
             # Check the controllers are alive and restat if needs be:
-            for order, ctl in self.controllers:
+            for order, ctl in self.controllers:            
                 if ctl.disabled == 'no':
                     if not ctl.controller.isStarted():
                         self.log.info("The controller '%s' needs to be started." % (ctl))
