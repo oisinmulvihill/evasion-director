@@ -107,6 +107,10 @@ class Manager(object):
         messenger will determine when its time to exit.
         
         """
+        c = director.config.get_cfg()
+        cfg = c.cfg['director']
+        poll_time = float(cfg.get('poll_time', '0.1'))
+
         # Register messenger hook for shutdown()
         def signal_exit(signal, sender, **data) :
             self.log.warn("main: EVT_EXIT_ALL received, exiting...")
@@ -117,10 +121,6 @@ class Manager(object):
           signal=messenger.EVT("EVT_EXIT_ALL")
         )        
         self.log.info("main: EVT_EXIT_ALL signal setup.")
-        
-        c = director.config.get_cfg()
-        cfg = c.cfg['director']
-        poll_time = float(cfg.get('poll_time', '0.1'))
 
         # Recover the controllers from director configuration.
         self.controllerSetup()

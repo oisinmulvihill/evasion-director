@@ -45,14 +45,15 @@ class Controller(base.Controller):
         xulrunner = 'xulrunner'
 
         # The URI to connect to when the URI is present and the viewpoint
-        # is ready to recieve requests:
+        # is ready to recieve requests. The viewpoint will also be kept
+        # looking at this URI so it can't navigate away out of the app.
         uri = "http://myhost:myport/myapp"        
 
         # This is the control port which will be listened on for
         # command requests on. 7055 is the default if not given.
         port = '7055'
         
-        # Director to run the application from:
+        # Director to run the xul application from:
         workingdir = '.'
 
         # Viewpoint command line arguments to use. Currently
@@ -171,18 +172,21 @@ class Controller(base.Controller):
         """
         try:
             data = self.dbc.getBrowserUri()
-        except socket.error, e:
-            self.log.error("setURI: socket connection to viewpoint failed! Error: %s" % str(e))            
+        except viewpointdirect.BrowserNotPresent, e:
+            self.log.error("setURI: %s" % str(e))            
         else:
-            # no data is socket close.
             if data:
                 rc = simplejson.loads(data)
                 vp_uri = rc['data']
                 if not vp_uri.startswith(uri):
                     # Were not looking at app. Repointing...
-                    self.log.info("setURI: old URI:'%s', new URI:'%s'." % (vp_uri, uri))            
-                    self.dbc.setBrowserUri(uri) 
-                    
+                    try:
+                        self.dbc.setBrowserUri(uri) 
+                    except viewpointdirect.BrowserNotPresent, e:
+                        self.log.error("setURI: %s" % str(e))            
+                    else:
+                        self.log.info("setURI: old URI:'%s', new URI:'%s'." % (vp_uri, uri))            
+                                            
 
     def isStarted(self):
         """
@@ -194,11 +198,8 @@ class Controller(base.Controller):
         """
         rc = proc.check(self.commandProc)
         if rc:
-            self.log.info("isStarted: The viewpoint '%s' is running. Checking its readiness..." % self.uri)
             if self.dbc.waitForReady(retries=1):
-                self.log.info("isStarted: Yes its ready. Now check if URI:'%s' is too..." % self.uri)
                 if self.checkForURIReadiness(self.uri):
-                    self.log.info("isStarted: Yes its ready, pointing viewpoint at the URI:'%s'." % self.uri)
                     self.setURI(self.uri)            
     
         return rc
@@ -215,10 +216,14 @@ class Controller(base.Controller):
         :return: None
         
         """
-        if self.pid:
+        rc = proc.check(self.commandProc)
+        if rc:
             # Ask the viewpoint nicely to shutdown:
             self.log.info("stop: asking viewpoint to shutdown.")
-            rc = self.dbc.browserQuit()
+            try:
+                rc = self.dbc.browserQuit()
+            except viewpointdirect.BrowserNotPresent, e:
+                pass
 
             self.log.info("stop: stopping the viewpoint PID:'%s' and all its children." % self.pid)
             proc.kill(self.pid)

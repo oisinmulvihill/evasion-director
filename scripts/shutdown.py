@@ -1,6 +1,6 @@
 #!python 
 """
-Connect to the proxydispatch on 1901 and issue a shutdown() call over xmlrpc.
+Connect to the proxydispatch on 1901 and issue a shutdown() call over XML-RPC.
 
 The director will shut all parts down in an orderly fashion.
 
@@ -11,12 +11,10 @@ from xmlrpclib import Server
 from optparse import OptionParser
 
 
-
 def main():
     """
     Connect to a directors proxy dispatch and send out a shutdown command.
     """
-    
     parser = OptionParser()    
 
     parser.add_option("-u", "--uri", action="store", dest="uri", default="http://localhost:1901",
@@ -27,13 +25,14 @@ def main():
     s = Server(uri)
     
     try:
-        s.shutdown()
+        s.exitall()
         
     except socket.error, e:
         sys.stderr.write("Unable to connect on '%s' - %s\n" % (uri, str(e)))
         
     else:
-        sys.stdout.write("Shutdown called on '%s' OK.\n" % (uri))
+        sys.stdout.write("Exit All called on '%s' OK.\n" % (uri))
+
 
 
 if __name__ == "__main__":

@@ -91,7 +91,7 @@ def wait_for_ready(uri, retries=PORT_RETRIES):
     URI = uri
 
     while retries:
-        get_log().info("wait_for_ready: (reties left:%d) check if we can get <%s>." % (retries, URI))
+        #get_log().info("wait_for_ready: (reties left:%d) check if we can get <%s>." % (retries, URI))
         retries -= 1
         try:
             urllib.urlopen(URI)

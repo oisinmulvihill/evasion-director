@@ -18,6 +18,11 @@ class BrowserCallReplyTimeout(Exception):
     """Raised when the call callBrowserWaitReply() when the timeout for a reply occurs.
     """
     
+class BrowserNotPresent(Exception):
+    """Raised when the call callBrowserWaitReply() cannot connect to the browser/viewpoint
+    control port.
+    """
+
 
 class DirectBrowserCalls(object):
     """This directly instructs the browser to act on instructions
@@ -117,7 +122,7 @@ class DirectBrowserCalls(object):
             
         except socket.error, e:
             self.log.error("write: socket send error - Is browser running? ")
-
+            raise BrowserNotPresent("Viewpoint/Browser Control Port Down")
         ##print "rc:",rc
 
         return rc
@@ -150,9 +155,9 @@ class DirectBrowserCalls(object):
         d = dict(replyto='no-one', data=control_frame)
         d = xulcontrolprotocol.dump(d)
 
-        self.log.debug("getBrowserUri: Sending command %s" % str(d))
+        #self.log.debug("getBrowserUri: Sending command %s" % str(d))
         rc = self.write(d)
-        self.log.debug("getBrowserUri: rc %s" % str(rc))
+        #self.log.debug("getBrowserUri: rc %s" % str(rc))
 
         return rc
 

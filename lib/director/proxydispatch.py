@@ -51,13 +51,35 @@ class XmlRpcServer:
 
         return 0
 
-    def xmlrpc_shutdown(self):
-        """Broadcasts a exit message to the director to quit the application.
+
+    def xmlrpc_viewpoint_startup(self):
+        """Broadcasts a EVT_VIEWPOINT_STARTUP message if anyone is listening they will react.
+        """
+        self.log.debug("xmlrpc_startup: sending EVT_VIEWPOINT_STARTUP to the director.")
+        messenger.send(messenger.EVT('EVT_VIEWPOINT_STARTUP'), {})
+        self.log.debug("xmlrpc_startup: sent EVT_VIEWPOINT_STARTUP OK.")
+
+        return 0
+
+
+    def xmlrpc_viewpoint_shutdown(self):
+        """Broadcasts a EVT_VIEWPOINT_SHUTDOWN message if anyone is listening they will react.
+        """
+        self.log.debug("xmlrpc_shutdown: sending EVT_VIEWPOINT_SHUTDOWN to the director.")
+        messenger.send(messenger.EVT('EVT_VIEWPOINT_SHUTDOWN'), {})
+        self.log.debug("xmlrpc_shutdown: sent EVT_SHUTDOWN OK.")
+
+        return 0
+
+
+    def xmlrpc_exitall(self):
+        """Broadcasts a EVT_EXIT_ALL which will tell the director to shut all parts down
+        in an orderly fashion.
         """
         def sendexit(data):
-            self.log.debug("xmlrpc_shutdown: sending EVT_EXIT_ALL to the director.")
+            self.log.debug("xmlrpc_exitall: sending EVT_EXIT_ALL to the director.")
             messenger.send(messenger.EVT('EVT_EXIT_ALL'), {})
-            self.log.debug("xmlrpc_shutdown: sent EVT_EXIT_ALL OK.")
+            self.log.debug("xmlrpc_exitall: sent EVT_EXIT_ALL OK.")
 
         # be nice, return so otherside can close without errors.
         thread.start_new_thread(sendexit, (0,))
