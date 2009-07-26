@@ -238,7 +238,7 @@ class Controller(base.Controller):
         rc = proc.check(self.commandProc)
         if rc:
             # Check if the comms port is closed:
-            rc = self.dbc.waitForReady(retries=1)
+            rc = self.dbc.waitForReady(retries=5)
 
         return rc
 
