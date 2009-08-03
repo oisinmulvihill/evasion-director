@@ -27,6 +27,10 @@ def main():
     try:
         s.exitall()
         
+    except xmlrpclib.ProtocolError, e:
+        # ok, the director shut down faster then socket close.
+        pass
+        
     except socket.error, e:
         sys.stderr.write("Unable to connect on '%s' - %s\n" % (uri, str(e)))
         

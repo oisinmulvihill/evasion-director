@@ -1,10 +1,19 @@
-VERSION=director-1.0.0
+VERSION=${PROJECT_SRC_DIR}/director-1.0.0
+ROOT=${PROJECT_SRC_DIR}
+
 
 exe:
-	bb-freeze scripts/director
-	bb-freeze scripts/morbidsvr
-	bb-freeze scripts/shutdowndirector
-	mv dist ${VERSION}
+	mkdir -p ${VERSION}
+	
+	# Build the latest FDSDrivers and copy into build dir:
+	cd ${ROOT}/FDSDrivers
+	python setup.py bdist_egg
+	cp ${ROOT}/FDSDrivers/dist/fdsdrivers-1.0.0-py2.6.egg ${VERSION}
+
+	# Now build exe's:
+	bb-freeze scripts/director scripts/morbidsvr scripts/shutdowndirector
+	cp -r dist/* ${VERSION}
+	
 
 	
 clean:
