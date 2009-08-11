@@ -16,6 +16,7 @@ will retry for by default.
 .. autofunction:: director.tools.net.get_free_port
 
 """
+import time
 import socket
 import urllib
 import random
