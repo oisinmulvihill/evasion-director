@@ -34,7 +34,6 @@ needed = [
     # evasion deps:
     'evasion-messenger',
     'evasion-agency',
-    'evasion-viewpoint',
 ]
 
 import sys
