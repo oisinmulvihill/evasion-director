@@ -202,10 +202,9 @@ def main():
             logging.config.fileConfig(options.logconfig_filename)
             
         else:
-			print "The log config file name '%s' wasn't found" % options.logconfig_filename 
-
             # No log configuration file given or it has been overidden
             # by the user, just print out to console instead:
+            print "The log config file name '%s' wasn't found" % options.logconfig_filename 
             hdlr = logging.StreamHandler()
             formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
             hdlr.setFormatter(formatter)
