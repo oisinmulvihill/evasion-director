@@ -18,6 +18,7 @@ import logging
 import agency
 import director
 import messenger
+import decorator # help for bbfreeze.
 import director.config
 from pydispatch import dispatcher
 from director import proxydispatch
