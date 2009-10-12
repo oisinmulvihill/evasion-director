@@ -198,12 +198,12 @@ def main():
         director.config.set_cfg(raw)
 
         # Set up python logging if a config file is given:
-        cfg = director.config.get_cfg().cfg
-        log_cfg = cfg.get('logconfig', '')
-        if os.path.isfile(log_cfg):
-            logging.config.fileConfig(log_cfg)
+        if os.path.isfile(options.logconfig_filename):
+            logging.config.fileConfig(options.logconfig_filename)
             
         else:
+			print "The log config file name '%s' wasn't found" % options.logconfig_filename 
+
             # No log configuration file given or it has been overidden
             # by the user, just print out to console instead:
             hdlr = logging.StreamHandler()
