@@ -18,12 +18,17 @@ import logging
 import agency
 import director
 import messenger
-import decorator # help for bbfreeze.
 import director.config
 from pydispatch import dispatcher
 from director import proxydispatch
 from director import viewpointdirect
 from messenger import xulcontrolprotocol
+
+try:
+	import decorator # help for bbfreeze.
+except ImportError, e:
+	pass
+
 
 def get_log():
     return logging.getLogger("director.manager")
