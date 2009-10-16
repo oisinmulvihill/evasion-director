@@ -24,6 +24,11 @@ from director import proxydispatch
 from director import viewpointdirect
 from messenger import xulcontrolprotocol
 
+try:
+	import decorator # help for bbfreeze.
+except ImportError, e:
+	pass
+
 
 def get_log():
     return logging.getLogger("director.manager")
