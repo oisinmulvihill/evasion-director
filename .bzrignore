@@ -1,3 +1,4 @@
+*.log
 director-*
 director-log.cfg
 director.cfg
