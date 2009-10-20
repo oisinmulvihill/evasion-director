@@ -49,14 +49,11 @@ class Manager(object):
         msg_channel = 'evasion'
 
         # (OPTIONAL): Set this to 'yes' if you wish to stop the director connecting to the broker.
-        nobroker = 'no'
+        disable_broker = 'no'
 
         # (OPTIONAL) Prevent director busy waiting. This just limits the time between maintenances checks.
+        # This is in seconds or fractions of seconds, the default being 0.1s.
         poll_time = 0.1
-
-        # (OPTIONAL): Default log to stdout if this isn't present of log file not found:
-        logconfig = "log.cfg"
-        logdir = "."
 
         # (OPTIONAL): To disable the special proxy dispatch set this to 'yes'
         noproxydispatch = 'no'
@@ -184,8 +181,8 @@ class Manager(object):
         cfg = director.config.get_cfg().cfg
         cfg = cfg['director']
         
-        nobroker = cfg.get('nobroker', 'no')
-        if nobroker == 'no':
+        disable_broker = cfg.get('disable_broker', 'no')
+        if disable_broker == 'no':
             # Set up the messenger protocols where using:
             self.log.info("main: setting up stomp connection to broker.")
             messenger.stompprotocol.setup(dict(
@@ -196,7 +193,7 @@ class Manager(object):
                 channel=cfg.get('msg_channel'),
             ))
         else:
-            self.log.warn("main: the director's broker connection is disabled (nobroker = 'yes').")
+            self.log.warn("main: the director's broker connection is disabled (disable_broker = 'yes').")
             
         noproxydispatchbroker = cfg.get('noproxydispatch', 'no')
         if noproxydispatchbroker == 'no':

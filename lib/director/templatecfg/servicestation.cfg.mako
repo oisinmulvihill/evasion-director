@@ -23,15 +23,15 @@
 ;
 [service]
 ; The servce name and display name of the service:
-name = evasiondirector
+name = EvasionDirector
 
 ; The command line to run for this service:
-command_line = ${python_exe} Scripts\director --config=${director_cfg} --logconfig=${director_log_cfg} 
+command_line = ${exe} --config=${director_cfg} --logconfig=${logconfig_filename} 
 
 ; The directory to run the command_line from. No double 
 ; slashes are needed. For example c:\temp is ok however 
 ; c:\\temp is not.
-working_dir = ${servicestation_workingdir}
+working_dir = ${servicestation_dir}
 
 ; Not yet used: will eventually log STDERR/OUT to a file at 
 ; the moment it is thrown away.

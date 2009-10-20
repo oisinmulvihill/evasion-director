@@ -22,37 +22,52 @@ DEFAULT_LOGCONFIG_NAME = "director-log.cfg"
 DEFAULT_SERVICESTATION_NAME = "servicestation.cfg"
 
 
+def render_config(cfg, template_data, outputfile):
+    """Render the mako template to plain text or print useful traceback for missing config variables.
+    
+    """
+    ok = True
+    
+    # lazy import do this module can be included without import mako.
+    import pprint
+    from mako import exceptions
+    from mako.template import Template
+
+    def writeout(filename, data):
+        # Ok, write the result out to disk:
+        fd = open(filename, 'wb')
+        fd.write(data)
+        fd.close()
+
+    try:
+        data = Template(template_data, output_encoding='utf8', encoding_errors='strict').render(**cfg)        
+    except:
+        ok = False
+        print("""Template data:
+%s
+
+outfile:
+%s
+
+""" % (pprint.pformat(cfg), outputfile))
+
+        print("""Error Create Template:
+%s
+
+""" % exceptions.text_error_template().render())
+        
+    else:
+        writeout(outputfile, data)
+
+    if not ok:
+        sys.exit(1)
+
+
+
+
 def create_config(cfg_dict):
     """Create the default director.ini in the current directory based
     on a the template stored in director.templatecfg
-
-    cfg_dict contains:
-
-    root_path:
-       This root used in the template to where python+director is
-       installed, from the installer.
-
-    python_exe:
-       This is the absolute path and python.exe to use for calls in
-       the configuration.
-
-    log_dir:
-       This is the directory to write logs to. It must be an absolute
-       path as this will be added to the director-log.ini file.
-
-    director_log_cfg:
-       What and where to find the director logging configuration.
-
-    da_config:
-       The file and path for deviceaccess.ini
-
-    manager_config:
-       The file and path for manager.ini
-       
-    disable_xul:    'yes' | 'no'
-    disable_app:    'yes' | 'no'
-    disable_broker: 'yes' | 'no'
-    disable_device: 'yes' | 'no'
     
     """
     import director
@@ -63,121 +78,127 @@ def create_config(cfg_dict):
     print("Creating initial configuration.")
 
     # Fill in the template information with XUL Browser path:
-    import viewpoint
-    cfg_dict['viewpoint_path'] = os.path.abspath(viewpoint.__path__[0])
-
-    def writeout(filename, data):
-        # Ok, write the result out to disk:
-        fd = open(filename, 'w')
-        fd.write(data)
-        fd.close()
+    cfg_dict['viewpoint_path'] = ''
+    try:
+        # Attempt to set up the path to the evasion viewpoint XUL app
+        # installed as a python package.
+        import viewpoint
+    except ImportError, e:
+        pass
+    else:
+        cfg_dict['viewpoint_path'] = os.path.abspath(viewpoint.__path__[0])
 
     # Fill in the template information with XUL Browser path:
-    cfg_data = resource_string(director.templatecfg.__name__, 'director.cfg.mako')
-    data = Template(cfg_data).render(**cfg_dict)
-    writeout(DEFAULT_CONFIG_NAME, data)
+    t = resource_string(director.templatecfg.__name__, 'director.cfg.mako')
+    render_config(cfg_dict, t, DEFAULT_CONFIG_NAME)
 
-    logcfg_data = resource_string(director.templatecfg.__name__, 'director-log.cfg.mako')
+    t = resource_string(director.templatecfg.__name__, 'director-log.cfg.mako')
     #cfg_dict['log_dir'] = cfg_dict['log_dir'].replace("\\","/")
-    data = Template(logcfg_data).render(**cfg_dict)
-    writeout(DEFAULT_LOGCONFIG_NAME, data)
+    render_config(cfg_dict, t, DEFAULT_LOGCONFIG_NAME)
 
-    cfg_data = resource_string(director.templatecfg.__name__, 'servicestation.cfg.mako')
-    data = Template(cfg_data).render(**cfg_dict)
-    writeout(DEFAULT_SERVICESTATION_NAME, data)
+    t = resource_string(director.templatecfg.__name__, 'servicestation.cfg.mako')
+    render_config(cfg_dict, t, DEFAULT_SERVICESTATION_NAME)
 
     print("Success, '%s', '%s' and '%s' created ok." % (DEFAULT_CONFIG_NAME, DEFAULT_LOGCONFIG_NAME, DEFAULT_SERVICESTATION_NAME))
 
 
 def main():
-    """Set up the LANG ID prior to importing the device layer code.
     """
+    """
+    current_dir = "%s" % os.path.abspath(os.curdir)
+    director_cfg = current_dir + os.path.sep + DEFAULT_CONFIG_NAME
+    directorlog_cfg = current_dir + os.path.sep + DEFAULT_LOGCONFIG_NAME
+    directorlog_output = current_dir + os.path.sep + 'director.log'
+    
     parser = OptionParser()
+                      
+    parser.add_option("--config", action="store", dest="config_filename", 
+                    default=director_cfg,
+                    help="This director configuration file to use at run time."
+                    )
     
-    parser.add_option("--logconfig", action="store", dest="logconfig_filename", default="log.ini",
-                      help="This is the logging config file.")
+    parser.add_option("--logconfig", action="store", dest="logconfig_filename", 
+                    default=directorlog_cfg,
+                    help="This is the log configuration file to use at run time."
+                    )
     
-    parser.add_option("--create", action="store_true", dest="create_config", default=False,
-                      help=(
-                         "Create a configuration file from the internal template. The file"
-                         "%s' will be created in the current directory." % DEFAULT_CONFIG_NAME
-                      ))
+    parser.add_option("--create", action="store_true", dest="create_config", 
+                    default=False,
+                    help="Create configuration files from the internal templates"
+                    )
                       
-    parser.add_option("--installhome", action="store", dest="install_home",
-                      default=r"c:\\evasion\\director",
-                      help="Used by the install and --create to setup template root path.")
+    parser.add_option("--installdir", action="store", dest="install_dir",
+                    default=current_dir,
+                    help=(
+                        "Used with the --create to setup the install folder in which the director"
+                        "is found in the generated configuration output."
+                    ))
                       
-    parser.add_option("--pythonexe", action="store", dest="python_exe",
-                      default=r"python",
-                      help="Used by the install and --create to setup '/the/path/to/python.exe'.")
+    parser.add_option("--exe", action="store", dest="exe",
+                    default=r"director",
+                    help=(
+                        "Used with the --create to set the executeable name that servicestation calls"
+                        "in its generated servicestation.ini."
+                    ))
                       
-    parser.add_option("--logdir", action="store", dest="log_dir", default=r"c:\\evasion\\logs",
-                      help="Used by the install and --create to setup the log dir.")
-                      
-    parser.add_option("--directorlogcfg", action="store", dest="director_log_cfg",
-                      default=r"c:\\evasion\\cfg\\director-log.ini",
-                      help="Used by the install and --create to setup the log dir.")
-                      
-    parser.add_option("--disableapp", action="store", dest="disable_app",
-                      default="no",
-                      help="Used disable the web application.")
-                      
-    parser.add_option("--disableapp2", action="store", dest="disable_app2",
-                      default="no",
-                      help="Used disable the optional application.")
-                      
-    parser.add_option("--disablexul", action="store", dest="disable_xul",
-                      default="no",
-                      help="Used disable the xul browser.")
-                      
-    parser.add_option("--disabledevice", action="store", dest="disable_device",
-                      default="no",
-                      help="Used disable the device manager.")
+    parser.add_option("--logdir", action="store", dest="log_dir", 
+                    default=current_dir,
+                    help=(
+                        "Used with --create to set the folder the director.log file will"
+                        "be written in the generated configuration output."
+                    ))
+                                          
+    parser.add_option("--disableagency", action="store", dest="disable_agency",
+                    default="no",
+                    help=(
+                        "Used with --create to disable the agency in the"
+                        "generated configuration output."
+                    ))
                       
     parser.add_option("--disablebroker", action="store", dest="disable_broker",
-                      default="no",
-                      help="Used disable the broker.")
-                      
-    parser.add_option("--dlconfig", action="store", dest="da_config",
-                      default=r"c:\\evasion\\cfg\\director\\devices.cfg",
-                      help="Used by the install and --create to setup where the devices.cfg is.")
-                      
-    parser.add_option("--dmconfig", action="store", dest="manager_config",
-                      default=r"c:\\evasion\\cfg\\director\\manager.cfg",
-                      help="Used by the install and --create to setup where the manager.cfg is.")
-                      
-    parser.add_option("--dmlogconfig", action="store", dest="manager_log_cfg",
-                      default=r"c:\\evasion\\cfg\\director\\manager-log.cfg",
-                      help="Used by the install and --create to setup where the manager.cfg is.")
+                    default="no",
+                    help=(
+                        "Used with --create to disable the broker in the"
+                        "generated configuration output."
+                    ))
 
-    parser.add_option("--config", action="store", dest="config_filename", default=DEFAULT_CONFIG_NAME,
-                      help="This projects config file.")
+    parser.add_option("--servicestationdir", action="store", dest="servicestation_dir", 
+                    default=current_dir,
+                    help=(
+                        "Used with --create to set the servicestation install folder in the"
+                        "generated configuration output."
+                    ))
 
-    parser.add_option("--service_workingdir", action="store", dest="servicestation_workingdir", default="c:\\evasion\\director",
-                      help="The directory that servcestation will run the director from.")                      
+    parser.add_option("--directorcfg", action="store", dest="director_cfg",
+                    default=director_cfg,
+                    help=(
+                        "Used with --create to set the path and name of the director configuration"
+                        "servicestation will use in the generated configuration output."
+                    ))
+
+    parser.add_option("--directorlog_output", action="store", dest="directorlog_output",
+                    default=directorlog_output,
+                    help=(
+                        "Used with --create to set the path and name of the director log output"
+                        "file used in the generated configuration output."
+                    ))
 
     (options, args) = parser.parse_args()
 
     log = logging.getLogger("")
 
-
     # Create the default app manager config:
     if options.create_config:
         cfg = dict(
-            install_home= options.install_home,
-            disable_xul = options.disable_xul,
-            disable_app = options.disable_app,
-            disable_app2 = options.disable_app2,
-            disable_broker = options.disable_broker,
-            disable_device = options.disable_device,
-            python_exe=options.python_exe,
+            install_dir= options.install_dir,
+            exe=options.exe,
             log_dir=options.log_dir,
-            director_cfg=options.config_filename,
-            director_log_cfg=options.director_log_cfg,
-            da_config=options.da_config,
-            manager_config=options.manager_config,
-            manager_log_cfg=options.manager_log_cfg,
-            servicestation_workingdir=options.servicestation_workingdir,
+            logconfig_filename=options.logconfig_filename,
+            disable_agency = options.disable_agency,
+            disable_broker = options.disable_broker,
+            servicestation_dir=options.servicestation_dir,
+            director_cfg=options.director_cfg,
+            directorlog_output=options.directorlog_output.replace('\\','/'),
         )
         create_config(cfg)
         sys.exit(0)
