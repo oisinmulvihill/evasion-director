@@ -159,6 +159,27 @@ class Controller(base.Controller):
         """
         return net.wait_for_ready(uri, retries=1)
 
+    
+    def isURICorrect(self, uri):
+        """
+        """
+        returned = False
+        
+        try:
+            data = self.dbc.getBrowserUri()
+        except viewpointdirect.BrowserNotPresent, e:
+            self.log.error("isURICorrect: %s" % str(e))            
+        else:
+            if data:
+                rc = simplejson.loads(data)
+                vp_uri = rc['data']
+                if vp_uri.startswith(uri):
+                    returned = True
+                else:
+                    self.log.info("isURICorrect: current URI:'%s', correct URI:'%s'." % (vp_uri, uri))            
+                
+        return returned
+        
 
     def setURI(self, uri):
         """
@@ -170,23 +191,13 @@ class Controller(base.Controller):
         config then the repointing is done.
         
         """
-        try:
-            data = self.dbc.getBrowserUri()
-        except viewpointdirect.BrowserNotPresent, e:
-            self.log.error("setURI: %s" % str(e))            
-        else:
-            if data:
-                rc = simplejson.loads(data)
-                vp_uri = rc['data']
-                if not vp_uri.startswith(uri):
-                    # Were not looking at app. Repointing...
-                    try:
-                        self.dbc.setBrowserUri(uri) 
-                    except viewpointdirect.BrowserNotPresent, e:
-                        self.log.error("setURI: %s" % str(e))            
-                    else:
-                        self.log.info("setURI: old URI:'%s', new URI:'%s'." % (vp_uri, uri))            
-                                            
+        if not self.isURICorrect(uri):
+            # Were not looking at app. Repointing...
+            try:
+                self.dbc.setBrowserUri(uri) 
+            except viewpointdirect.BrowserNotPresent, e:
+                self.log.error("setURI: %s" % str(e))            
+
 
     def isStarted(self):
         """

@@ -91,8 +91,12 @@ class Controller(viewpoint.Controller):
         
         """
         if self.dbc.waitForReady(retries=1):
-            if self.checkForURIReadiness(self.uri):
-                self.setURI(self.uri)            
+            if not self.isURICorrect(self.uri):
+                # only re-check the webapp if the viewpoint isn't
+                # looking at it. This reduces request load on web 
+                # app.
+                if self.checkForURIReadiness(self.uri):
+                    self.setURI(self.uri)            
     
         return True
         

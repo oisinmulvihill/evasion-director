@@ -21,6 +21,8 @@ import socket
 import urllib
 import random
 import logging
+import httplib
+import urlparse
 
 
 def get_log():
@@ -76,7 +78,10 @@ def get_free_port(retries=PORT_RETRIES):
 def wait_for_ready(uri, retries=PORT_RETRIES):
     """
     Called to wait for a web application to respond to
-    normal get requests.
+    normal requests.
+    
+    This function will attempt a HEAD request if its
+    supported, otherwise it will use GET.
 
     :param uri: the URI of the web application on which
     it will receive requests.
@@ -90,24 +95,46 @@ def wait_for_ready(uri, retries=PORT_RETRIES):
     returned = False
     
     URI = uri
-
+    # Work set up the connection for the HEAD request:
+    o = urlparse.urlsplit(URI)
+    conn = httplib.HTTPConnection(o.hostname, o.port)
+	
     while retries:
         #get_log().info("wait_for_ready: (reties left:%d) check if we can get <%s>." % (retries, URI))
         retries -= 1
         try:
-            urllib.urlopen(URI)
-        except IOError, e:
+            # Just get the headers and not the body to speed things up.
+            conn.request("HEAD",'/')
+            res = conn.getresponse()
+            if res.status == httplib.OK:
+                # success, its ready.
+                returned = True
+                break;		
+                
+            elif res.status == httplib.NOT_IMPLEMENTED:
+                # HEAD not supported try a GET instead:
+                try:
+                    urllib.urlopen(URI)
+                except IOError, e:
+                    # Not ready yet. I should check the exception to
+                    # make sure its socket error or we could be looping
+                    # forever. I'll need to use a state machine if this
+                    # prototype works. For now I'm taking the "head in
+                    # the sand" approach.
+                    pass
+                else:
+                    # success, its ready.
+                    returned = True
+                    break;
+			
+        except socket.error, e:
             # Not ready yet. I should check the exception to
             # make sure its socket error or we could be looping
             # forever. I'll need to use a state machine if this
             # prototype works. For now I'm taking the "head in
             # the sand" approach.
             pass
-        else:
-            # success, its ready.
-            returned = True
-            break;
 
-        time.sleep(0.8)
+        time.sleep(0.5)
 
     return returned
