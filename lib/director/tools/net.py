@@ -100,7 +100,7 @@ def wait_for_ready(uri, retries=PORT_RETRIES):
     conn = httplib.HTTPConnection(o.hostname, o.port)
 	
     while retries:
-        #get_log().info("wait_for_ready: (reties left:%d) check if we can get <%s>." % (retries, URI))
+        #get_log().debug("wait_for_ready: (reties left:%d) check if we can get <%s>." % (retries, URI))
         retries -= 1
         try:
             # Just get the headers and not the body to speed things up.
@@ -135,6 +135,6 @@ def wait_for_ready(uri, retries=PORT_RETRIES):
             # the sand" approach.
             pass
 
-        time.sleep(0.5)
+        time.sleep(0.8)
 
     return returned

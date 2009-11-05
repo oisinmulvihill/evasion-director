@@ -112,12 +112,6 @@ class Controller(viewpoint.Controller):
         :return: None
         
         """
-        # Ask the viewpoint nicely to shutdown:
-        self.log.info("stop: asking viewpoint to shutdown.")
-        try:
-            self.dbc.browserQuit()
-        except viewpointdirect.BrowserNotPresent, e:
-            pass
 
 
     def isStopped(self):

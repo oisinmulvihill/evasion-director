@@ -55,7 +55,7 @@ class DirectBrowserCalls(object):
 
 
     def waitForReady(self, retries=0, retry_period=5.0):
-        """Called to invoke the crossbow interfaces ping() method.
+        """Called to wait until the viewpoint interface is ready on the host and port.
 
         retries: (default: 0)
            The number of attempts before giving up on 
@@ -80,17 +80,20 @@ class DirectBrowserCalls(object):
         retry_period = float(retry_period)
 
         def check():
+            returned = False
             try:
                 s.connect((self.interface, self.port))
             except socket.error, e:
-                return False
+                pass # not ready yet.
             else:
-                # success!
+                returned = True
+            finally:
                 try:
                     s.close()
                 except:
                     pass
-                return True
+
+            return returned
     
         if not retries:
             # Keep connecting until its present:
@@ -101,7 +104,11 @@ class DirectBrowserCalls(object):
             # Give up after 'retries' attempts:
             for i in range(0, retries):
                 returned = check()
-                time.sleep(retry_period)
+                if returned:
+                    # Success!
+                    break
+                else:
+                    time.sleep(retry_period)
 
         return returned
 
@@ -122,20 +129,20 @@ class DirectBrowserCalls(object):
             
         except socket.error, e:
             self.log.error("write: socket send error - Is browser running? ")
-            raise BrowserNotPresent("Viewpoint/Browser Control Port Down")
+            raise BrowserNotPresent("Viewpoint/Browser Control COMMS Error")
         ##print "rc:",rc
 
         return rc
 
     
-    def browserQuit(self):
+    def browserQuit(self, replyto='no-one'):
         """Called to recover where the browser is looking currently.
         """
         control_frame = {
             'command' : 'exit',
             'args' : {}
         }
-        d = dict(replyto='no-one', data=control_frame)
+        d = dict(replyto=replyto, data=control_frame)
         d = xulcontrolprotocol.dump(d)
 
         self.log.debug("browserQuit: Sending command: %s " % str(d))
@@ -152,7 +159,7 @@ class DirectBrowserCalls(object):
             'command' : 'get_uri',
             'args' : {}
         }
-        d = dict(replyto='no-one', data=control_frame)
+        d = dict(replyto=replyto, data=control_frame)
         d = xulcontrolprotocol.dump(d)
 
         #self.log.debug("getBrowserUri: Sending command %s" % str(d))
@@ -162,7 +169,7 @@ class DirectBrowserCalls(object):
         return rc
 
     
-    def setBrowserUri(self, args, replyto='no-one', host='127.0.0.1'):
+    def setBrowserUri(self, args, replyto='no-one'):
         """Called to tell the XUL Browser where to point
         """
         # Go to yahoo:
@@ -179,6 +186,25 @@ class DirectBrowserCalls(object):
 
         return rc
 
+        
+    def replaceContent(self, content_id, content, replyto='no-one'):
+        """Called to replace content inside the viewpoint browser window with
+        the given content fragment.
+        """
+        content=urllib.quote(content.encode('ascii', 'ignore'))
+        control_frame = {
+            'command' : 'replace',
+            'args' : {'id' : content_id, 'content' : content}
+        }
+        d = dict(replyto=replyto, data=control_frame)
+        d = xulcontrolprotocol.dump(d)
+
+        self.log.debug("replaceContent: Sending command: %s " % str(d))
+        rc = self.write(d)
+        self.log.debug("replaceContent: rc %s " % str(rc))
+
+        return rc
+        
 
     def callFunction(self, args, replyto='no-one'):
         """Call a javascript function in the browser.
@@ -198,7 +224,7 @@ class DirectBrowserCalls(object):
 
         return rc
 
-
+        
     def newSessionId(self):
         """Generate a sessionid for a callBrowserWaitReply.
 

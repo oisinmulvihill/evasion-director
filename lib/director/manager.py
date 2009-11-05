@@ -111,7 +111,7 @@ class Manager(object):
         """
         c = director.config.get_cfg()
         cfg = c.cfg['director']
-        poll_time = float(cfg.get('poll_time', '0.1'))
+        poll_time = float(cfg.get('poll_time', '1'))
 
         # Register messenger hook for shutdown()
         def signal_exit(signal, sender, **data) :

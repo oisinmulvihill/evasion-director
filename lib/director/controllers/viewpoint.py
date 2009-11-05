@@ -173,6 +173,7 @@ class Controller(base.Controller):
             if data:
                 rc = simplejson.loads(data)
                 vp_uri = rc['data']
+                
                 if vp_uri.startswith(uri):
                     returned = True
                 else:
