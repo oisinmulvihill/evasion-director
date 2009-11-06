@@ -53,7 +53,7 @@ class Manager(object):
 
         # (OPTIONAL) Prevent director busy waiting. This just limits the time between maintenances checks.
         # This is in seconds or fractions of seconds, the default being 0.1s.
-        poll_time = 0.1
+        poll_time = 1
 
         # (OPTIONAL): To disable the special proxy dispatch set this to 'yes'
         noproxydispatch = 'no'
