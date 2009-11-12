@@ -15,6 +15,7 @@
 import os
 import socket
 import logging
+import urlparse
 import subprocess
 import pkg_resources
 
@@ -38,20 +39,31 @@ class Controller(base.Controller):
         disabled = 'no'
         order = 1
         controller = 'director.controllers.viewpoint'
-
+        
         # Specific configuration:
         #
-        # The xulrunner exe to use (command and/or path to exe):
-        xulrunner = 'xulrunner'
-
         # The URI to connect to when the URI is present and the viewpoint
         # is ready to recieve requests. The viewpoint will also be kept
         # looking at this URI so it can't navigate away out of the app.
         uri = "http://myhost:myport/myapp"        
+        
+        # The method to use to check that web application is ready
+        # for requests:
+        #
+        # The default method is 'connect' which just checks a socket
+        # connection to the URI will succeed.
+        #
+        # The alternative method is 'recover' which will try a
+        # HEAD or GET method on the URI.
+        #
+        test_method = 'connect'
 
         # This is the control port which will be listened on for
         # command requests on. 7055 is the default if not given.
         port = '7055'
+
+        # The xulrunner exe to use (command and/or path to exe):
+        xulrunner = 'xulrunner'
         
         # Director to run the xul application from:
         workingdir = '.'
@@ -97,7 +109,10 @@ class Controller(base.Controller):
             raise ValueError("No valid 'xulrunner' recovered from config!")
 
         self.uri = self.config.get('uri', None)
-
+        
+        self.test_method = 'connect'
+        self.testMethodConfigure(config)
+        
         self.workingdir = self.config.get('workingdir', '.')
             
         self.port = self.config.get('port', '7055')
@@ -119,6 +134,14 @@ class Controller(base.Controller):
         self.log.info("setUp: using args '%s'." % self.args)
         self.command = "%s %s -startport %s %s" % (self.xulrunner, self.viewpointPath, self.port, self.args)
 
+        
+    def testMethodConfigure(self, config):
+        m = self.config.get('test_method', 'connect')
+        self.test_method = 'connect'
+        if m == 'recover':
+            self.test_method = 'recover'
+        
+        
 
     def start(self):
         """
@@ -148,6 +171,8 @@ class Controller(base.Controller):
         Called to see if the given uri is available for the viewpoint 
         to load.
         
+        The test for availability depends on the viewpoint config
+        
         If the URI is present I.E. we go a get and get 200 back
         then it is considered as available.
         
@@ -156,8 +181,19 @@ class Controller(base.Controller):
         :returns: True if the URI is responding to get requests,
         otherwise False.
         
-        """
-        return net.wait_for_ready(uri, retries=1)
+        """       
+        if self.test_method == 'connect':
+            hp = urlparse.urlsplit(uri).netloc.split(':')  
+            host = hp[0]
+            if len(hp) < 2:
+                port = 80
+            else:
+                port = int(hp[1])
+        
+            return net.wait_for_service(host, port, retries=1)
+        
+        else:
+            return net.wait_for_ready(uri, retries=1)
 
     
     def isURICorrect(self, uri):

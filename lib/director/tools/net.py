@@ -74,6 +74,71 @@ def get_free_port(retries=PORT_RETRIES):
 
     return free_port
 
+    
+def wait_for_service(host, port, retries=0, retry_period=5.0):
+    """Called to wait until a socket connection can be
+    made to a remote service.
+    
+    host: 
+        IP/DNS of the service to connect to.
+    
+    port: TCP port number to connect to.
+
+    retries: (default: 0)
+       The number of attempts before giving up on 
+       connecting to the browser.
+       
+       If this is 0 then we will wait forever for 
+       the browser to appear.
+       
+    retry_period: (default: 5.0)
+       The amount of seconds to wait before the next
+       connection attempt.
+
+    returned:
+
+        True: success
+        Failed: failed to connect after maximum retries.
+        
+    """
+    returned = False
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    retries = int(retries)
+    retry_period = float(retry_period)
+
+    def check():
+        returned = False
+        try:
+            s.connect((host, port))
+        except socket.error, e:
+            pass # not ready yet.
+        else:
+            returned = True
+        finally:
+            try:
+                s.close()
+            except:
+                pass
+
+        return returned
+
+    if not retries:
+        # Keep connecting until its present:
+        while True:
+            returned = check()
+            time.sleep(retry_period)
+    else:
+        # Give up after 'retries' attempts:
+        for i in range(0, retries):
+            returned = check()
+            if returned:
+                # Success!
+                break
+            else:
+                time.sleep(retry_period)
+
+    return returned
+
 
 def wait_for_ready(uri, retries=PORT_RETRIES):
     """

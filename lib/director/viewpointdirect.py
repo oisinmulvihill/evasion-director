@@ -11,6 +11,7 @@ import logging
 import simplejson
 
 import messenger
+from tools.net import wait_for_service
 from messenger import xulcontrolprotocol
 
 
@@ -74,43 +75,7 @@ class DirectBrowserCalls(object):
             Failed: failed to connect after maximum retries.
             
         """
-        returned = False
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        retries = int(retries)
-        retry_period = float(retry_period)
-
-        def check():
-            returned = False
-            try:
-                s.connect((self.interface, self.port))
-            except socket.error, e:
-                pass # not ready yet.
-            else:
-                returned = True
-            finally:
-                try:
-                    s.close()
-                except:
-                    pass
-
-            return returned
-    
-        if not retries:
-            # Keep connecting until its present:
-            while True:
-                returned = check()
-                time.sleep(retry_period)
-        else:
-            # Give up after 'retries' attempts:
-            for i in range(0, retries):
-                returned = check()
-                if returned:
-                    # Success!
-                    break
-                else:
-                    time.sleep(retry_period)
-
-        return returned
+        return wait_for_service(self.interface, int(self.port), retries, retry_period)
 
     
     def write(self, data, RECV=2048):

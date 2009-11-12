@@ -41,6 +41,17 @@ class Controller(viewpoint.Controller):
         # is ready to recieve requests. The viewpoint will also be kept
         # looking at this URI so it can't navigate away out of the app.
         uri = "http://myhost:myport/myapp"        
+        
+        # The method to use to check that web application is ready
+        # for requests:
+        #
+        # The default method is 'connect' which just checks a socket
+        # connection to the URI will succeed.
+        #
+        # The alternative method is 'recover' which will try a
+        # HEAD or GET method on the URI.
+        #
+        test_method = 'connect'
 
         # This is the control port which will be listened on for
         # command requests on. 7055 is the default if not given.
@@ -67,6 +78,7 @@ class Controller(viewpoint.Controller):
 
         self.uri = self.config.get('uri', None)           
         self.port = self.config.get('port', '7055')
+        self.testMethodConfigure(config)        
 
         self.dbc = viewpointdirect.DirectBrowserCalls(self.port)
         self.log.info("setUp: viewpoint port '%s'." % self.port)
