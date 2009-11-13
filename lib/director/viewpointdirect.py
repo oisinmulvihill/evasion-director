@@ -156,7 +156,7 @@ class DirectBrowserCalls(object):
         """Called to replace content inside the viewpoint browser window with
         the given content fragment.
         """
-        content=urllib.quote(content.encode('ascii', 'ignore'))
+        content=urllib.quote(content)
         control_frame = {
             'command' : 'replace',
             'args' : {'id' : content_id, 'content' : content}
