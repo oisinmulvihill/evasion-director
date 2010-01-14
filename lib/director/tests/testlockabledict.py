@@ -1,27 +1,27 @@
 import unittest
 
-import lockabledict
+from director import lockabledict
 
 
 class LockableDictionaryTestCase(unittest.TestCase):
 
-	def setUp(self):
-		self.dict = lockabledict.LockableDict()
+    def setUp(self):
+        self.dict = lockabledict.LockableDict()
         
-	def tearDown(self):
-		self.dict = None
+    def tearDown(self):
+        self.dict = None
         
-	def testSimpleOperations(self):
-		"""Tests to see if basic operations work.
+    def testSimpleOperations(self):
+        """Tests to see if basic operations work.
 
-		"""
-		self.dict['a_key'] = 'a_data'
-		self.dict['b_key'] = 'b_data'
+        """
+        self.dict['a_key'] = 'a_data'
+        self.dict['b_key'] = 'b_data'
 
-		assert self.dict['a_key'] == 'a_data'
-		assert self.dict['b_key'] == 'b_data'
+        assert self.dict['a_key'] == 'a_data'
+        assert self.dict['b_key'] == 'b_data'
 
-		del self.dict['a_key']
+        del self.dict['a_key']
 
         def t():
             self.dict['a_key']
@@ -30,5 +30,5 @@ class LockableDictionaryTestCase(unittest.TestCase):
 
         
 if __name__ == "__main__":
-	unittest.main(defaultTest="suite")
+    unittest.main(defaultTest="suite")
 

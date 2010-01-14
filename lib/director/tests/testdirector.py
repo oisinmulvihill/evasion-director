@@ -8,6 +8,48 @@ somevalue = 123
 """
 
 class DirectorTC(unittest.TestCase):
+    
+
+    def testWebAdminConfigRecovery(self):
+        """Test the parsing of the controllers to see that the webadmin modules are found or not as the case maybe.
+        """
+        test_config = """
+        [messenger]
+        # not a controller, should be ignored.
+        host="localhost"
+        port=61613
+
+        [checkdir]
+        order = 1
+        controller = 'director.controllers.commandline'
+        webadmin = checkdiradmin
+        command = "ls"
+        workingdir = "/tmp"
+
+        [echodir]
+        order = 2
+        controller = 'director.controllers.commandline'
+        command = "echo 'hello' > /tmp/hello.txt"
+        workingdir = "/tmp"
+
+        [lsdir]
+        order = 2
+        controller = 'director.controllers.commandline'
+        webadmin = listingadmin
+        command = "ls 'hello' > /tmp/dirlisting.txt"
+        workingdir = "/tmp"
+
+        [myswipe]
+        # Should ignore this too as its also not a program.
+        cat = 'general'
+        agent = 'agency.agents.testing.fake'
+        something = 1
+        
+        """
+        programs = director.config.load(test_config)
+        self.assertEquals(len(programs), 2)
+    
+    
     def testRequiredConfigSection(self):
         """Test that the evasion section is present in the given config file.
         """
