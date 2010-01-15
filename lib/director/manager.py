@@ -98,6 +98,19 @@ class Manager(object):
             self.log.warn("controllerSetup: no controllers found in config.")
 
 
+    def signalExit(self, signal, sender, **data) :
+        self.log.warn("main: EVT_EXIT_ALL received, exiting...")
+        self.exit()
+
+
+    def signalWebAdminModules(self, signal, sender, **data):
+        self.log.info("main: EVT_WEBADMIN_MODULES received.")
+        
+        returned = director.config.webadmin_modules(self.controllers)
+        
+        return returned
+            
+            
     def appmain(self, isExit):
         """
         Run the main program loop.
@@ -112,17 +125,20 @@ class Manager(object):
         c = director.config.get_cfg()
         cfg = c.cfg['director']
         poll_time = float(cfg.get('poll_time', '1'))
-
-        # Register messenger hook for shutdown()
-        def signal_exit(signal, sender, **data) :
-            self.log.warn("main: EVT_EXIT_ALL received, exiting...")
-            self.exit()
             
+        # Register messenger hook for shutdown()
         dispatcher.connect(
-          signal_exit,
+          self.signalExit,
           signal=messenger.EVT("EVT_EXIT_ALL")
         )        
         self.log.info("main: EVT_EXIT_ALL signal setup.")
+            
+        # Register messenger hook for webadmin module list:
+        dispatcher.connect(
+          self.signalWebAdminModules,
+          signal=messenger.EVT("EVT_WEBADMIN_MODULES")
+        )        
+        self.log.info("main: EVT_WEBADMIN_MODULES signal setup.")
 
         # Recover the controllers from director configuration.
         self.controllerSetup()

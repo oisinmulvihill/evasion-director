@@ -251,7 +251,27 @@ def load(config):
     returned.sort()
     
     return returned
+
+
+def webadmin_modules(controllers):
+    """Called recover the controllers which have webadmin module entries.
     
+    These module represent python modules the evasion-webadmin can
+    use why creating the available pages.
+    
+    controllers:
+        This is a list of entries returned from a call to load(...).
+    
+    returned:
+        A list of module names or and empty list if non were found.
+    
+    """
+    returned = []
+    
+    def find(item):
+        pass
+    
+    return returned
     
     
     

@@ -8,7 +8,7 @@ somevalue = 123
 """
 
 class DirectorTC(unittest.TestCase):
-    
+
 
     def testWebAdminConfigRecovery(self):
         """Test the parsing of the controllers to see that the webadmin modules are found or not as the case maybe.
@@ -38,16 +38,54 @@ class DirectorTC(unittest.TestCase):
         webadmin = listingadmin
         command = "ls 'hello' > /tmp/dirlisting.txt"
         workingdir = "/tmp"
-
-        [myswipe]
-        # Should ignore this too as its also not a program.
-        cat = 'general'
-        agent = 'agency.agents.testing.fake'
-        something = 1
         
         """
         programs = director.config.load(test_config)
-        self.assertEquals(len(programs), 2)
+        self.assertEquals(len(programs), 3)
+        
+        import pprint
+        
+        for i in programs:
+            print("""p:\n\n%s\n\n""" % (pprint.pformat(i[1].__dict__)))
+       
+        # Recover the webadmin module names if any are mentioned 
+        # by the controllers.
+        #
+        module_names = director.config.webadmin_modules(self.controllers)       
+        correct = ['checkdiradmin', 'listingadmin']
+        
+        self.assertEquals(module_names, correct)
+        
+
+    def testConfigContainers(self):
+        """Test the contents of a loaded controller.
+        """
+        test_config = """
+        [messenger]
+        # not a controller, should be ignored.
+        host="localhost"
+        port=61613
+
+        [checkdir]
+        order = 1
+        controller = 'director.controllers.commandline'
+        webadmin = checkdiradmin
+        command = "ls"
+        workingdir = "/tmp"
+        """
+        programs = director.config.load(test_config)
+        self.assertEquals(len(programs), 1)
+        
+        order_position, entry = programs[0]
+        
+        self.assertEquals(order_position, '1')
+        self.assertEquals(entry.name, 'checkdir')
+        self.assertEquals(entry.order, '1')
+        self.assertEquals(entry.disabled, 'no')        
+        self.assertEquals(isinstance(entry.controller, director.controllers.commandline.Controller), True)        
+        self.assertEquals(entry.webadmin, 'checkdiradmin')
+        self.assertEquals(entry.workingdir, '/tmp')
+        self.assertEquals(entry.command, 'ls')
     
     
     def testRequiredConfigSection(self):
