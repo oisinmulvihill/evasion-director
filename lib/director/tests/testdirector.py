@@ -40,19 +40,18 @@ class DirectorTC(unittest.TestCase):
         workingdir = "/tmp"
         
         """
-        programs = director.config.load(test_config)
-        self.assertEquals(len(programs), 3)
+        controllers = director.config.load(test_config)
+        self.assertEquals(len(controllers), 3)
         
-        import pprint
-        
-        for i in programs:
-            print("""p:\n\n%s\n\n""" % (pprint.pformat(i[1].__dict__)))
-       
         # Recover the webadmin module names if any are mentioned 
         # by the controllers.
         #
-        module_names = director.config.webadmin_modules(self.controllers)       
-        correct = ['checkdiradmin', 'listingadmin']
+        module_names = director.config.webadmin_modules(controllers)       
+        
+        correct = [
+            dict(controller='checkdir',webadmin='checkdiradmin'), 
+            dict(controller='lsdir',webadmin='listingadmin')
+        ]
         
         self.assertEquals(module_names, correct)
         

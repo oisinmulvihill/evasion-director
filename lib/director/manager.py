@@ -98,15 +98,25 @@ class Manager(object):
             self.log.warn("controllerSetup: no controllers found in config.")
 
 
-    def signalExit(self, signal, sender, **data) :
+    def signalExit(self, signal, sender, **data):
+        """This is the handler for the EVT_EXIT_ALL signal and causes the director to 
+        shutdown normally.
+        
+        """
         self.log.warn("main: EVT_EXIT_ALL received, exiting...")
         self.exit()
 
 
     def signalWebAdminModules(self, signal, sender, **data):
+        """
+        """
         self.log.info("main: EVT_WEBADMIN_MODULES received.")
         
         returned = director.config.webadmin_modules(self.controllers)
+
+        self.log.debug("main: EVT_WEBADMIN_MODULES returned '%s'." % pprint.pformat(
+            returned
+        ))
         
         return returned
             

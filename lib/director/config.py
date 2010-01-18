@@ -264,12 +264,25 @@ def webadmin_modules(controllers):
     
     returned:
         A list of module names or and empty list if non were found.
+        
+        Format = [{
+                'webadmin' : '...', # contents of webadmin field.
+                'controller' : '...', # name of controller it belongs to.
+            },
+            :
+            etc
+        ]
     
     """
     returned = []
     
-    def find(item):
-        pass
+    def recover(item):
+        returned.append(dict(
+            webadmin = item.webadmin,
+            controller = item.name
+        ))
+        
+    [recover(c[1]) for c in controllers if hasattr(c[1], 'webadmin')]
     
     return returned
     
