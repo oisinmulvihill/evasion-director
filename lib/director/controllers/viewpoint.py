@@ -54,7 +54,8 @@ class Controller(base.Controller):
         # connection to the URI will succeed.
         #
         # The alternative method is 'recover' which will try a
-        # HEAD or GET method on the URI.
+        # HEAD or GET method on the URI. This can also be set to
+        # 'disable' to prevent checking and redirection.
         #
         test_method = 'connect'
 
@@ -140,6 +141,8 @@ class Controller(base.Controller):
         self.test_method = 'connect'
         if m == 'recover':
             self.test_method = 'recover'
+        elif m == 'disable':
+            self.test_method = 'disable'
         
         
 
@@ -244,11 +247,14 @@ class Controller(base.Controller):
         :return: True if the process is running otherwise False
         
         """
-        rc = proc.check(self.commandProc)
-        if rc:
-            if self.dbc.waitForReady(retries=1):
-                if self.checkForURIReadiness(self.uri):
-                    self.setURI(self.uri)            
+        if not self.test_method == 'disable':
+            rc = proc.check(self.commandProc)
+            if rc:
+                if self.dbc.waitForReady(retries=1):
+                    if self.checkForURIReadiness(self.uri):
+                        self.setURI(self.uri)
+        else:
+            rc = True
     
         return rc
         

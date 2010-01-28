@@ -68,6 +68,8 @@ class Controller(viewpoint.Controller):
         order = 1
         controller = 'director.controllers.viewpointxulcontrol'
 
+        # Disable 
+        
         # The URI to connect to when the URI is present and the viewpoint
         # is ready to recieve requests. The viewpoint will also be kept
         # looking at this URI so it can't navigate away out of the app.
@@ -80,7 +82,8 @@ class Controller(viewpoint.Controller):
         # connection to the URI will succeed.
         #
         # The alternative method is 'recover' which will try a
-        # HEAD or GET method on the URI.
+        # HEAD or GET method on the URI. This can also be set to
+        # 'disable' to prevent checking and redirection.
         #
         test_method = 'connect'
 
