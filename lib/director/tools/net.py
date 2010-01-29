@@ -114,11 +114,12 @@ def wait_for_service(host, port, retries=0, retry_period=5.0):
             pass # not ready yet.
         else:
             returned = True
-        finally:
-            try:
-                s.close()
-            except:
-                pass
+# not py24 friendly:            
+#        finally:
+        try:
+            s.close()
+        except:
+            pass
 
         return returned
 
