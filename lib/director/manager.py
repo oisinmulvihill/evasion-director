@@ -14,11 +14,13 @@
 """
 import time
 import logging
+import traceback
 
 import agency
 import director
 import messenger
 import director.config
+from director import signals
 from pydispatch import dispatcher
 from director import proxydispatch
 from director import viewpointdirect
@@ -68,6 +70,7 @@ class Manager(object):
         """
         """
         self.controllers = []
+        self.signals = signals.SignalsReceiver(self)
         
 
     def controllerSetup(self):
@@ -92,35 +95,16 @@ class Manager(object):
         if self.controllers:
             # Setup all enabled controllers:
             for order, ctl in self.controllers:
-                if ctl.disabled == 'no':
-                    ctl.controller.setUp(ctl.config)
+                try:
+                    if ctl.disabled == 'no':
+                        ctl.controller.setUp(ctl.config)
+                except:
+                    self.log.exception("%s setUp error: " % ctl)
+                    sys.stderr.write("%s setUp error: %s" % (ctl, self.formatError()))
         else:
             self.log.warn("controllerSetup: no controllers found in config.")
+    
 
-
-    def signalExit(self, signal, sender, **data):
-        """This is the handler for the EVT_EXIT_ALL signal and causes the director to 
-        shutdown normally.
-        
-        """
-        self.log.warn("main: EVT_EXIT_ALL received, exiting...")
-        self.exit()
-
-
-    def signalWebAdminModules(self, signal, sender, **data):
-        """
-        """
-        self.log.info("main: EVT_WEBADMIN_MODULES received.")
-        
-        returned = director.config.webadmin_modules(self.controllers)
-
-        self.log.debug("main: EVT_WEBADMIN_MODULES returned '%s'." % pprint.pformat(
-            returned
-        ))
-        
-        return returned
-            
-            
     def appmain(self, isExit):
         """
         Run the main program loop.
@@ -136,19 +120,8 @@ class Manager(object):
         cfg = c.cfg['director']
         poll_time = float(cfg.get('poll_time', '1'))
             
-        # Register messenger hook for shutdown()
-        dispatcher.connect(
-          self.signalExit,
-          signal=messenger.EVT("EVT_EXIT_ALL")
-        )        
-        self.log.info("main: EVT_EXIT_ALL signal setup.")
-            
-        # Register messenger hook for webadmin module list:
-        dispatcher.connect(
-          self.signalWebAdminModules,
-          signal=messenger.EVT("EVT_WEBADMIN_MODULES")
-        )        
-        self.log.info("main: EVT_WEBADMIN_MODULES signal setup.")
+        # Set up all signals handlers provided by the director:
+        self.signals.setup()
 
         # Recover the controllers from director configuration.
         self.controllerSetup()
@@ -157,11 +130,16 @@ class Manager(object):
             # Check the controllers are alive and restat if needs be:
             for order, ctl in self.controllers:            
                 if ctl.disabled == 'no':
-                    if not ctl.controller.isStarted():
-                        self.log.info("The controller '%s' needs to be started." % (ctl))
-                        ctl.controller.start()
-                        rc = ctl.controller.isStarted()
-                        self.log.info("Started ok '%s'? '%s'" % (ctl.name, rc))            
+                    try:
+                        if not ctl.controller.isStarted():
+                            self.log.info("The controller '%s' needs to be started." % (ctl))
+                            ctl.controller.start()
+                            rc = ctl.controller.isStarted()
+                            self.log.info("Started ok '%s'? '%s'" % (ctl.name, rc))            
+                    except:
+                        self.log.exception("%s isStarted error: " % ctl)
+                        sys.stderr.write("%s isStarted error: %s" % (ctl, self.formatError()))
+                    
             
             # Don't busy wait if nothing needs doing:
             time.sleep(poll_time)
@@ -177,6 +155,14 @@ class Manager(object):
         self.log.warn("exit: the director is shutting down.")
         messenger.quit()
         time.sleep(2)
+    
+    
+    def formatError(self):
+        """Return a string representing the last traceback.
+        """
+        exception, instance, tb = traceback.sys.exc_info()
+        error = "".join(traceback.format_tb(tb))      
+        return error
 
 
     def shutdown(self):
@@ -188,13 +174,22 @@ class Manager(object):
         """
         # Stop all enabled controllers:
         for order, ctl in self.controllers:
-            ctl.controller.stop()
+            try:
+                ctl.controller.stop()
+            except:
+                self.log.exception("%s stop error: " % ctl)
+                sys.stderr.write("%s stop error: %s" % (ctl, self.formatError()))
+
 
         # Teardown all enabled controllers:
         for order, ctl in self.controllers:
-            ctl.controller.tearDown()
+            try:
+                ctl.controller.tearDown()
+            except:
+                self.log.exception("%s stop error: " % ctl)
+                sys.stderr.write("%s stop error: %s" % (ctl, self.formatError()))
 
-                
+
     def main(self):
         """
         The main thread in which twisted and the messagin system runs. The
