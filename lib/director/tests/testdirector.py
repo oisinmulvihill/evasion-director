@@ -1,3 +1,4 @@
+import pprint
 import unittest
 
 import director
@@ -11,49 +12,110 @@ class DirectorTC(unittest.TestCase):
 
 
     def testWebAdminConfigRecovery(self):
-        """Test the parsing of the controllers to see that the webadmin modules are found or not as the case maybe.
+        """Test the parsing of the config recovering any webadmin modules mentioned.
         """
         test_config = """
+        [director]
+        # The broker connection details:
+        msg_host = "127.0.0.1"
+        msg_port = 61613
+        msg_username = ''
+        msg_password = ''
+        msg_channel = 'newman'
+        disable_broker = no
+        poll_time = 1
+        # This is the root level interface the webadmin will use if present:
+        webadmin = 'director.webadmin'
+
+        # anything can have a webadmin interface, I'm looking for the webadmin attribute:
         [messenger]
-        # not a controller, should be ignored.
         host="localhost"
         port=61613
+        webadmin = 'webadminbroker'
+        
+        [agencyhq]
+        #disabled = 'yes'
+        webadmin = 'agency.webadmin'
+
+            # should show up as its got webadmin section and isn't disabled:
+            [testingsale]
+            #disabled = 'yes'
+            cat = sale
+            agent = devicelayer.agents.testing.sale
+            interface = 127.0.0.1
+            port = 54998
+            webadmin = 'testsale'
+
+            # This agent has no webadmin so won't be present in modules
+            [testingprinter]
+            #disabled = 'yes'
+            cat = printer
+            agent = devicelayer.agents.testing.printer
+            #show_gui = 'yes'
+            interface = 127.0.0.1
+            port = 50980
+
+            # This is disabled so its webadmin interface won't appear in modules:
+            [testingfrog]
+            disabled = 'yes'
+            cat = swipe
+            agent = myswipe
+            webadmin = 'webadminprinter'
+
+            [dog]
+            #disabled = 'yes'
+            cat = swipe
+            agent = myswipe
+            webadmin = 'webadmindog'
 
         [checkdir]
-        order = 1
+        order = 4
         controller = 'director.controllers.commandline'
-        webadmin = checkdiradmin
         command = "ls"
         workingdir = "/tmp"
+        webadmin = 'bob.webadmin'
 
         [echodir]
-        order = 2
+        order = 5
         controller = 'director.controllers.commandline'
         command = "echo 'hello' > /tmp/hello.txt"
         workingdir = "/tmp"
 
         [lsdir]
-        order = 2
+        order = 6
         controller = 'director.controllers.commandline'
         webadmin = listingadmin
         command = "ls 'hello' > /tmp/dirlisting.txt"
         workingdir = "/tmp"
         
         """
-        controllers = director.config.load(test_config)
-        self.assertEquals(len(controllers), 3)
-        
         # Recover the webadmin module names if any are mentioned 
         # by the controllers.
         #
-        module_names = director.config.webadmin_modules(controllers)       
+        module_names = director.config.webadmin_modules(test_config)
         
         correct = [
-            dict(controller='checkdir',webadmin='checkdiradmin'), 
-            dict(controller='lsdir',webadmin='listingadmin')
+            dict(director='director',webadmin='director.webadmin'), 
+            dict(messenger='messenger',webadmin='webadminbroker'),
+            dict(agency='agencyhq',webadmin='agency.webadmin'),
+            dict(agent='testingsale',webadmin='testsale'),
+            dict(agent='dog',webadmin='webadmindog'),
+            dict(controller='checkdir',webadmin='bob.webadmin'),
+            dict(controller='lsdir',webadmin='listingadmin'),
         ]
+       
+        msg = """
+        Recovery Failed, correct != recovered
         
-        self.assertEquals(module_names, correct)
+        correct:
+        %s
+        
+        found:
+        %s
+        
+        """ % (pprint.pformat(correct), pprint.pformat(module_names))
+        
+        self.assertEquals(module_names, correct, msg)
         
 
     def testConfigContainers(self):

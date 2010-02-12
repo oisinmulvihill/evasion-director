@@ -45,7 +45,7 @@ class FailedToStop(Exception):
     """
 
 
-class Controller:
+class Controller(object):
     """
     This class represents a 'process' which the director will manage.
     This class is really an interface which all who wish to be loaded

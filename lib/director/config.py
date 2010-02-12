@@ -166,7 +166,75 @@ class Container(object):
         """This is a string the represents us, can be used as a dict key."""
         return self.__str__()
 
+        
+def webadmin_modules(config):
+    """
+    Called to walk through the configuration and recover the webadmin
+    modules from any section which mentions it.
+    
+    config:
+        This is a string representing the contents of the
+        configuration file.
+    
+    returned:
+        A list of module names or and empty list if non were found.
+        
+        Format = [{
+                'webadmin' : '...', # contents of webadmin field.
+                '<type>' : '...', # name of controller it belongs to.
+            },
+            :
+            etc
+        ]
+        
+        <type>: 'agent' | 'controller' | 'agencyhq' | 'messenger' | 
+                'director'
 
+    """
+    returned = []
+    cfg = configobj.ConfigObj(StringIO.StringIO(config))
+    
+    def recover(section, key):
+        print """
+        
+        key: %s
+        
+        section: %s
+        
+        """ % (key, section)
+        
+        if section.has_key('webadmin'):
+            section_type = key
+            section_name = key
+            
+            if section.has_key('agent'):
+                section_type = 'agent'
+            
+            if section.has_key('controller'):
+                section_type = 'controller'
+            
+            returned.append(dict(
+                section_type=section_name,
+                webadmin=section['webadmin'],
+            ))
+            
+    cfg.walk(recover)
+
+    print """
+    
+    returned:
+    
+    %s
+    
+    """ % (pprint.pformat(returned))
+    
+    for i in cfg:
+        print "i: ", i
+        
+    return returned
+
+
+    
 def load(config):
     """Called to test and then load the controller configuration.
     
@@ -223,7 +291,7 @@ def load(config):
                          traceback.format_exc()
                      ))
 
-                # Now see if it contains a Agent category all agent must have to load:
+                # Now see if it contains a Controller category all agent must have to load:
                 if hasattr(imported_agent, 'Controller'):
                     returned = getattr(imported_agent, 'Controller')
                     returned = returned()
@@ -251,43 +319,5 @@ def load(config):
     returned.sort()
     
     return returned
-
-
-def webadmin_modules(controllers):
-    """Called recover the controllers which have webadmin module entries.
-    
-    These module represent python modules the evasion-webadmin can
-    use why creating the available pages.
-    
-    controllers:
-        This is a list of entries returned from a call to load(...).
-    
-    returned:
-        A list of module names or and empty list if non were found.
-        
-        Format = [{
-                'webadmin' : '...', # contents of webadmin field.
-                'controller' : '...', # name of controller it belongs to.
-            },
-            :
-            etc
-        ]
-    
-    """
-    returned = []
-    
-    def recover(item):
-        returned.append(dict(
-            webadmin = item.webadmin,
-            controller = item.name
-        ))
-        
-    [recover(c[1]) for c in controllers if hasattr(c[1], 'webadmin')]
-    
-    return returned
-    
-    
-    
-    
 
 
