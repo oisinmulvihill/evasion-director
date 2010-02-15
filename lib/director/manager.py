@@ -40,28 +40,8 @@ class Manager(object):
     """Manages the running services determined by the configuration
     that was loaded.
 
-    The manager expects to find a [director] section in the configuration::
-
-        [director]
-        # The broker connection details. Required if nobroker = 'no' (default):
-        msg_host = "127.0.0.1"
-        msg_port = 61613
-        msg_username = ''
-        msg_password = ''
-        msg_channel = 'evasion'
-
-        # (OPTIONAL): Set this to 'yes' if you wish to stop the director connecting to the broker.
-        disable_broker = 'no'
-
-        # (OPTIONAL) Prevent director busy waiting. This just limits the time between maintenances checks.
-        # This is in seconds or fractions of seconds, the default being 0.1s.
-        poll_time = 1
-
-        # (OPTIONAL): To disable the special proxy dispatch set this to 'yes'
-        noproxydispatch = 'no'
-
-        # (OPTIONAL): Web app local reply dispatch XML-RPC service i.e. http://localhost:<this port>/RPC2.
-        proxy_dispatch_port = 1901
+    The manager expects to find a [director] section in the configuration.
+    For more on this see director.configobjs.Director doc string.
 
     """
     log = logging.getLogger("director.manager.Manager")

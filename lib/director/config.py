@@ -36,7 +36,11 @@ import logging
 import StringIO
 import traceback
 import configobj
+import itertools
 from configobj import ConfigObj
+
+
+from configobjs import *
 
 
 def get_log():
@@ -113,124 +117,192 @@ def set_cfg(raw):
     __config = ConfigStore(raw, cfg)
     
 
-class Container(object):
-    """This represents a configuration sections as recoverd from the configuration.    
-    
-    A config section can have the following options::
-    
-        [name]        
-        # Order in which to start programs (must be unique)
-        order = 1
+MAPPED_SECTIONS = dict(
+    # (Default order, class to store details in) 
+    director = (0, Director),
+    broker = (1, Broker),
+    agency = (2, Agency),
+    webadmin = (3, WebAdmin),
+)
 
-        # The python path to agent to import e.g.
-        controller = 'director.controllers.program'
-                        
-        # OPTIONAL: disable the start/stop of the controller. It will
-        # still be loaded and created.
-        disabled = 'yes' | 'no'
-
-        # Other customer configuration can also be put in each
-        # section. I just look for the above alone and ignore
-        # anything else.
-    
+def recover_objects(config):
     """
-    reserved = ()
+    Called to walk through the configuration and convert the
+    sections into their equivalent configobjs.
     
-    def __init__(self):
-        self.name = None
-        self.order = None
-        self.controller = None
-        self.disabled = "no"
-        self.reserved = ('controller', 'order', 'name')
-        self.config = None
-        self.controller = None
+    This function does not attempt to import any modules, it
+    simply creates the main containers. The load_modules() 
+    function does this on this functions output.
     
-    def check(self):
-        """Called to check that all the reserved fields have been provided.
-        
-        If one or more aren't provided then ConfigError
-        will be raised to indicate so.
-        
-        """
-        for i in self.reserved:
-            if not getattr(self, i, None):
-                raise ConfigError("The member '%s' must be provided in the configuration." % i)        
-    
-    def __str__(self):
-        """Print out who were representing and some unique identifier."""
-        #print "self:", self.__dict__
-        return "<Controller: name %s, order %s>" % (self.name, self.order)
-
-    
-    def __repr__(self):
-        """This is a string the represents us, can be used as a dict key."""
-        return self.__str__()
-
-        
-def webadmin_modules(config):
-    """
-    Called to walk through the configuration and recover the webadmin
-    modules from any section which mentions it.
+    The webadmin_modules() function uses the output of this 
+    function to recover its information from.
     
     config:
         This is a string representing the contents of the
         configuration file.
     
     returned:
+        A list of configuration objects which with the default 
+        ordering will usually contain
+        
+        returned = [
+            Director instance,
+            Broker instance,
+            Agency instance,
+            WebAdmin instance,
+            :
+            other controllers in there order
+        ]
+
+        The Agency will contain the list of agents as part of
+        its agents member and these will be ordered by defaults
+        or by the order attribute if it was used.
+
+    """
+    cfg = configobj.ConfigObj(StringIO.StringIO(config))
+
+    class R(object):
+        def __init__(self):
+            self.returned = []
+            self.agency = None
+            self.agents = []
+            self.agentCount = itertools.count(0)
+            # Start at 4, 0-3 are reserved by default
+            # for director,broker,agency&webadmin:
+            self.sectionCounter = itertools.count(4)
+    
+        def setup(self, c, s):
+            # Store all items we recovered
+            for key, value in s.items():
+                #print "key, value: ", key, value
+                if key == 'order':
+                    # Make these numbers and not strings.
+                    value = int(value)
+                setattr(c, key, value)
+
+        def recover(self, section):
+            """Convert to configobjs"""
+            rsection = cfg[section]
+            if section in MAPPED_SECTIONS:
+                default_order, container = MAPPED_SECTIONS[section]
+                container = container()
+                if 'name' in rsection:
+                    # remove this if its present in favour of hardcoded.
+                    rsection.pop('name')
+                if 'order' not in rsection:
+                    container.order = default_order
+                if section == 'agency':
+                    # store agency so we can add agents to it.
+                    self.agency = container
+                self.setup(container, rsection)
+                
+            elif 'agent' in rsection:
+                container = Agent()
+                self.setup(container, rsection)
+                container.name = section
+                if not container.order:
+                    container.order = self.agentCount.next()
+                self.agents.append([container.order, container])
+                
+                # Note: agents will be discarded if no agency is 
+                # present in the configuration.
+                return
+                
+            elif 'controller' in rsection:
+                container = Controller()
+                self.setup(container, rsection)
+                container.name = section
+                if 'order' not in rsection:
+                    container.order = self.sectionCounter.next()
+            
+            else:
+                container = Container()
+                self.setup(container, rsection)
+                container.name = section
+                if 'order' not in rsection:
+                    container.order = self.sectionCounter.next()
+            
+            self.returned.append([container.order, container])
+
+    r = R()
+    [r.recover(section) for section in cfg]
+    
+    # Add any recovered agents to the agency 'agents' member:
+    if r.agency:
+        # sort the agents first:
+        r.agents.sort()
+        # strip the order and return just the agents in that order:
+        r.agency.agents = [a for o,a in r.agents]
+    
+    # Sort all except agents which are part of the agency:
+    r.returned.sort()
+    
+    # Check each container has the required parts:
+    def v(c):
+        c.validate()
+        return c
+        
+    # Strip the order and return just the objects in that 
+    # order, after validating them:
+    #
+    returned = [v(c) for order, c in r.returned]
+        
+    return returned
+
+
+def webadmin_modules(config_objs):
+    """
+    Called to walk through the configuration objects and
+    recover a list of webadmin modules from any object with
+    it.
+    
+    config_objs:
+        This is a list as returned by recover_objects()
+    
+    returned:
         A list of module names or and empty list if non were found.
         
         Format = [{
                 'webadmin' : '...', # contents of webadmin field.
-                '<type>' : '...', # name of controller it belongs to.
+                'name' : '...', 
+                'type' : 'director' | 'broker' | 'agency' | 'webadmin' |
+                         'agent' | 'controller' | 'container'  
             },
             :
             etc
         ]
-        
-        <type>: 'agent' | 'controller' | 'agencyhq' | 'messenger' | 
-                'director'
 
     """
     returned = []
-    cfg = configobj.ConfigObj(StringIO.StringIO(config))
-    
-    def recover(section, key):
-        print """
-        
-        key: %s
-        
-        section: %s
-        
-        """ % (key, section)
-        
-        if section.has_key('webadmin'):
-            section_type = key
-            section_name = key
-            
-            if section.has_key('agent'):
-                section_type = 'agent'
-            
-            if section.has_key('controller'):
-                section_type = 'controller'
-            
-            returned.append(dict(
-                section_type=section_name,
-                webadmin=section['webadmin'],
-            ))
-            
-    cfg.walk(recover)
 
-    print """
+    def setup(obj):
+        type = 'container'
+        if isinstance(obj, Director) or isinstance(obj, Broker) or \
+           isinstance(obj, Agency) or isinstance(obj, WebAdmin):
+            type = obj.name
+        elif isinstance(obj, Agent):
+            type = 'agent'
+        elif isinstance(obj, Controller):
+            type = 'controller'
+        return dict(
+            name=obj.name,
+            type=type,
+            webadmin=obj.webadmin,
+        )
     
-    returned:
-    
-    %s
-    
-    """ % (pprint.pformat(returned))
-    
-    for i in cfg:
-        print "i: ", i
+    def recover(obj):
+        disabled = getattr(obj, 'disabled', 'no')
+        webadmin = getattr(obj, 'webadmin', '')
+        webadmin = webadmin.strip()
         
+        if disabled == 'no' and webadmin:
+            returned.append(setup(obj))
+            if obj.name == 'agency':
+                # put the agents after agency hq
+                [recover(o) for o in obj.agents]
+
+    [recover(o) for o in config_objs]
+
     return returned
 
 
