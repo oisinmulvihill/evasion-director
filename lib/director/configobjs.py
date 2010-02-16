@@ -56,6 +56,9 @@ class Base(object):
         self.disabled = "no"
         self.config = None
         self.webadmin = ''
+        # This is the loaded module as recovered by import_module
+        # via a call to load_agents / load_controllers.
+        self.mod = None
 
 
     def __str__(self):
@@ -213,10 +216,11 @@ class Agency(Base):
         self.order = 2
         self.webadmin = 'agency.webadmin'
         self.disabled = 'no'
+        self.controller = 'director.controllers.agencyctrl'
         self.agents = []
 
     def __str__(self):
-        return "<AgencyHQ: order:%s>" % (self.order)
+        return "<Agency: order:%s>" % (self.order)
 
 
 class Agent(Base):
@@ -261,7 +265,7 @@ class Agent(Base):
 
 
     def __str__(self):
-        return "<Agent: name:%s order:%s>" % (self.name, self.order)
+        return "<Agent: name:%s agent order:%s>" % (self.name, self.order)
 
 
 class WebAdmin(Base):

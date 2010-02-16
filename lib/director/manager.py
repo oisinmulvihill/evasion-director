@@ -12,6 +12,7 @@
    :undoc-members:
 
 """
+import sys
 import time
 import logging
 import traceback
@@ -69,14 +70,24 @@ class Manager(object):
 
         """
         self.log.info("controllerSetup: loading controllers from config.")
-        c = director.config.get_cfg().cfg
+        c = director.config.get_cfg()
         
         # Recover and import the controllers:
-        self.controllers = director.config.load_controllers(cfg)
+        self.controllers = director.config.load_controllers(c.cfg)
+        self.log.info("controllerSetup: %s controller(s) recovered." % len(self.controllers))
+
+        import pprint
+        print("""
+        
+        pprint.pformat(self.controllers)
+        
+        %s
+        
+        """ % (pprint.pformat(self.controllers)))
         
         if self.controllers:
             # Setup all enabled controllers:
-            for order, ctl in self.controllers:
+            for ctl in self.controllers:
                 try:
                     if ctl.disabled == 'no':
                         ctl.controller.setUp(ctl.config)
@@ -98,8 +109,8 @@ class Manager(object):
         messenger will determine when its time to exit.
         
         """
-        c = director.config.get_cfg().cfg
-        poll_time = float(c.obj.director.poll_time)
+        c = director.config.get_cfg()
+        poll_time = float(c.director.poll_time)
             
         # Set up all signals handlers provided by the director:
         self.signals.setup()
@@ -179,25 +190,25 @@ class Manager(object):
         
         """
         self.log.info("main: setting up stomp connection.")        
-        c = director.config.get_cfg().cfg
+        c = director.config.get_cfg()
         
-        disable_broker = c.obj.director.disable_broker
+        disable_broker = c.director.disable_broker
         if disable_broker == 'no':
             # Set up the messenger protocols where using:
             self.log.info("main: setting up stomp connection to broker.")
             messenger.stompprotocol.setup(dict(
-                host=c.obj.director.msg_host,
-                port=c.obj.director.msg_port,
-                username=c.obj.director.msg_username,
-                password=c.obj.director.msg_password,
-                channel=c.obj.director.msg_channel,
+                host=c.director.msg_host,
+                port=int(c.director.msg_port),
+                username=c.director.msg_username,
+                password=c.director.msg_password,
+                channel=c.director.msg_channel,
             ))
         else:
             self.log.warn("main: the director's broker connection is disabled (disable_broker = 'yes').")
             
-        noproxydispatchbroker = c.obj.director.noproxydispatch
+        noproxydispatchbroker = c.director.noproxydispatch
         if noproxydispatchbroker == 'no':
-            port = int(c.obj.director.proxydispatch_port)
+            port = int(c.director.proxy_dispatch_port)
             self.log.info("main: setting up reply proxy dispatch http://127.0.0.1:%s/ ." % port)
             proxydispatch.setup(port)
         else:

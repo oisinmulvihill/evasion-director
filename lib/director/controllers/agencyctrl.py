@@ -28,19 +28,18 @@ class Controller(base.Controller):
     """
     This controller typically has the following configuration::
 
-        [agencyhq]
+        [agency]
         # Standard options example:
         disabled = 'no'
         order = 1
-        controller = 'director.controllers.agencyhq'
+        controller = 'director.controllers.agencyctrl'
 
     The agency uses the raw director config to look for
     agents to load and run. It will recover the configuration
     using director.config.get_cfg().raw
 
     """
-    log = logging.getLogger('director.controllers.commandline')
-        
+    log = logging.getLogger('director.controllers.agencyctrl')
         
     def setUp(self, config):
         """

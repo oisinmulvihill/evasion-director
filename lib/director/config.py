@@ -18,17 +18,23 @@ This module provides the director configuration parsing and handling.
 .. autoclass:: director.config.ConfigStore
    :members:
 
-.. autofunction:: director.config.clear()
+.. autofunction:: director.config.clear
 
-.. autofunction:: director.config.get_cfg()
+.. autofunction:: director.config.get_cfg
 
-.. autofunction:: director.config.set_cfg(the_config
+.. autofunction:: director.config.set_cfg
 
 .. autoclass:: director.config.Container
    :members:
    :undoc-members:
 
-.. autofunction:: director.config.load(config)
+.. autofunction:: director.config.recover_objects
+
+.. autofunction:: director.config.webadmin_modules
+
+.. autofunction:: director.config.load_agents
+
+.. autofunction:: director.config.load_controllers
 
 """
 import copy
@@ -78,26 +84,27 @@ class ConfigStore:
 
     The ConfigObj instance is stored as the 'cfg' member variable.
     
+    The director, broker, agency and webadmin are members which will
+    not be None. These will be set up if the are present in the cfg
+    configuration objects.
+    
     """
     def __init__(self, raw, cfg):
         self.raw = raw
         self.cfg = cfg
-        class Obj(object):
-            def __init__(self):
-                self.director = None
-                self.broker = None
-                self.agency = None
-                self.webadmin = None
-        self.obj = Obj()
+        self.director = None
+        self.broker = None
+        self.agency = None
+        self.webadmin = None
         for i in cfg:
             if i.name == 'director':
-                self.obj.director = i
+                self.director = i
             if i.name == 'broker':
-                self.obj.broker = i
+                self.broker = i
             if i.name == 'agency':
-                self.obj.agency = i
+                self.agency = i
             if i.name == 'webadmin':
-                self.obj.webadmin = i
+                self.webadmin = i
 
 
 def clear():
@@ -128,6 +135,29 @@ def get_cfg():
         __configLock.release()
         
     return rc
+    
+
+def update_objs(objs):
+    """Called to updated the current cached store of config objs.
+
+    :param objs: this is a list of configuration object
+    as returned by a call from recover_objects.
+    
+    This function will typically be done after a load_agents 
+    or load_controllers.
+    
+    If no config has been set up, via a call to set_config, then
+    ConfigNotSetup will be raised to indicate so.
+    
+    """
+    global __config
+    if not __config:
+        raise ConfigNotSetup("No configuration has been setup.")
+    __configLock.acquire()
+    try:
+        __config = ConfigStore(__config.raw, objs)
+    finally:
+        __configLock.release()
 
 
 def set_cfg(raw):
@@ -381,12 +411,13 @@ def import_module(import_type, obj):
         importmod = import_string
         fromlist = import_string.split('.')
         # absolute imports only (level=0):
+        #get_log().debug("import_module: import<%s> fromlist<%s>" % (importmod, fromlist))
         imported_agent = __import__(importmod, fromlist=fromlist, level=0)
         
     except ImportError, e:
-         raise ImportError("The controller '%s' from section '%s' was not found! %s" % (
+         raise ImportError("The controller '%s' from '%s' could not be imported! %s" % (
              importmod,
-             section,
+             obj,
              traceback.format_exc()
          ))
 
@@ -397,32 +428,7 @@ def import_module(import_type, obj):
         
     return returned
 
-    
-def load_controllers(config_objs):
-    """Called to test and then load the controllers from the configuration.
-    
-    config_objs:
-        This is a list as returned by recover_objects()
-    
-    returned:
-        This returns a list of config containers loaded with
-        the entries recovered from the device's section.
-    
-    """
-    returned = []
 
-    for obj in config_objs:
-        disabled = getattr(obj, 'disabled', 'no')
-        type = getattr(obj, 'type', '')
-        
-        if disabled == 'no' and type == 'controller':
-            returned.append(
-                import_module(obj.type, obj)
-            )
-
-    return returned    
-
-    
 def load_agents(config_objs):
     """Called to test and then load the agents from the configuration.
     
@@ -439,19 +445,37 @@ def load_agents(config_objs):
         the entries recovered from the device's section.
     
     """
-    returned = []
-
     for obj in config_objs:
         if obj.disabled == 'no' and obj.type == 'agency':
-            print "agency present"
             for a in obj.agents:
-                print "agent: ", a
-                returned.append(
-                    import_module('agent', a)
-                )
+                if a.disabled == 'no':
+                    a.mod = import_module(a.type, a)
 
-    return returned    
+    return config_objs
 
+    
+def load_controllers(config_objs):
+    """Called to test and then load the controllers from the configuration.
+    
+    config_objs:
+        This is a list as returned by recover_objects()
+    
+    Note: the broker, agency and webadmin are also considered 
+    controllers in addition to the explicit controllers.
+    
+    returned:
+        This returns the given config_objs with the mod field
+        of each controller entry updated with the imported 
+        module.
+    
+    """
+    for obj in config_objs:
+        print "obj: ", obj
+    
+        if obj.disabled == 'no' and obj.type not in ['director', 'container']:
+            print "2. obj: ", obj
+            obj.mod = import_module(obj.type, obj)
+            print "2.1 obj.mod: ", obj.mod
 
-
+    return config_objs
 

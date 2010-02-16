@@ -61,26 +61,44 @@ class Agent(object):
             # Try this from configuration file:
             test_config = """
             [director]
-
+            
             [agency]
-            # I don't really need this here as its enabled by default
+            order = 1
             disabled = 'no'
             
             [fancyagent]
+            order = 2
+            cat = 'misc'
+            agent = 'mypackage.myagent'
+            
+            [willnotshowup]
+            disabled = 'yes'
+            order = 3
             cat = 'misc'
             agent = 'mypackage.myagent'
             
             """
-            objs = director.config.recover_objects(test_config)
+            director.config.set_cfg(test_config)
+            c = director.config.get_cfg()
             
-            agents = director.config.load_agents(objs)
+            objs = director.config.load_agents(c.cfg)
 
-            self.assertEquals(len(agents), 1)
-            m = __import__('mypackage.myagent', fromlist=['mypackage',])
-            self.assertEquals(isinstance(agents[0], m.Agent), True, "Agent not recovered correctly!")
+            # The agency will be in position 1 (order 1). There should be
+            # two agents present, even though the second one is disabled.
+            self.assertEquals(len(objs[1].agents), 2)
             
-            controllers = director.config.load_controllers(objs)
-            self.assertEquals(len(controllers), 0)
+            m = __import__('mypackage.myagent', fromlist=['mypackage',])
+            self.assertEquals(isinstance(objs[1].agents[0].mod, m.Agent), True, "Agent not recovered correctly!")
+            
+            # The disabled agent should not be imported.
+            m = __import__('mypackage.myagent', fromlist=['mypackage',])
+            self.assertEquals(objs[1].agents[1].mod, None, "Agent was imported when it should not have been!")
+            
+            # try updating the config_objs and recheck that the change has been stored.
+            director.config.update_objs(objs)
+            c = director.config.get_cfg()
+            self.assertEquals(isinstance(objs[1].agents[0].mod, m.Agent), True, "Agent not stored+updated correctly!")
+            self.assertEquals(isinstance(c.agency.agents[0].mod, m.Agent), True, "Agent not stored+updated correctly!")
             
             
             # Create an controller module that import_module should find and load.
@@ -104,20 +122,47 @@ class Controller(object):
             # Try this from configuration file:
             test_config = """
             [director]
+
+            [agency]
+            order = 1
+            disabled = 'yes'
             
             [supercontroller]
+            order = 2
             controller = 'mypackage.mycontroller'
             
             """
-            objs = director.config.recover_objects(test_config)
-            agents = director.config.load_agents(objs)
+            director.config.set_cfg(test_config)
+            c = director.config.get_cfg()
             
-            self.assertEquals(len(agents), 0)
+            self.assertEquals(len(c.cfg), 3)
+            objs = director.config.load_controllers(c.cfg)
             
-            controllers = director.config.load_controllers(objs)
-            self.assertEquals(len(controllers), 1)
+            msg = """
+            Inital config != result from load_controllers
+            
+            c.objs:            
+            %s
+            
+            loaded objs:
+            %s
+            
+            """ % (c.cfg, objs)
+            
+            self.assertEquals(len(objs), 3, msg)
+            
             m = __import__('mypackage.mycontroller', fromlist=['mypackage',])
-            self.assertEquals(isinstance(controllers[0], m.Controller), True, "Controller not recovered correctly!")
+            
+            # The supercontroller will be in this position:
+            self.assertEquals(isinstance(objs[2].mod, m.Controller), True, "Controller not recovered correctly!")
+
+            # try updating the config_objs and recheck that the change has been stored.
+            director.config.update_objs(objs)
+            c = director.config.get_cfg()
+            self.assertEquals(len(objs), 3)
+            m = __import__('mypackage.mycontroller', fromlist=['mypackage',])
+            self.assertEquals(isinstance(objs[2].mod, m.Controller), True, "Controller not recovered correctly!")
+            
             
         finally:
             self.cleanUp(p)
@@ -151,17 +196,17 @@ class Controller(object):
         director.config.set_cfg(test_config)
         c = director.config.get_cfg()
         
-        self.assertEquals(c.obj.director is None, False)
-        self.assertEquals(c.obj.broker is None, False)
-        self.assertEquals(c.obj.agency is None, False)
-        self.assertEquals(c.obj.webadmin is None, True)
+        self.assertEquals(c.director is None, False)
+        self.assertEquals(c.broker is None, False)
+        self.assertEquals(c.agency is None, False)
+        self.assertEquals(c.webadmin is None, True)
         
         # This is the default order in which the objects should be recovered:
-        self.assertEquals(c.obj.director.name, 'director')
-        self.assertEquals(c.obj.director.order, 0)
+        self.assertEquals(c.director.name, 'director')
+        self.assertEquals(c.director.order, 0)
         
         # Check the agents are present:
-        agents = c.obj.agency.agents
+        agents = c.agency.agents
         self.assertEquals(len(agents), 2)
         
         # Check the default ordering of the recovered agents:
