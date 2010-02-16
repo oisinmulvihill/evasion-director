@@ -469,13 +469,13 @@ def load_controllers(config_objs):
         module.
     
     """
-    for obj in config_objs:
-        print "obj: ", obj
+    skip = ['director', 'container']
     
-        if obj.disabled == 'no' and obj.type not in ['director', 'container']:
-            print "2. obj: ", obj
+    def doimp(obj):
+        if obj.disabled == 'no' and obj.type not in skip:
             obj.mod = import_module(obj.type, obj)
-            print "2.1 obj.mod: ", obj.mod
-
+            
+    [doimp(obj) for obj in config_objs]
+    
     return config_objs
 

@@ -88,9 +88,10 @@ class Manager(object):
         if self.controllers:
             # Setup all enabled controllers:
             for ctl in self.controllers:
+                controller = ctl.mod
                 try:
                     if ctl.disabled == 'no':
-                        ctl.controller.setUp(ctl.config)
+                        controller.setUp(ctl.config)
                 except:
                     self.log.exception("%s setUp error: " % ctl)
                     sys.stderr.write("%s setUp error: %s" % (ctl, self.formatError()))
@@ -120,19 +121,19 @@ class Manager(object):
 
         while not isExit():
             # Check the controllers are alive and restat if needs be:
-            for order, ctl in self.controllers:            
+            for ctl in self.controllers:            
                 if ctl.disabled == 'no':
+                    controller = ctl.mod
                     try:
-                        if not ctl.controller.isStarted():
+                        if not controller.isStarted():
                             self.log.info("The controller '%s' needs to be started." % (ctl))
-                            ctl.controller.start()
-                            rc = ctl.controller.isStarted()
+                            controller.start()
+                            rc = controller.isStarted()
                             self.log.info("Started ok '%s'? '%s'" % (ctl.name, rc))            
                     except:
                         self.log.exception("%s isStarted error: " % ctl)
                         sys.stderr.write("%s isStarted error: %s" % (ctl, self.formatError()))
-                    
-            
+
             # Don't busy wait if nothing needs doing:
             time.sleep(poll_time)
 
