@@ -1,14 +1,176 @@
+import os
+import sys
+import os.path
 import pprint
 import unittest
-
+import tempfile
 import director
-
 
 
 class DirectorConfigTC(unittest.TestCase):
     """Exercise the director configuration functionality
     """
     
+    def cleanUp(self, top):
+        for root, dirs, files in os.walk(top, topdown=False):
+            for name in files:
+                #print 'name:',name
+                os.remove(os.path.join(root, name))
+            for name in dirs:
+                #print 'dir name:',name
+                os.rmdir(os.path.join(root, name))
+
+
+    def testAgentControllerImport(self):
+        """Test I can import Agent or Controller classes using the import_module
+        """
+        p = tempfile.mkdtemp()
+        sys.path.append(p)
+        try:
+            # Create an agent inside a package so I can then test 
+            # the absolute import on which the system is based.
+            #
+            # mypackage.myagent
+            #
+            mypkg = os.path.join(p,'mypackage')
+            os.mkdir(mypkg)
+            
+            f = os.path.join(mypkg, '__init__.py')
+            fd = open(f, 'wb')
+            fd.write("\n")
+            fd.close()
+            
+            # Create an agent module that import_module should find and load.
+            #
+            f = os.path.join(mypkg, 'myagent.py')
+            fd = open(f, 'wb')
+            fd.write("""
+
+class Agent(object):
+    pass
+        
+            """)
+            fd.close()
+            
+            # This shouldn't create any import exceptions: 
+            class Obj:
+                type = 'agent'
+                agent = 'mypackage.myagent'
+            director.config.import_module(Obj.type, Obj())
+            
+            # Try this from configuration file:
+            test_config = """
+            [director]
+
+            [agency]
+            # I don't really need this here as its enabled by default
+            disabled = 'no'
+            
+            [fancyagent]
+            cat = 'misc'
+            agent = 'mypackage.myagent'
+            
+            """
+            objs = director.config.recover_objects(test_config)
+            
+            agents = director.config.load_agents(objs)
+
+            self.assertEquals(len(agents), 1)
+            m = __import__('mypackage.myagent', fromlist=['mypackage',])
+            self.assertEquals(isinstance(agents[0], m.Agent), True, "Agent not recovered correctly!")
+            
+            controllers = director.config.load_controllers(objs)
+            self.assertEquals(len(controllers), 0)
+            
+            
+            # Create an controller module that import_module should find and load.
+            #
+            f = os.path.join(mypkg, 'mycontroller.py')
+            fd = open(f, 'wb')
+            fd.write("""
+
+class Controller(object):
+    pass
+        
+            """)
+            fd.close()
+            
+            # This shouldn't create any import exceptions: 
+            class Obj:
+                type = 'controller'
+                controller = 'mypackage.mycontroller'
+            director.config.import_module(Obj.type, Obj())
+            
+            # Try this from configuration file:
+            test_config = """
+            [director]
+            
+            [supercontroller]
+            controller = 'mypackage.mycontroller'
+            
+            """
+            objs = director.config.recover_objects(test_config)
+            agents = director.config.load_agents(objs)
+            
+            self.assertEquals(len(agents), 0)
+            
+            controllers = director.config.load_controllers(objs)
+            self.assertEquals(len(controllers), 1)
+            m = __import__('mypackage.mycontroller', fromlist=['mypackage',])
+            self.assertEquals(isinstance(controllers[0], m.Controller), True, "Controller not recovered correctly!")
+            
+        finally:
+            self.cleanUp(p)
+
+
+    def testdirectorConfigByNameRecovery(self):
+        """Test that I can get named config objects from the global configuration.
+        """
+        test_config = """
+        [director]
+        disabled = 'no'
+        
+        [broker]
+        disabled = 'no'
+        
+        [agency]
+        disabled = 'no'
+
+            [aardvark]
+            order = 1
+            cat = swipe
+            agent = myswipe
+
+            [bat]
+            order = 0
+            cat = swipe
+            agent = myswipe
+            
+        """
+        director.config.clear()
+        director.config.set_cfg(test_config)
+        c = director.config.get_cfg()
+        
+        self.assertEquals(c.obj.director is None, False)
+        self.assertEquals(c.obj.broker is None, False)
+        self.assertEquals(c.obj.agency is None, False)
+        self.assertEquals(c.obj.webadmin is None, True)
+        
+        # This is the default order in which the objects should be recovered:
+        self.assertEquals(c.obj.director.name, 'director')
+        self.assertEquals(c.obj.director.order, 0)
+        
+        # Check the agents are present:
+        agents = c.obj.agency.agents
+        self.assertEquals(len(agents), 2)
+        
+        # Check the default ordering of the recovered agents:
+        self.assertEquals(agents[0].name, 'bat')
+        self.assertEquals(agents[0].order, 0)
+        self.assertEquals(agents[1].name, 'aardvark')
+        self.assertEquals(agents[1].order, 1)
+
+
     def testWebAdminConfigRecovery(self):
         """Test the parsing of the config recovering any webadmin modules mentioned.
         """
@@ -106,40 +268,116 @@ class DirectorConfigTC(unittest.TestCase):
         
         self.assertEquals(module_names, correct, msg)
 
-
-    def testRequiredConfigSection(self):
-        """Test that the evasion section is present in the given config file.
+        
+    def testConfigErrors(self):
+        """Test the bad configuration handling
         """
-        # Check that no setup done is caught:
-        self.assertRaises(director.config.ConfigNotSetup, director.config.get_cfg)
+        # No director section
+        test_config = ""
+        director.config.clear()
+        self.assertRaises(director.config.ConfigError, director.config.set_cfg, test_config)
 
-        # Check we don't get and problems with files...
-        testcfg = """
-[director] 
-somevalue = 123
-"""
-        director.config.set_cfg(testcfg)
-        c = director.config.get_cfg()
+        # Two+ director sections:
+        test_config = """
+        [director]
+        
+        [director]
+        """
+        director.config.clear()
+        self.assertRaises(director.config.ConfigError, director.config.set_cfg, test_config)
 
-        self.assertEquals(c.raw, testcfg)
-        self.assertEquals(c.cfg['director']['somevalue'], '123')
+        # Two+ broker sections:
+        test_config = """
+        [director]
+        
+        [broker]
+        
+        [broker]
+        """
+        director.config.clear()
+        self.assertRaises(director.config.ConfigError, director.config.set_cfg, test_config)
+
+        # Two+ agency sections:
+        test_config = """
+        [director]
+
+        [agency]
+        
+        [agency]
+        
+        """
+        director.config.clear()
+        self.assertRaises(director.config.ConfigError, director.config.set_cfg, test_config)
+
+        # Two+ webadmin sections:
+        test_config = """
+        [director]
+
+        [webadmin]
+        
+        [webadmin]
+        
+        """
+        director.config.clear()
+        self.assertRaises(director.config.ConfigError, director.config.set_cfg, test_config)
 
 
     def testdirectorConfig(self):
         """Test the configuration set and machinery
         """
-        testcfg = """
-        [director] 
-        somevalue = 123
+        test_config = """
+        [director]
+        disabled = 'no'
+        
+        [broker]
+        disabled = 'no'
+        
+        [agency]
+        disabled = 'no'
+
+            [aardvark]
+            order = 1
+            cat = swipe
+            agent = myswipe
+
+            [bat]
+            order = 0
+            cat = swipe
+            agent = myswipe
+            
         """
         
         # Reset and Check that no setup done is caught:
         director.config.clear()
+        
         self.assertRaises(director.config.ConfigNotSetup, director.config.get_cfg)
 
         # Check we don't get and problems with files...
-        director.config.set_cfg(testcfg)
-        director.config.get_cfg()
+        director.config.set_cfg(test_config)
+        
+        c = director.config.get_cfg()
+        
+        # This should only contain 5 as the agents should be part of 
+        # the agency.agents member:
+        self.assertEquals(len(c.cfg), 3)
+        
+        # This is the default order in which the objects should be recovered:
+        self.assertEquals(c.cfg[0].name, 'director')
+        self.assertEquals(c.cfg[0].order, 0)
+        self.assertEquals(c.cfg[1].name, 'broker')
+        self.assertEquals(c.cfg[1].order, 1)
+        self.assertEquals(c.cfg[2].name, 'agency')
+        self.assertEquals(c.cfg[2].order, 2)
+        
+        # Check the agents are present:
+        agents = c.cfg[2].agents
+        self.assertEquals(len(agents), 2)
+        
+        # Check the default ordering of the recovered agents:
+        self.assertEquals(agents[0].name, 'bat')
+        self.assertEquals(agents[0].order, 0)
+        self.assertEquals(agents[1].name, 'aardvark')
+        self.assertEquals(agents[1].order, 1)
 
 
     def testOrdering(self):

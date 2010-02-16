@@ -69,9 +69,11 @@ class Manager(object):
 
         """
         self.log.info("controllerSetup: loading controllers from config.")
-        cfg = director.config.get_cfg().raw
+        c = director.config.get_cfg().cfg
         
-        self.controllers = director.config.load(cfg)
+        # Recover and import the controllers:
+        self.controllers = director.config.load_controllers(cfg)
+        
         if self.controllers:
             # Setup all enabled controllers:
             for order, ctl in self.controllers:
@@ -96,9 +98,8 @@ class Manager(object):
         messenger will determine when its time to exit.
         
         """
-        c = director.config.get_cfg()
-        cfg = c.cfg['director']
-        poll_time = float(cfg.get('poll_time', '1'))
+        c = director.config.get_cfg().cfg
+        poll_time = float(c.obj.director.poll_time)
             
         # Set up all signals handlers provided by the director:
         self.signals.setup()
@@ -178,27 +179,25 @@ class Manager(object):
         
         """
         self.log.info("main: setting up stomp connection.")        
-
-        cfg = director.config.get_cfg().cfg
-        cfg = cfg['director']
+        c = director.config.get_cfg().cfg
         
-        disable_broker = cfg.get('disable_broker', 'no')
+        disable_broker = c.obj.director.disable_broker
         if disable_broker == 'no':
             # Set up the messenger protocols where using:
             self.log.info("main: setting up stomp connection to broker.")
             messenger.stompprotocol.setup(dict(
-                host=cfg.get('msg_host'),
-                port=int(cfg.get('msg_port')),
-                username=cfg.get('msg_username'),
-                password=cfg.get('msg_password'),
-                channel=cfg.get('msg_channel'),
+                host=c.obj.director.msg_host,
+                port=c.obj.director.msg_port,
+                username=c.obj.director.msg_username,
+                password=c.obj.director.msg_password,
+                channel=c.obj.director.msg_channel,
             ))
         else:
             self.log.warn("main: the director's broker connection is disabled (disable_broker = 'yes').")
             
-        noproxydispatchbroker = cfg.get('noproxydispatch', 'no')
+        noproxydispatchbroker = c.obj.director.noproxydispatch
         if noproxydispatchbroker == 'no':
-            port = int(cfg.get('proxydispatch_port', 1901))
+            port = int(c.obj.director.proxydispatch_port)
             self.log.info("main: setting up reply proxy dispatch http://127.0.0.1:%s/ ." % port)
             proxydispatch.setup(port)
         else:

@@ -43,7 +43,7 @@ def render_config(cfg, template_data, outputfile):
         data = Template(template_data, output_encoding='utf8', encoding_errors='strict').render(**cfg)        
     except:
         ok = False
-        print("""Template data:
+        get_log().debug("""Template data:
 %s
 
 outfile:
@@ -51,7 +51,7 @@ outfile:
 
 """ % (pprint.pformat(cfg), outputfile))
 
-        print("""Error Create Template:
+        get_log().debug("""Error Create Template:
 %s
 
 """ % exceptions.text_error_template().render())
@@ -75,9 +75,9 @@ def create_config(cfg_dict):
     from pkg_resources import resource_string
     from mako.template import Template
 
-    print("Creating initial configuration.")
+    get_log().debug("Creating initial configuration.")
 
-    # Fill in the template information with XUL Browser path:
+    # Fill in the template information with viewpoint path:
     cfg_dict['viewpoint_path'] = ''
     try:
         # Attempt to set up the path to the evasion viewpoint XUL app
@@ -206,7 +206,7 @@ def main():
 
     # Load the system config:
     if not os.path.isfile(options.config_filename):
-        print "The config file name '%s' wasn't found" % options.config_filename
+        sys.stderr.write("The config file name '%s' wasn't found" % options.config_filename)
         sys.exit(1)
 
     else:    

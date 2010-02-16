@@ -121,9 +121,11 @@ class Director(Base):
         # anything else.
 
     """
+    type = 'director'
+    
     def __init__(self):
         Base.__init__(self)
-        self.name = 'director'
+        self.name = self.type
         self.order = 0
         self.msg_host = '127.0.0.1'
         self.msg_port = 61613
@@ -134,8 +136,6 @@ class Director(Base):
         self.noproxydispatch = 'no'
         self.proxy_dispatch_port = 1901
         self.webadmin = 'director.webadmin'
-        # not used from base
-        del self.disabled
 
 
     def __str__(self):
@@ -167,9 +167,11 @@ class Broker(Base):
         disabled = 'yes' | 'no'
 
     """
+    type = 'broker'
+    
     def __init__(self):
         Base.__init__(self)
-        self.name = 'broker'
+        self.name = self.type
         self.order = 1
         self.disabled = 'no'
         self.controller = 'director.controllers.commandline'
@@ -203,9 +205,11 @@ class Agency(Base):
     recovered.
     
     """
+    type = 'agency'
+    
     def __init__(self):
         Base.__init__(self)
-        self.name = 'agency'
+        self.name = self.type
         self.order = 2
         self.webadmin = 'agency.webadmin'
         self.disabled = 'no'
@@ -242,6 +246,8 @@ class Agent(Base):
         disabled = 'yes' | 'no'
     
     """
+    type = 'agent'
+    
     def __init__(self):
         Base.__init__(self)
         self.agent = None
@@ -288,9 +294,11 @@ class WebAdmin(Base):
         disabled = 'yes' | 'no'
 
     """
+    type = 'webadmin'
+    
     def __init__(self):
         Base.__init__(self)
-        self.name = 'webadmin'
+        self.name = self.type
         self.order = 4
         self.disabled = 'no'
         self.host = '127.0.0.1'
@@ -326,6 +334,8 @@ class Controller(Base):
         # anything else.
     
     """
+    type = 'controller'
+    
     def __init__(self):
         Base.__init__(self)
         self.required = ['name','order','controller']
@@ -341,6 +351,8 @@ class Container(Base):
     from the configuration. The '[<section>]' will become the 
     name of the container.
     """
+    type = 'container'
+    
     def __init__(self):
         Base.__init__(self)
 

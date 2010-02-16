@@ -31,12 +31,14 @@ This module provides the director configuration parsing and handling.
 .. autofunction:: director.config.load(config)
 
 """
+import copy
 import pprint
 import logging
 import StringIO
 import traceback
 import configobj
 import itertools
+import threading
 from configobj import ConfigObj
 
 
@@ -64,6 +66,7 @@ class ConfigError(Exception):
 # Private: represents the current ConfigStore instance
 # holding the config and configobj instance.
 #
+__configLock = threading.Lock()
 __config = None
 
 
@@ -79,6 +82,22 @@ class ConfigStore:
     def __init__(self, raw, cfg):
         self.raw = raw
         self.cfg = cfg
+        class Obj(object):
+            def __init__(self):
+                self.director = None
+                self.broker = None
+                self.agency = None
+                self.webadmin = None
+        self.obj = Obj()
+        for i in cfg:
+            if i.name == 'director':
+                self.obj.director = i
+            if i.name == 'broker':
+                self.obj.broker = i
+            if i.name == 'agency':
+                self.obj.agency = i
+            if i.name == 'webadmin':
+                self.obj.webadmin = i
 
 
 def clear():
@@ -88,7 +107,9 @@ def clear():
     
     """
     global __config
+    __configLock.acquire()
     __config = None
+    __configLock.release()
     
 
 def get_cfg():
@@ -100,8 +121,13 @@ def get_cfg():
     """
     if not __config:
         raise ConfigNotSetup("No configuration has been setup.")
-    
-    return __config
+    __configLock.acquire()
+    try:
+        rc =  copy.deepcopy(__config)
+    finally:
+        __configLock.release()
+        
+    return rc
 
 
 def set_cfg(raw):
@@ -112,9 +138,15 @@ def set_cfg(raw):
     
     """
     global __config
-    fd = StringIO.StringIO(raw)
-    cfg = ConfigObj(infile=fd)
-    __config = ConfigStore(raw, cfg)
+    
+    # Recover the objects and store them:
+    objs = recover_objects(raw)
+    
+    __configLock.acquire()
+    try:
+        __config = ConfigStore(raw, objs)
+    finally:
+        __configLock.release()
     
 
 MAPPED_SECTIONS = dict(
@@ -158,14 +190,27 @@ def recover_objects(config):
         its agents member and these will be ordered by defaults
         or by the order attribute if it was used.
 
+    ConfigError will be raised if the configuration contains two
+    sections with the same name.
+
+    If the configuration does not contain the [director] section
+    the ConfigError will be raised.
+    
     """
-    cfg = configobj.ConfigObj(StringIO.StringIO(config))
+    try:
+        cfg = configobj.ConfigObj(StringIO.StringIO(config))
+        
+    except configobj.DuplicateError, e:
+        raise ConfigError('Error in director configuraion - %s' % e)
 
     class R(object):
         def __init__(self):
             self.returned = []
             self.agency = None
             self.agents = []
+            self.director = None
+            self.broker = None
+            self.webadmin = None
             self.agentCount = itertools.count(0)
             # Start at 4, 0-3 are reserved by default
             # for director,broker,agency&webadmin:
@@ -191,9 +236,14 @@ def recover_objects(config):
                     rsection.pop('name')
                 if 'order' not in rsection:
                     container.order = default_order
+                if section == 'director':
+                    self.director = container
+                if section == 'broker':
+                    self.broker = container
                 if section == 'agency':
-                    # store agency so we can add agents to it.
                     self.agency = container
+                if section == 'webadmin':
+                    self.webadmin = container
                 self.setup(container, rsection)
                 
             elif 'agent' in rsection:
@@ -226,6 +276,10 @@ def recover_objects(config):
 
     r = R()
     [r.recover(section) for section in cfg]
+
+    # Check there is at least a director section
+    if not r.director:
+        raise ConfigError("The configuration contains no [director] section!")
     
     # Add any recovered agents to the agency 'agents' member:
     if r.agency:
@@ -276,17 +330,9 @@ def webadmin_modules(config_objs):
     returned = []
 
     def setup(obj):
-        type = 'container'
-        if isinstance(obj, Director) or isinstance(obj, Broker) or \
-           isinstance(obj, Agency) or isinstance(obj, WebAdmin):
-            type = obj.name
-        elif isinstance(obj, Agent):
-            type = 'agent'
-        elif isinstance(obj, Controller):
-            type = 'controller'
         return dict(
             name=obj.name,
-            type=type,
+            type=obj.type,
             webadmin=obj.webadmin,
         )
     
@@ -306,90 +352,106 @@ def webadmin_modules(config_objs):
     return returned
 
 
+def import_module(import_type, obj):
+    """
+    Called to import a module as recovered from the agent
+    or controller attribute.
     
-def load(config):
-    """Called to test and then load the controller configuration.
+    :param import_type: 'agent' or 'controller'
     
-    config:
-        This is a string representing the contents of the
-        configuration file.
+    The agent or controller attributes must contain the 
+    absolute import path. I.e <mypackage>.<mymodule>
     
-    check:
-        If this is given the callback will be invoked and
-        given the node and alias of the config object. The
-        callback can then check if its unique. Its up to the
-        user to determine what to do if they're not.
+    The import must contain a class called Agent or
+    Controller.
+    
+    """
+    # default: nothing found.
+    returned = None
+    
+    if import_type == 'agent':
+        import_string = obj.agent
+        import_class = 'Agent'
+    else:
+        import_string = obj.controller
+        import_class = 'Controller'
+    
+    # Check I can at least import the stated module.
+    try:
+        importmod = import_string
+        fromlist = import_string.split('.')
+        # absolute imports only (level=0):
+        imported_agent = __import__(importmod, fromlist=fromlist, level=0)
+        
+    except ImportError, e:
+         raise ImportError("The controller '%s' from section '%s' was not found! %s" % (
+             importmod,
+             section,
+             traceback.format_exc()
+         ))
+
+    # Now see if it contains a Controller category all agent must have to load:
+    if hasattr(imported_agent, import_class):
+        returned = getattr(imported_agent, import_class)
+        returned = returned()
+        
+    return returned
+
+    
+def load_controllers(config_objs):
+    """Called to test and then load the controllers from the configuration.
+    
+    config_objs:
+        This is a list as returned by recover_objects()
     
     returned:
         This returns a list of config containers loaded with
         the entries recovered from the device's section.
     
     """
-    cfg = configobj.ConfigObj(StringIO.StringIO(config))
-    processed = {}
-    
-    def recover(section, key):        
-        # If the section does not have and 'agent' then it is not considered and ignored.
-        if 'controller' not in section:
-            #get_log().info("The config section '%s' does not appear to be an controller key. Ignoring." % key)
-            return
-    
-        value = section[key]
-        disabled = section.get('disabled','no')
-        c = processed.get(section.name, Container())            
+    returned = []
+
+    for obj in config_objs:
+        disabled = getattr(obj, 'disabled', 'no')
+        type = getattr(obj, 'type', '')
         
-        if not c.name:
-            c.name = section.name    
-        
-        if not c.config:
-            c.config = section
-                        
-        elif key == 'controller' and disabled == 'no':
-            def recover_agent():
-                # default: nothing found.
-                returned = None
-                
-                # Check I can at least import the stated module.
-                try:
-                    importmod = section[key]
-                    fromlist = section[key].split('.')
-                    # absolute imports only (level=0):
-                    imported_agent = __import__(importmod, fromlist=fromlist, level=0)
-                    
-                except ImportError, e:
-                     raise ImportError("The controller '%s' from section '%s' was not found! %s" % (
-                         importmod,
-                         section,
-                         traceback.format_exc()
-                     ))
+        if disabled == 'no' and type == 'controller':
+            returned.append(
+                import_module(obj.type, obj)
+            )
 
-                # Now see if it contains a Controller category all agent must have to load:
-                if hasattr(imported_agent, 'Controller'):
-                    returned = getattr(imported_agent, 'Controller')
-                    returned = returned()
-                    
-                return returned
+    return returned    
 
-            value = recover_agent()
-            if not value:
-                raise ConfigError("I was unable to import '%s' from '%s'." % (item, current))
-
-        # Only store if this section isn't disabled
-        if  disabled == 'no':
-            setattr(c, key, value)
-            processed[section.name] = c
-        
-    # Process all the config sections creating config containers.
-    cfg.walk(recover)
     
-    # Verify we've got all the sections I require:
-    def order_setup_and_check(c):
-        c.check()
-        return (c.order, c)
-
-    returned = [order_setup_and_check(c) for c in processed.values()]
-    returned.sort()
+def load_agents(config_objs):
+    """Called to test and then load the agents from the configuration.
     
-    return returned
+    If the [agency] is disabled then no agents will be 
+    present to load. The agency is enabled by default,
+    so any agents entries will be present in the agency's
+    agents member.
+    
+    config_objs:
+        This is a list as returned by recover_objects()
+    
+    returned:
+        This returns a list of config containers loaded with
+        the entries recovered from the device's section.
+    
+    """
+    returned = []
+
+    for obj in config_objs:
+        if obj.disabled == 'no' and obj.type == 'agency':
+            print "agency present"
+            for a in obj.agents:
+                print "agent: ", a
+                returned.append(
+                    import_module('agent', a)
+                )
+
+    return returned    
+
+
 
 
