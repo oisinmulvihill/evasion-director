@@ -19,18 +19,19 @@ def configure(map):
     
     # Set up the routing for our URLs
     #
-    base = 'director.webadmin.%s'
+    base = 'webadmin.controllers.%s'
     
     # The ErrorController route (handles 404/500 error pages); it should
     # likely stay at the top, ensuring it can always be resolved
-    map.connect('/error/{action}', controller='error')
-    map.connect('/error/{action}/{id}', controller='error')
+    map.connect('/error/{action}', controller=base % 'error')
+    map.connect('/error/{action}/{id}', controller=base % 'error')
     
     # Root site:
-    map.connect('root', '/', controller='root', action='index')
-    map.connect('login', '/login', controller='root', action='login')
-    map.connect('/{controller}/{action}')
-    map.connect('/{controller}/{action}/{id}')
+    map.connect('root', '/', controller=base % 'root', action='index')
+    map.connect('login', '/login', controller=base % 'root', action='login')
+    
+#    map.connect('/{controller}/{action}')
+#    map.connect('/{controller}/{action}/{id}')
 
     return dict(
         controllers = controllers_dir,

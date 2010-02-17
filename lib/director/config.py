@@ -128,13 +128,17 @@ def get_cfg():
     """
     if not __config:
         raise ConfigNotSetup("No configuration has been setup.")
-    __configLock.acquire()
-    try:
-        rc =  copy.deepcopy(__config)
-    finally:
-        __configLock.release()
-        
-    return rc
+    
+    # Won't work once module imports are added:
+    #__configLock.acquire()
+    #try:
+    #    rc =  copy.deepcopy(__config)
+    #finally:
+    #    __configLock.release()
+    #
+    #return rc
+    
+    return __config
     
 
 def update_objs(objs):
@@ -254,6 +258,8 @@ def recover_objects(config):
                     # Make these numbers and not strings.
                     value = int(value)
                 setattr(c, key, value)
+            # store the config dict section
+            c.config = s
 
         def recover(self, section):
             """Convert to configobjs"""
@@ -262,18 +268,22 @@ def recover_objects(config):
                 default_order, container = MAPPED_SECTIONS[section]
                 container = container()
                 if 'name' in rsection:
-                    # remove this if its present in favour of hardcoded.
+                    # remove this if its present in favour of hardcoded values.
                     rsection.pop('name')
                 if 'order' not in rsection:
                     container.order = default_order
                 if section == 'director':
                     self.director = container
+                    #get_log().debug("recover_objects: 'director' found.")
                 if section == 'broker':
                     self.broker = container
+                    #get_log().debug("recover_objects: 'broker' found.")
                 if section == 'agency':
                     self.agency = container
+                    #get_log().debug("recover_objects: 'agency' found.")
                 if section == 'webadmin':
                     self.webadmin = container
+                    #get_log().debug("recover_objects: 'webadmin' found.")
                 self.setup(container, rsection)
                 
             elif 'agent' in rsection:

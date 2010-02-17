@@ -1,8 +1,8 @@
 """
-:mod:`agencyhq` -- This runs the agency without needing to spawnit under another python process.
+:mod:`agency` -- This runs the agency without needing to spawnit under another python process.
 =================================================================================================
 
-.. module:: agencyhq
+.. module:: agency
    :platform: Unix, MacOSX, Windows
    :synopsis: This provides the interface to command line processes.
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
@@ -30,13 +30,19 @@ class Controller(base.Controller):
 
         [agency]
         # Standard options example:
-        disabled = 'no'
-        order = 1
         controller = 'director.controllers.agencyctrl'
+        
+        # (OPTIONAL) Uncomment to prevent this controller
+        # from being used. If the agency is disabled no agents
+        # will be recovered from config or loaded.
+        #disabled = 'yes'
+        
+        # (OPTIONAL) When to start the agency. It should start after the 
+        # broker.
+        order = 2
 
-    The agency uses the raw director config to look for
-    agents to load and run. It will recover the configuration
-    using director.config.get_cfg().raw
+    The agency uses the director system wide config should be set 
+    up by the time setUp method is called.
 
     """
     log = logging.getLogger('director.controllers.agencyctrl')
@@ -62,8 +68,7 @@ class Controller(base.Controller):
         # Get the raw config and recover the agents we'll be using:
         self.log.info("setUp: setting up the agency and recovering agents.")
         self.manager = Manager()
-        cfg = director.config.get_cfg().raw
-        self.manager.load(cfg)
+        self.manager.load()
         self.manager.setUp()        
 
         self.log.info("setUp: agents loaded '%d'." % self.manager.agents)

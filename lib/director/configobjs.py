@@ -54,6 +54,7 @@ class Base(object):
         self.name = None
         self.order = None
         self.disabled = "no"
+        # This is a dict of the config section.
         self.config = None
         self.webadmin = ''
         # This is the loaded module as recovered by import_module
@@ -130,6 +131,7 @@ class Director(Base):
         Base.__init__(self)
         self.name = self.type
         self.order = 0
+        self.poll_time = float(1.0)
         self.msg_host = '127.0.0.1'
         self.msg_port = 61613
         self.msg_username = ''
@@ -138,7 +140,21 @@ class Director(Base):
         self.disable_broker = 'no'
         self.noproxydispatch = 'no'
         self.proxy_dispatch_port = 1901
-        self.webadmin = 'director.webadmin'
+        self.webadmin = '' #'director.webadmin'
+        
+        # Fake the director's mod so it can be used like a controller.
+        #
+        class F:
+            """Based on director.controllers.base:Base but 
+            there is no point importing it just for this.
+            """
+            def setUp(self, config): pass
+            def start(self): pass
+            def isStarted(self): return True
+            def stop(self): return True
+            def isStopped(self): return True
+            def tearDown(self): pass
+        self.mod = F()
 
 
     def __str__(self):
@@ -183,7 +199,7 @@ class Broker(Base):
 
 
     def __str__(self):
-        return "<Broker: order:%s>" % (self.order)
+        return "<Broker: order:%s disabled:%s>" % (self.order, self.disabled)
 
 
 class Agency(Base):
@@ -214,13 +230,13 @@ class Agency(Base):
         Base.__init__(self)
         self.name = self.type
         self.order = 2
-        self.webadmin = 'agency.webadmin'
+        self.webadmin = '' #'agency.webadmin'
         self.disabled = 'no'
         self.controller = 'director.controllers.agencyctrl'
         self.agents = []
 
     def __str__(self):
-        return "<Agency: order:%s>" % (self.order)
+        return "<Agency: order:%s disabled:%s>" % (self.order, self.disabled)
 
 
 class Agent(Base):
@@ -265,7 +281,11 @@ class Agent(Base):
 
 
     def __str__(self):
-        return "<Agent: name:%s agent order:%s>" % (self.name, self.order)
+        return "<Agent: name:%s agent order:%s disabled:%s>" % (
+            self.name, 
+            self.order, 
+            self.disabled
+        )
 
 
 class WebAdmin(Base):
@@ -307,13 +327,18 @@ class WebAdmin(Base):
         self.disabled = 'no'
         self.host = '127.0.0.1'
         self.port = 29875
-        self.controller = 'director.controllers.commandline'
+        
+        # Use the default root site admin:
+        self.webadmin = "webadmin"
+        
+        # noop for the moment:
+        self.controller = 'director.controllers.base'
         self.command = "runwebadmin --config development.ini"
         self.workingdir = ""
 
 
     def __str__(self):
-        return "<WebAdmin: order:%s>" % (self.order)
+        return "<WebAdmin: order:%s disabled:%s>" % (self.order, self.disabled)
 
 
 class Controller(Base):
@@ -347,7 +372,7 @@ class Controller(Base):
 
 
     def __str__(self):
-        return "<Controller: order:%s name:%s>" % (self.order, self.name)
+        return "<Controller: order:%s name:%s disabled:%s>" % (self.order, self.name, self.disabled)
 
 
 class Container(Base):

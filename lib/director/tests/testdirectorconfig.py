@@ -76,6 +76,8 @@ class Agent(object):
             order = 3
             cat = 'misc'
             agent = 'mypackage.myagent'
+            bob = '1234'
+            port = 59876
             
             """
             director.config.set_cfg(test_config)
@@ -86,6 +88,16 @@ class Agent(object):
             # The agency will be in position 1 (order 1). There should be
             # two agents present, even though the second one is disabled.
             self.assertEquals(len(objs[1].agents), 2)
+            
+            # Check the config section is stored as part of the config 
+            # attribute:
+            a = objs[1].agents[1]
+            self.assertEquals(a.config['disabled'], 'yes')
+            self.assertEquals(a.config['order'], '3')
+            self.assertEquals(a.config['cat'], 'misc')
+            self.assertEquals(a.config['agent'], 'mypackage.myagent')
+            self.assertEquals(a.config['bob'], '1234')
+            self.assertEquals(a.config['port'], '59876')
             
             m = __import__('mypackage.myagent', fromlist=['mypackage',])
             self.assertEquals(isinstance(objs[1].agents[0].mod, m.Agent), True, "Agent not recovered correctly!")

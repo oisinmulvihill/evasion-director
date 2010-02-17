@@ -19,13 +19,7 @@ class RootController(BaseController):
         
 
     def index(self):
-        
-        # Check if the director is present
-        self.director.ping()
-    
-        c.modules = self.director.webadminModules()
-    
-        return render('/root.mako')
+        return 'site root' #render('root.mako')
 
 
     def login(self):

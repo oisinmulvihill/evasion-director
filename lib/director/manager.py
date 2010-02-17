@@ -36,6 +36,8 @@ except ImportError, e:
 def get_log():
     return logging.getLogger("director.manager")
 
+    
+    
 
 class Manager(object):
     """Manages the running services determined by the configuration
@@ -75,20 +77,14 @@ class Manager(object):
         # Recover and import the controllers:
         self.controllers = director.config.load_controllers(c.cfg)
         self.log.info("controllerSetup: %s controller(s) recovered." % len(self.controllers))
-
-        import pprint
-        print("""
-        
-        pprint.pformat(self.controllers)
-        
-        %s
-        
-        """ % (pprint.pformat(self.controllers)))
         
         if self.controllers:
             # Setup all enabled controllers:
             for ctl in self.controllers:
                 controller = ctl.mod
+                if not controller:
+                    # skip
+                    continue
                 try:
                     if ctl.disabled == 'no':
                         controller.setUp(ctl.config)
@@ -97,7 +93,39 @@ class Manager(object):
                     sys.stderr.write("%s setUp error: %s" % (ctl, self.formatError()))
         else:
             self.log.warn("controllerSetup: no controllers found in config.")
-    
+
+
+    def shutdown(self):
+        """
+        Shutdown any remaining services and call their tearDown methods.
+
+        This is called before exit() is called.
+        
+        """
+        # Stop all enabled controllers:
+        for ctl in self.controllers:
+            controller = ctl.mod
+            if not controller:
+                # skip
+                continue
+            try:
+                controller.stop()
+            except:
+                self.log.exception("%s stop error: " % ctl)
+                sys.stderr.write("%s stop error: %s" % (ctl, self.formatError()))
+
+        # Teardown all enabled controllers:
+        for ctl in self.controllers:
+            controller = ctl.mod
+            if not controller:
+                # skip
+                continue
+            try:
+                controller.tearDown()
+            except:
+                self.log.exception("%s tearDown error: " % ctl)
+                sys.stderr.write("%s tearDown error: %s" % (ctl, self.formatError()))
+
 
     def appmain(self, isExit):
         """
@@ -122,17 +150,16 @@ class Manager(object):
         while not isExit():
             # Check the controllers are alive and restat if needs be:
             for ctl in self.controllers:            
-                if ctl.disabled == 'no':
-                    controller = ctl.mod
+                if ctl.disabled == 'no' and ctl.mod:
                     try:
-                        if not controller.isStarted():
-                            self.log.info("The controller '%s' needs to be started." % (ctl))
-                            controller.start()
-                            rc = controller.isStarted()
-                            self.log.info("Started ok '%s'? '%s'" % (ctl.name, rc))            
+                        if not ctl.mod.isStarted():
+                            self.log.info("appmain: The controller '%s' needs to be started." % (ctl))
+                            ctl.mod.start()
+                            rc = ctl.mod.isStarted()
+                            self.log.info("appmain: Started ok '%s'? '%s'" % (ctl.name, rc))            
                     except:
-                        self.log.exception("%s isStarted error: " % ctl)
-                        sys.stderr.write("%s isStarted error: %s" % (ctl, self.formatError()))
+                        self.log.exception("%s appmain error: " % ctl)
+                        sys.stderr.write("%s appmain error: %s" % (ctl, self.formatError()))
 
             # Don't busy wait if nothing needs doing:
             time.sleep(poll_time)
@@ -158,31 +185,6 @@ class Manager(object):
         return error
 
 
-    def shutdown(self):
-        """
-        Shutdown any remaining services and call their tearDown methods.
-
-        This is called before exit() is called.
-        
-        """
-        # Stop all enabled controllers:
-        for order, ctl in self.controllers:
-            try:
-                ctl.controller.stop()
-            except:
-                self.log.exception("%s stop error: " % ctl)
-                sys.stderr.write("%s stop error: %s" % (ctl, self.formatError()))
-
-
-        # Teardown all enabled controllers:
-        for order, ctl in self.controllers:
-            try:
-                ctl.controller.tearDown()
-            except:
-                self.log.exception("%s stop error: " % ctl)
-                sys.stderr.write("%s stop error: %s" % (ctl, self.formatError()))
-
-
     def main(self):
         """
         The main thread in which twisted and the messagin system runs. The
@@ -197,21 +199,24 @@ class Manager(object):
         if disable_broker == 'no':
             # Set up the messenger protocols where using:
             self.log.info("main: setting up stomp connection to broker.")
+            
             messenger.stompprotocol.setup(dict(
-                host=c.director.msg_host,
-                port=int(c.director.msg_port),
-                username=c.director.msg_username,
-                password=c.director.msg_password,
-                channel=c.director.msg_channel,
+                    host=c.director.msg_host,
+                    port=int(c.director.msg_port),
+                    username=c.director.msg_username,
+                    password=c.director.msg_password,
+                    channel=c.director.msg_channel,
             ))
+            
         else:
             self.log.warn("main: the director's broker connection is disabled (disable_broker = 'yes').")
-            
+
         noproxydispatchbroker = c.director.noproxydispatch
         if noproxydispatchbroker == 'no':
             port = int(c.director.proxy_dispatch_port)
             self.log.info("main: setting up reply proxy dispatch http://127.0.0.1:%s/ ." % port)
             proxydispatch.setup(port)
+
         else:
             self.log.warn("main: the director's proxydispatch is disabled (noproxydispatch = 'yes').")
 
@@ -223,5 +228,7 @@ class Manager(object):
             self.log.info("main: shutdown!")
             self.shutdown()
             self.exit()
+
+
             
 
