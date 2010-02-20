@@ -344,54 +344,6 @@ def recover_objects(config):
     return returned
 
 
-def webadmin_modules(config_objs):
-    """
-    Called to walk through the configuration objects and
-    recover a list of webadmin modules from any object with
-    it.
-    
-    config_objs:
-        This is a list as returned by recover_objects()
-    
-    returned:
-        A list of module names or and empty list if non were found.
-        
-        Format = [{
-                'webadmin' : '...', # contents of webadmin field.
-                'name' : '...', 
-                'type' : 'director' | 'broker' | 'agency' | 'webadmin' |
-                         'agent' | 'controller' | 'container'  
-            },
-            :
-            etc
-        ]
-
-    """
-    returned = []
-
-    def setup(obj):
-        return dict(
-            name=obj.name,
-            type=obj.type,
-            webadmin=obj.webadmin,
-        )
-    
-    def recover(obj):
-        disabled = getattr(obj, 'disabled', 'no')
-        webadmin = getattr(obj, 'webadmin', '')
-        webadmin = webadmin.strip()
-        
-        if disabled == 'no' and webadmin:
-            returned.append(setup(obj))
-            if obj.name == 'agency':
-                # put the agents after agency hq
-                [recover(o) for o in obj.agents]
-
-    [recover(o) for o in config_objs]
-
-    return returned
-
-
 def import_module(import_type, obj):
     """
     Called to import a module as recovered from the agent

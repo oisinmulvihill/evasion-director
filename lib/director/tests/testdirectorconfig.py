@@ -227,104 +227,6 @@ class Controller(object):
         self.assertEquals(agents[1].name, 'aardvark')
         self.assertEquals(agents[1].order, 1)
 
-
-    def testWebAdminConfigRecovery(self):
-        """Test the parsing of the config recovering any webadmin modules mentioned.
-        """
-        test_config = """
-        [director]
-        # This is the root level interface the webadmin will use if present:
-        webadmin = 'director.webadmin'
-
-        # anything can have a webadmin interface, I'm looking for the webadmin attribute:
-        [broker]
-        webadmin = 'webadminbroker'
-        
-        [agency]
-        webadmin = 'agency.webadmin'
-
-            # should show up as its got webadmin section and isn't disabled:
-            [testingsale]
-            cat = sale
-            agent = devicelayer.agents.testing.sale
-            webadmin = 'testsale'
-
-            # This agent has no webadmin so won't be present in modules
-            [testingprinter]
-            cat = printer
-            agent = devicelayer.agents.testing.printer
-
-            # This is disabled so its webadmin interface won't appear in modules:
-            [testingfrog]
-            disabled = 'yes'
-            cat = swipe
-            agent = myswipe
-            webadmin = 'webadminprinter'
-
-            [dog]
-            cat = swipe
-            agent = myswipe
-            webadmin = 'webadmindog'
-
-        [checkdir]
-        order = 4
-        controller = 'director.controllers.commandline'
-        command = "ls"
-        workingdir = "/tmp"
-        webadmin = 'bob.webadmin'
-
-        [echodir]
-        order = 5
-        controller = 'director.controllers.commandline'
-        command = "echo 'hello' > /tmp/hello.txt"
-        workingdir = "/tmp"
-
-        [lsdir]
-        order = 6
-        controller = 'director.controllers.commandline'
-        webadmin = listingadmin
-        command = "ls 'hello' > /tmp/dirlisting.txt"
-        workingdir = "/tmp"
-        
-        [somerandomsection]
-        order = 10
-        # This will become a catch all container object
-        bob = '1234'
-        uptime = True
-        webadmin = 'bobadmin'
-        
-        """
-        # Convert to config objects:
-        objs = director.config.recover_objects(test_config)
-        
-        # Recover the webadmin module names if any are mentioned 
-        # by the controllers.
-        module_names = director.config.webadmin_modules(objs)
-        
-        correct = [
-            dict(name='director',type='director',webadmin='director.webadmin'), 
-            dict(name='broker',type='broker',webadmin='webadminbroker'),
-            dict(name='agency',type='agency',webadmin='agency.webadmin'),
-            dict(name='testingsale',type='agent',webadmin='testsale'),
-            dict(name='dog',type='agent',webadmin='webadmindog'),
-            dict(name='checkdir',type='controller',webadmin='bob.webadmin'),
-            dict(name='lsdir',type='controller',webadmin='listingadmin'),
-            dict(name='somerandomsection',type='container',webadmin='bobadmin'),
-        ]
-       
-        msg = """
-        Recovery Failed, correct != recovered
-        
-        correct:
-        %s
-        
-        recovered:
-        %s
-        
-        """ % (pprint.pformat(correct), pprint.pformat(module_names))
-        
-        self.assertEquals(module_names, correct, msg)
-
         
     def testConfigErrors(self):
         """Test the bad configuration handling
@@ -514,28 +416,23 @@ class Controller(object):
         msg_channel = 'evasion'
         disable_broker = no
         poll_time = 1
-        webadmin = 'director.webadmin'
 
         [broker]
         host="localhost"
         port=61613
-        webadmin = 'webadminbroker'
         
         [agency]
         #disabled = 'yes'
-        webadmin = 'agency.webadmin'
 
             [aardvark]
             #disabled = 'yes'
             cat = swipe
             agent = myswipe
-            webadmin = 'webadmindog'
 
             [bat]
             #disabled = 'yes'
             cat = swipe
             agent = myswipe
-            webadmin = 'webadmincat'
 
         [webadmin]
         host="127.0.0.1"
@@ -545,7 +442,6 @@ class Controller(object):
         controller = 'director.controllers.commandline'
         command = "ls"
         workingdir = "/tmp"
-        webadmin = 'bob.webadmin'
         
         [somerandomsection]
         # This will become a catch all container object.

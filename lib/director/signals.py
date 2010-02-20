@@ -81,28 +81,6 @@ class SignalsSender(object):
             raise SignalTimeout("Director presence check failed! Is it running?")        
 
 
-    def webadminModules(self):
-        """
-        Called to ask the director for a list of python modules
-        which will form the basis of the webadmin frontend.
-
-        Event Dispatched: EVT_WEBADMIN_MODULES
-
-        """
-        modules = []
-        self.log.debug("webadminModules: asking the director for webadmin modules.")
-        evt = messenger.EVT("EVT_WEBADMIN_MODULES")
-        try:
-            rc = messenger.send_await(evt)
-            modules = rc['data']
-            self.log.debug("ping: received correct ping from director." % ())
-
-        except messenger.EventTimeout, e:
-            raise SignalTimeout("Timeout! No response to webadmin module request.")        
-        
-        return modules
-
-
 
 class SignalsReceiver(object):
     """
@@ -149,21 +127,6 @@ class SignalsReceiver(object):
         self.manager.exit()
 
 
-    def signalWebAdminModules(self, signal, sender, **data):
-        """
-        Called to handle the signal EVT_WEBADMIN_MODULES
-        """
-        self.log.info("main: EVT_WEBADMIN_MODULES received.")
-        
-        returned = director.config.webadmin_modules(self.manager.controllers)
-
-        self.log.debug("main: EVT_WEBADMIN_MODULES returned '%s'." % pprint.pformat(
-            returned
-        ))
-        
-        messenger.reply(signal, returned)
-
-
     def setup(self):
         """
         Called to set up the signal handlers which subscribe to all the 
@@ -184,10 +147,4 @@ class SignalsReceiver(object):
             signal=messenger.EVT("EVT_EXIT_ALL")
         )        
         self.log.info("signalSetup: EVT_EXIT_ALL signal setup.")
-            
-        # Register messenger hook for webadmin module list:
-        dispatcher.connect(
-            self.signalWebAdminModules,
-            signal=messenger.EVT("EVT_WEBADMIN_MODULES")
-        )        
-        self.log.info("signalSetup: EVT_WEBADMIN_MODULES signal setup.")
+
