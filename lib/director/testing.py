@@ -17,6 +17,8 @@ import threading
 
 from pydispatch import dispatcher        
 
+from director.morbid import setup
+
 
 class FakeViewpoint(object):
     """This provides a 'viewpoint' signal handler you can use 
@@ -132,3 +134,61 @@ class FakeViewpoint(object):
         # Indicate that we received an replace event:
         self.replaceOccured.set()
 
+
+def setup_broker(port=61613, interface='127.0.0.1'):
+    """
+    Called to start the internal broker listening
+    via twisted's reactor.
+
+    :param port: TCP port to listen on (default 61613)
+
+    :param interface: The interface to bind to (default 
+    127.0.0.1):
+
+    :returns: This returns a listening port instance
+    on which deferred = listener.stopListening() can
+    be called.
+
+    Ref:
+    http://twistedmatrix.com/documents/8.2.0/api/twisted.internet.interfaces.IReactorTCP.listenTCP.html
+
+    """
+    # lazy import to prevent import issues if were not using this function.
+    from twisted.internet import reactor
+    return setup(reactor, port, interface)
+    
+    
+def director_setup(test_config):
+    """
+    Create a director manager instance which can be used
+    from unit/acceptance/functional tests.
+    
+    :param test_config: this is a valid director config
+    string as you would have in its config file.
+    
+    :returns: A instance of director.manager:Manager
+    
+    """
+    # lazy import to prevent loops:
+    import director
+    from director import manager
+    from director.tools import net
+
+    broker_interface = '127.0.0.1'
+    broker_port = net.get_free_port()
+    proxy_port = net.get_free_port(exclude_ports=[broker_port,])
+    
+    # load this configuration into the director:
+    #
+    director.config.clear()
+    director.config.set_cfg(test_config % locals())
+    c = director.config.get_cfg()
+    
+    # Create the director management logic:
+    #
+    m = manager.Manager()
+    m.main(director_testing=True)
+    m.appmainSetup() # need this as mainloop is not in main now.
+    
+    return m
+    

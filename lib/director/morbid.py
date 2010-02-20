@@ -205,6 +205,18 @@ class StompFactory(Factory):
             pass    
 
 
+def setup(reactor, port, interface):
+    """Create a listenTCP entry in the reactor, which
+    if twisted is running will start the stomp broker
+    handling client connections.
+    
+    :param reactor: twisted reactor.
+    :param port: TCP port on which to listen.
+    :param interface: The interface on which to bind.
+    
+    """
+    reactor.listenTCP(port, StompFactory(), interface=interface)
+            
 
 def main(): 
     from optparse import OptionParser
@@ -229,7 +241,7 @@ def main():
     
     (options, args) = parser.parse_args(sys.argv)
     from twisted.internet import reactor
-    reactor.listenTCP(options.port, StompFactory(), interface=options.interface)
+    setup(reactor, options.port, options.interface)
     print "Starting Morbid Stomp server @ stomp://" + options.interface+ ":" + str(options.port)
     reactor.run()
     

@@ -21,6 +21,7 @@ import agency
 import director
 import messenger
 import director.config
+from director import testing
 from director import signals
 from pydispatch import dispatcher
 from director import proxydispatch
@@ -83,7 +84,7 @@ class Manager(object):
             for ctl in self.controllers:
                 controller = ctl.mod
                 if not controller:
-                    # skip
+                    self.log.warn("controllerSetup: %s module isn't loaded!" % ctl)
                     continue
                 try:
                     if ctl.disabled == 'no':
@@ -106,7 +107,7 @@ class Manager(object):
         for ctl in self.controllers:
             controller = ctl.mod
             if not controller:
-                # skip
+                self.log.warn("tearDown: %s module isn't loaded!" % ctl)
                 continue
             try:
                 controller.stop()
@@ -126,6 +127,27 @@ class Manager(object):
                 self.log.exception("%s tearDown error: " % ctl)
                 sys.stderr.write("%s tearDown error: %s" % (ctl, self.formatError()))
 
+                
+    def appmainSetup(self):
+        """
+        Called from appmain or from testing to set up the signal
+        handling and other items ready for a run / test run.
+        
+        :returns: poll_time used by the director as a sleep
+        between controller checks.
+        
+        """
+        c = director.config.get_cfg()
+        poll_time = float(c.director.poll_time)
+        
+        # Set up all signals handlers provided by the director:
+        self.signals.setup()
+
+        # Recover the controllers from director configuration.
+        self.controllerSetup()
+        
+        return poll_time
+
 
     def appmain(self, isExit):
         """
@@ -138,14 +160,8 @@ class Manager(object):
         messenger will determine when its time to exit.
         
         """
-        c = director.config.get_cfg()
-        poll_time = float(c.director.poll_time)
-            
-        # Set up all signals handlers provided by the director:
-        self.signals.setup()
-
-        # Recover the controllers from director configuration.
-        self.controllerSetup()
+        # Perform signal, controller, etc setup
+        poll_time = self.appmainSetup()
 
         while not isExit():
             # Check the controllers are alive and restat if needs be:
@@ -185,7 +201,7 @@ class Manager(object):
         return error
 
 
-    def main(self):
+    def main(self, director_testing=False):
         """
         The main thread in which twisted and the messagin system runs. The
         manager main run inside its own thread. The appman(...) is the
@@ -211,6 +227,19 @@ class Manager(object):
         else:
             self.log.warn("main: the director's broker connection is disabled (disable_broker = 'yes').")
 
+
+        # Use internal broker? This allow simplifies things and
+        # means we don't have to run a morbid/other program as
+        # a child process.
+        #
+        if c.director.internal_broker == 'yes':
+            self.log.warn("main: Starting the interal light weight broker (internal_broker = 'yes').")
+            from director import testing
+            testing.setup_broker(
+                int(c.director.msg_port), 
+                c.director.msg_interface
+            )
+
         noproxydispatchbroker = c.director.noproxydispatch
         if noproxydispatchbroker == 'no':
             port = int(c.director.proxy_dispatch_port)
@@ -220,14 +249,18 @@ class Manager(object):
         else:
             self.log.warn("main: the director's proxydispatch is disabled (noproxydispatch = 'yes').")
 
-        try:
-            self.log.info("main: Running.")
-            messenger.run(self.appmain)
+        if director_testing:
+            self.log.warn("main: testing active! The main loop is running elsewhere.")
             
-        finally:
-            self.log.info("main: shutdown!")
-            self.shutdown()
-            self.exit()
+        else:
+            try:
+                self.log.info("main: Running.")
+                messenger.run(self.appmain)
+                
+            finally:
+                self.log.info("main: shutdown!")
+                self.shutdown()
+                self.exit()
 
 
             

@@ -98,6 +98,11 @@ class Director(Base):
         msg_username = ''
         msg_password = ''
         msg_channel = 'evasion'
+        msg_interface = '127.0.0.1'
+        
+        # Start a light weight broker running as part of the 
+        # director process. This simplies certain installs
+        internal_broker = 'yes'
 
         # (OPTIONAL): Set this to 'yes' if you wish to stop the director connecting to the broker.
         disable_broker = 'no'
@@ -137,6 +142,8 @@ class Director(Base):
         self.msg_username = ''
         self.msg_password = ''
         self.msg_channel = 'evasion'
+        self.msg_interface = '127.0.0.1'
+        self.internal_broker = 'yes'
         self.disable_broker = 'no'
         self.noproxydispatch = 'no'
         self.proxy_dispatch_port = 1901

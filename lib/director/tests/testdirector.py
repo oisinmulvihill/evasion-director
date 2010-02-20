@@ -1,69 +1,44 @@
+"""
+"""
 import pprint
 import unittest
 
 import director
+import messenger
+from director.signals import SignalsSender
+from messenger.testing import message_main
+from director.testing import director_setup
 
-testcfg = """
-[director] 
-somevalue = 123
-"""
 
 class DirectorTC(unittest.TestCase):
 
 
-    def testProgramModuleLoading(self):
-        """Test the parsing of the director configuration and its ignoring of non-contoller modules.
+    def testPingSignal(self):
+        """Test a ping signal to the director.
         """
         test_config = """
-        [messenger]
-        # not a controller, should be ignored.
-        host="localhost"
-        port=61613
-
-        [checkdir]
-        disabled = 'no'
-        order = 1
-        controller = 'director.controllers.commandline'
-        command = "ls"
-        workingdir = "/tmp"
-
-        [echodir]
-        disabled = 'no'
-        order = 2
-        controller = 'director.controllers.commandline'
-        command = "echo 'hello' > /tmp/hello.txt"
-        workingdir = "/tmp"
-
-        [myswipe]
-        # Should ignore this too as its also not a program.
-        cat = 'general'
-        agent = 'agency.agents.testing.fake'
-        something = 1
+        [director]
+        msg_host = '%(broker_interface)s'
+        msg_port = %(broker_port)s
+        msg_username = ''
+        msg_password = ''
+        msg_channel = 'evasion'
+        msg_interface = '%(broker_interface)s'
+        proxy_dispatch_port = %(proxy_port)s
+        
+        # sets up a broker running when twisted runs:
+        internal_broker = 'yes'
         
         """
-        programs = director.config.load(test_config)
-        self.assertEquals(len(programs), 2)
-
-        # Just check empty cases return:
-        test_config = """
-        [messenger]
-        # not a controller, should be ignored.
-        host="localhost"
-        port=61613
-
-        [myswipe]
-        # Should ignore this too as its also not a program.
-        cat = 'general'
-        agent = 'agency.agents.testing.fake'
-        something = 1
-        """
-        programs = director.config.load(test_config)
-        self.assertEquals(len(programs), 0)
-
-        test_config = """
-        """
-        programs = director.config.load(test_config)
-        self.assertEquals(len(programs), 0)
-
+        m = director_setup(test_config)
+        
+        def testmain(tc):
+            """This should ping without raising a timeout exceptions"""
+            d = SignalsSender()
+            d.ping()
+       
+            
+        # Run inside the messaging system:
+        message_main(self, testmain, cfg=messenger.default_config['stomp'])
 
 
