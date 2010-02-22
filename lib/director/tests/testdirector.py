@@ -46,7 +46,7 @@ class DirectorTC(unittest.TestCase):
                 os.rmdir(os.path.join(root, name))
 
 
-    def makeController(self, my_controller):
+    def makeController(self, my_controller, my_agent=None):
         p = tempfile.mkdtemp()
         sys.path.append(p)
         get_log().debug("DirectorTC.makeController: test package location '%s'." % p)
@@ -69,7 +69,163 @@ class DirectorTC(unittest.TestCase):
         fd.write(my_controller)
         fd.close()
         
+        if my_agent:
+            f = os.path.join(mypkg, 'myagent.py')
+            fd = open(f, 'wb')
+            fd.write(my_agent)
+            fd.close()
+        
         return p
+
+
+    def testControllerConfigRecovery(self):
+        """Test a ping signal to the director.
+        """
+        my_controller = r"""
+import logging
+from director.controllers import base
+
+def get_log():
+    return logging.getLogger('director.tests.testdirector')
+
+class Controller(base.Controller):
+
+    def setUp(self, config):
+        base.Controller.setUp(self, config)
+        self.startCalled = False
+        self.stopCalled = False
+        self.tearDownCalled = False
+        self.isStartedCheck = False
+        self.isStoppedCheck = False
+        self.extraArg = config.get('extra_arg')
+        get_log().info('Controller: Setup Called!')
+
+    def start(self):
+        self.startCalled = True
+        self.isStartedCheck = True
+        get_log().info('Controller: start Called!')
+
+    def isStarted(self):
+        get_log().info('Controller: isStarted Called <%s>!' % self.isStartedCheck)
+        return self.isStartedCheck
+
+    def stop(self):
+        self.stopCalled = True
+        self.isStoppedCheck = True
+        get_log().info('Controller: stop Called!')
+
+    def isStopped(self):
+        get_log().info('Controller: isStopped Called <%s>!' % self.isStoppedCheck)
+        return self.isStoppedCheck
+
+    def tearDown(self):
+        self.tearDownCalled = True
+        get_log().info('Controller: tearDown Called!')
+
+        """
+        
+        my_agent = r"""
+import logging
+from agency import agent
+
+def get_log():
+    return logging.getLogger('director.tests.testdirector.testControllerConfigRecovery')
+
+class Agent(agent.Base):
+
+    def setUp(self, config):
+        self.tearDownCalled = False
+        self.startCalled = False
+        self.stopCalled = False
+    
+    def tearDown(self):
+        self.tearDownCalled = True
+
+    def start(self):
+        self.startCalled = True
+        
+    def stop(self):
+        self.stopCalled = True
+        
+        """
+        pkg_path = self.makeController(my_controller, my_agent)
+        
+        test_config = """
+        [director]
+        msg_host = '%(broker_interface)s'
+        msg_port = %(broker_port)s
+        msg_username = ''
+        msg_password = ''
+        msg_channel = 'evasion'
+        msg_interface = '%(broker_interface)s'
+        proxy_dispatch_port = %(proxy_port)s
+        
+        # sets up a broker running when twisted runs:
+        internal_broker = 'yes'
+        
+        [agency]
+        #disabled = 'yes'
+        order = 1
+            
+            [fancyagent]
+            #disabled = 'yes'
+            order = 1
+            cat = 'general'
+            agent = 'mypackage.myagent'        
+        
+        [mycontroller]
+        #disabled = 'yes'
+        order = 4
+        controller = 'mypackage.mycontroller'
+        extra_arg = 'hello there'
+
+        """
+        m = director_setup(test_config)
+        
+        def testmain(tc):
+            """"""
+            c = director.config.get_cfg()
+            self.assertNotEquals(c.director, None)
+            self.assertNotEquals(c.agency, None)
+            self.assertEquals(len(c.cfg), 3)
+            self.assertEquals(len(c.agency.agents), 1)
+            
+            # Quick ping to see if messaging is up and running:
+            d = signals.SignalsSender()
+            get_log().info("testControllerConfigReload: calling ping")
+            d.ping()
+            
+            # Check the initial state of our test controller. 
+            #
+            ctrl = c.cfg[2]
+            self.assertEquals(ctrl.disabled, 'no')
+            self.assertEquals(ctrl.order, 4)
+            self.assertEquals(ctrl.controller, 'mypackage.mycontroller')
+            self.assertNotEquals(ctrl.mod, None)
+            self.assertEquals(ctrl.extra_arg, 'hello there')
+
+            # Called to return a version of the config that
+            # could be pickled and transported externally.
+            # The main difference will be no module code will
+            # be exported as it won't pickle.
+            #
+            rc = d.configuration()
+            self.assertEquals(rc['result'], 'ok')
+
+            import pprint
+            get_log().debug("""
+            
+            
+            rc['data']
+            
+            %s
+            
+            
+            """ % (pprint.pformat(rc['data'])))
+            
+            
+        # Run inside the messaging system:
+        message_main(self, testmain, cfg=messenger.default_config['stomp'])
 
 
     def testControllerConfigReload(self):

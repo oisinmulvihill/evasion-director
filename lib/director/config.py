@@ -450,9 +450,6 @@ def import_module(import_type, obj):
         # absolute imports only (level=0):
         #get_log().debug("import_module: import<%s> fromlist<%s>" % (importmod, fromlist))
         imported_agent = __import__(importmod, fromlist=fromlist, level=0)
-        # Force a reload if this is the second time round to pickup 
-        # source level module changes.
-        reload(imported_agent)
         
     except ImportError, e:
          raise ImportError("The controller '%s' from '%s' could not be imported! %s" % (
@@ -638,4 +635,42 @@ def reload_controller(name, new_config):
     c = get_cfg()
     c.configobj[name] = new_config
     
-
+    
+def export_configuration():
+    """
+    Called to return the get_cfg() in a form that can travel i.e. pickle
+    
+    :returns: 
+    
+        returned = dict(
+            cfg = [..list of controller dicts from export call..],
+            director = '' | director.export(),
+            agency = '' | agency.export(),
+            broker = '' | broker.export(),
+            webadmin = '' | webadmin.export(),
+        )
+    
+    """
+    c = get_cfg()
+    
+    returned = dict(
+        cfg = [co.export() for co in c.cfg],
+        director = '',
+        agency = '',
+        broker = '',
+        webadmin = '',
+    )
+    
+    if c.director:
+        returned['director'] = c.director.export()
+    
+    if c.agency:
+        returned['agency'] = c.agency.export()
+    
+    if c.broker:
+        returned['broker'] = c.broker.export()
+    
+    if c.webadmin:
+        returned['webadmin'] = c.webadmin.export()
+    
+    return returned

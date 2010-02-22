@@ -46,17 +46,18 @@ class SectionError(Exception):
 class Base(object):
     """This is the base for all objects converted to from configuration sections.
     """
+    type = 'base'
+    
     def __init__(self):
         """
         Set up the base members name, order, disabled = 'no', config
         """
         self.required = []
-        self.name = None
+        self.name = self.type
         self.order = None
         self.disabled = "no"
         # This is a dict of the config section.
         self.config = None
-        self.webadmin = ''
         # This is the loaded module as recovered by import_module
         # via a call to load_agents / load_controllers.
         self.mod = None
@@ -72,6 +73,18 @@ class Base(object):
         """This is a string the represents us, can be used as a dict key."""
         return self.__str__()
 
+
+    def export(self):
+        """Called to return an exportable dict representing this object"""
+        return dict(
+            type = self.type,
+            name = self.name,
+            order = self.order,
+            disabled = self.disabled,
+            config = self.config,
+        )
+
+        
 
     def validate(self):
         """Called to check that all the required fields have been provided.
@@ -147,7 +160,6 @@ class Director(Base):
         self.disable_broker = 'no'
         self.noproxydispatch = 'no'
         self.proxy_dispatch_port = 1901
-        self.webadmin = '' #'director.webadmin'
         
         # Fake the director's mod so it can be used like a controller.
         #
@@ -162,6 +174,28 @@ class Director(Base):
             def isStopped(self): return True
             def tearDown(self): pass
         self.mod = F()
+
+    
+    def export(self):
+        """Called to return an exportable dict representing this object"""
+        return dict(
+            type = self.type,
+            name = self.name,
+            order = self.order,
+            disabled = self.disabled,
+            config = self.config,
+            poll_time = self.poll_time,
+            msg_host = self.msg_host,
+            msg_port = self.msg_port,
+            msg_username = self.msg_username,
+            msg_password = self.msg_password,
+            msg_channel = self.msg_channel,
+            msg_interface = self.msg_interface,
+            internal_broker = self.internal_broker,
+            disable_broker = self.disable_broker,
+            noproxydispatch = self.noproxydispatch,
+            proxy_dispatch_port = self.proxy_dispatch_port,
+        )
 
 
     def __str__(self):
@@ -204,6 +238,19 @@ class Broker(Base):
         self.command = "morbidsvr -p 61613 -i 127.0.0.1"
         self.workingdir = ""
 
+    
+    def export(self):
+        """Called to return an exportable dict representing this object"""
+        return dict(
+            type = self.type,
+            name = self.name,
+            order = self.order,
+            disabled = self.disabled,
+            config = self.config,
+            controller = self.controller,
+            command = self.command,
+        )
+
 
     def __str__(self):
         return "<Broker: order:%s disabled:%s>" % (self.order, self.disabled)
@@ -237,10 +284,27 @@ class Agency(Base):
         Base.__init__(self)
         self.name = self.type
         self.order = 2
-        self.webadmin = '' #'agency.webadmin'
         self.disabled = 'no'
         self.controller = 'director.controllers.agencyctrl'
         self.agents = []
+
+    
+    def export(self):
+        """Called to return an exportable dict representing this object"""
+        
+        agents = []
+        if self.agents:
+            agents = [a.export() for a in self.agents]
+        
+        return dict(
+            type = self.type,
+            name = self.name,
+            order = self.order,
+            disabled = self.disabled,
+            config = self.config,
+            controller = self.controller,
+            agents = agents,
+        )
 
     def __str__(self):
         return "<Agency: order:%s disabled:%s>" % (self.order, self.disabled)
@@ -285,6 +349,19 @@ class Agent(Base):
         self.order = None 
         # alias is no longer required.
         self.required = ['name','agent', 'cat']
+
+    
+    def export(self):
+        """Called to return an exportable dict representing this object"""
+        return dict(
+            type = self.type,
+            name = self.name,
+            order = self.order,
+            disabled = self.disabled,
+            config = self.config,
+            cat = self.cat,
+            alias = self.alias,
+        )
 
 
     def __str__(self):
@@ -334,9 +411,6 @@ class WebAdmin(Base):
         self.disabled = 'no'
         self.host = '127.0.0.1'
         self.port = 29875
-        
-        # Use the default root site admin:
-        self.webadmin = "webadmin"
         
         # noop for the moment:
         self.controller = 'director.controllers.base'
@@ -393,6 +467,12 @@ class Container(Base):
         Base.__init__(self)
 
     
+    def export(self):
+        """Called to return an exportable dict representing this object"""
+        return dict(
+            type = self.type,
+        )
+
     def validate(self):
         """No validation is performed on arbitrary containers."""
         pass

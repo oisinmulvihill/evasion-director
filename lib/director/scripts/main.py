@@ -216,7 +216,7 @@ def main():
         fd = file(options.config_filename)
         raw = fd.read()
         fd.close()
-        director.config.set_cfg(raw)
+        director.config.set_cfg(raw, filename=options.config_filename)
 
         # Set up python logging if a config file is given:
         if os.path.isfile(options.logconfig_filename):

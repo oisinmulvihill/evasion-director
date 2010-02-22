@@ -225,6 +225,36 @@ class SignalsSender(object):
         
         return rc    
 
+        
+    def configuration(self, timeout=DEFAULT_TIMEOUT):
+        """
+        Called to return the director configuration. 
+
+        :param timeout: This is the amount of time (in seconds) 
+        used to wait for the director to respond. If a response 
+        isn't received within this then SignalTimeout will be 
+        raised.
+        
+        :returns: See SignalReceiver configuration.
+
+        Event Dispatched: EVT_DIRECTOR_CONFIGURATION
+
+        """
+        sig = messenger.EVT("EVT_DIRECTOR_CONFIGURATION")
+        try:
+            self.log.debug("configuration: (request sig id %s) getting director configuration." % sig.uid)
+            rc = messenger.send_await(sig, timeout=timeout)
+
+        except messenger.EventTimeout, e:
+            self.log.error("configuration: (request sig id %s) event timeout!" % sig.uid)
+            raise SignalTimeout("Director communication timeout (%s)s! Is it running?" % timeout)
+
+        else:
+            self.log.debug("configuration: (reply for sig id %s) configuration recovered ok." % sig.uid)
+            rc = rc['data']
+        
+        return rc    
+        
 
 class SignalsReceiver(object):
     """
@@ -529,6 +559,46 @@ class SignalsReceiver(object):
         messenger.reply(signal, rc)
 
 
+    def signalConfiguration(self, signal, sender, **data):
+        """
+        Called to handle the EVT_DIRECTOR_CONFIGURATION signal, which 
+        is used to return the current director configuration.
+        
+        :param data['data]: None
+        
+        :returns: a call result dict.
+            
+            rc['result'] = 'ok' | 'error'
+        
+            For ok result:
+            
+            rc['data'] = [...]
+            
+            For error result:
+            
+            rc['data'] = 'Error / Exception message'
+
+        Event Dispatched: EVT_DIRECTOR_CONFIGURATION
+
+        """
+        msg = ''
+        cfg = None
+        try:
+            self.log.debug("signalConfiguration: received request (sig id %s)." % signal.uid)
+            cfg = director.config.export_configuration()
+            
+        except:
+            self.log.exception("signalConfiguration: error handling signal (sig id %s) - " % signal.uid)
+            msg = self.formatError()
+            rc = self.resultDict(msg, 'error')
+
+        else:
+            rc = self.resultDict(cfg)
+
+        self.log.debug("signalConfiguration: replying to request (sig id %s) - " % signal.uid)
+        messenger.reply(signal, rc)
+
+
     def signalExit(self, signal, sender, **data):
         """
         Called to handle the EVT_DIRECTOR_EXIT_ALL signal, which tells
@@ -576,6 +646,11 @@ class SignalsReceiver(object):
         dispatcher.connect(
             self.signalControllerReload,
             signal=messenger.EVT("EVT_DIRECTOR_CTRLRELOAD")
+        )        
+        
+        dispatcher.connect(
+            self.signalConfiguration,
+            signal=messenger.EVT("EVT_DIRECTOR_CONFIGURATION")
         )        
         
         # Register messenger hook for shutdown()
