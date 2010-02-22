@@ -360,7 +360,8 @@ class SignalsReceiver(object):
                         msg = "The controller '%s' is disabled and cannot be started" % name
                     else:
                         ctrl.mod.start()
-                    
+                        msg = ctrl.mod.isStarted()
+                        
                     break
 
         except:
@@ -414,6 +415,7 @@ class SignalsReceiver(object):
                         msg = "The controller '%s' is disabled and cannot be stopped" % name
                     else:
                         ctrl.mod.stop()
+                        msg = ctrl.mod.isStopped()
                     
                     break
 

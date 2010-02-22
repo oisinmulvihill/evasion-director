@@ -56,7 +56,11 @@ class DirectorTC(unittest.TestCase):
         """Test a ping signal to the director.
         """
         my_controller = r"""
+import logging
 from director.controllers import base
+
+def get_log():
+    return logging.getLogger('director.tests.testdirector')
 
 class Controller(base.Controller):
 
@@ -68,21 +72,29 @@ class Controller(base.Controller):
         self.isStartedCheck = False
         self.isStoppedCheck = False
         self.extraArg = config.get('extra_arg')
+        get_log().info('Controller: Setup Called!')
 
     def start(self):
         self.startCalled = True
+        self.isStartedCheck = True
+        get_log().info('Controller: start Called!')
 
     def isStarted(self):
+        get_log().info('Controller: isStarted Called <%s>!' % self.isStartedCheck)
         return self.isStartedCheck
 
     def stop(self):
         self.stopCalled = True
+        self.isStoppedCheck = True
+        get_log().info('Controller: stop Called!')
 
     def isStopped(self):
+        get_log().info('Controller: isStopped Called <%s>!' % self.isStoppedCheck)
         return self.isStoppedCheck
 
     def tearDown(self):
         self.tearDownCalled = True
+        get_log().info('Controller: tearDown Called!')
 
         """
         pkg_path = self.makeController(my_controller)
@@ -175,7 +187,8 @@ class Controller(base.Controller):
             #
             print "Calling controllerStart..."
             rc = d.controllerStart('mycontroller')
-            self.assertEquals(rc['result'], 'ok', rc['data'])
+            self.assertEquals(rc['result'], 'ok')
+            self.assertEquals(rc['data'], True)
             
             print "Calling controllerState..."
             rc = d.controllerState()
@@ -195,8 +208,9 @@ class Controller(base.Controller):
             # Tell the controller to stop and check it is:
             #
             print "Calling controllerStop..."
-            rc = d.controllerStart('mycontroller')
+            rc = d.controllerStop('mycontroller')
             self.assertEquals(rc['result'], 'ok')
+            self.assertEquals(rc['data'], True)
             
             print "Calling controllerState..."
             rc = d.controllerState()

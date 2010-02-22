@@ -89,7 +89,7 @@ class ConfigStore:
     configuration objects.
     
     """
-    def __init__(self, raw, cfg):
+    def __init__(self, raw, cfg, file):
         self.raw = raw
         self.cfg = cfg
         self.director = None
