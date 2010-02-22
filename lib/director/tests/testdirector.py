@@ -3,10 +3,12 @@
 import os
 import sys
 import pprint
+import logging
 import os.path
 import unittest
-
 import tempfile
+
+
 
 import director
 import messenger
@@ -15,9 +17,26 @@ from messenger.testing import message_main
 from director.testing import director_setup
 
 
+def get_log():
+    return logging.getLogger('director.tests.testdirector')
+
+
+def err_msg(correct, rc):
+    return """rc != correct
+    
+    correct:
+    %s
+    
+    rc:
+    %s
+    
+    """ % (pprint.pformat(correct),pprint.pformat(rc))
+
+
 class DirectorTC(unittest.TestCase):
 
     def cleanUp(self, top):
+        get_log().warn("DirectorTC.cleanUp: cleaning here '%s'." % top)
         for root, dirs, files in os.walk(top, topdown=False):
             for name in files:
                 #print 'name:',name
@@ -30,6 +49,7 @@ class DirectorTC(unittest.TestCase):
     def makeController(self, my_controller):
         p = tempfile.mkdtemp()
         sys.path.append(p)
+        get_log().debug("DirectorTC.makeController: test package location '%s'." % p)
         
         # Create a controller I can play with and test
         # the director behaviour with.
@@ -52,8 +72,222 @@ class DirectorTC(unittest.TestCase):
         return p
 
 
-    def testControllerStartStopRestart(self):
-        """Test a ping signal to the director.
+    def testControllerConfigReload(self):
+        """Test the reloading of a new controller configuration.
+        """
+        my_controller = r"""
+import logging
+from director.controllers import base
+
+def get_log():
+    return logging.getLogger('director.tests.testdirector')
+
+class Controller(base.Controller):
+
+    def setUp(self, config):
+        base.Controller.setUp(self, config)
+        self.startCalled = False
+        self.stopCalled = False
+        self.tearDownCalled = False
+        self.isStartedCheck = False
+        self.isStoppedCheck = False
+        self.extraArg = config.get('extra_arg')
+        get_log().info('Controller: Setup Called!')
+
+    def start(self):
+        self.startCalled = True
+        self.isStartedCheck = True
+        get_log().info('Controller: start Called!')
+
+    def isStarted(self):
+        get_log().info('Controller: isStarted Called <%s>!' % self.isStartedCheck)
+        return self.isStartedCheck
+
+    def stop(self):
+        self.stopCalled = True
+        self.isStoppedCheck = True
+        get_log().info('Controller: stop Called!')
+
+    def isStopped(self):
+        get_log().info('Controller: isStopped Called <%s>!' % self.isStoppedCheck)
+        return self.isStoppedCheck
+
+    def tearDown(self):
+        self.tearDownCalled = True
+        get_log().info('Controller: tearDown Called!')
+
+        """
+        pkg_path = self.makeController(my_controller)
+
+        # Create a second controller which we'll use in the new
+        # configuration.
+        #
+        my_controller2 = r"""
+import logging
+from director.controllers import base
+
+def get_log():
+    return logging.getLogger('director.tests.testdirector')
+
+class Controller(base.Controller):
+
+    def setUp(self, config):
+        base.Controller.setUp(self, config)
+        self.startCalled = False
+        self.stopCalled = False
+        self.tearDownCalled = False
+        self.isStartedCheck = False
+        self.isStoppedCheck = False
+
+    def start(self):
+        self.startCalled = True
+        self.isStartedCheck = True
+        get_log().info('Controller2: start Called!')
+
+    def isStarted(self):
+        get_log().info('Controller2: isStarted Called <%s>!' % self.isStartedCheck)
+        return self.isStartedCheck
+
+    def stop(self):
+        self.stopCalled = True
+        self.isStoppedCheck = True
+        get_log().info('Controller2: stop Called!')
+
+    def isStopped(self):
+        get_log().info('Controller2: isStopped Called <%s>!' % self.isStoppedCheck)
+        return self.isStoppedCheck
+
+    def tearDown(self):
+        self.tearDownCalled = True
+        get_log().info('Controller2: tearDown Called!')
+
+        """
+        f = os.path.join(pkg_path, 'mypackage', 'mycontroller2.py')
+        fd = open(f, 'wb')
+        fd.write(my_controller2)
+        fd.close()
+        
+        test_config = """
+        [director]
+        msg_host = '%(broker_interface)s'
+        msg_port = %(broker_port)s
+        msg_username = ''
+        msg_password = ''
+        msg_channel = 'evasion'
+        msg_interface = '%(broker_interface)s'
+        proxy_dispatch_port = %(proxy_port)s
+        
+        # sets up a broker running when twisted runs:
+        internal_broker = 'yes'
+        
+        [mycontroller]
+        #disabled = 'yes'
+        order = 8
+        controller = 'mypackage.mycontroller'
+        extra_arg = 'hello there'
+        
+        """
+        m = director_setup(test_config)
+        
+        def testmain(tc):
+            """Start-Stop-Restart"""
+            # The configuration should contain the director and
+            # controller with the load module instance from our
+            # test controller
+            #
+            c = director.config.get_cfg()
+            self.assertNotEquals(c.director, None)
+            self.assertEquals(len(c.cfg), 2)
+            
+            # Quick ping to see if messaging is up and running:
+            d = signals.SignalsSender()
+            get_log().info("testControllerConfigReload: calling ping")
+            d.ping()
+            
+            # Check the initial state of our test controller. 
+            #
+            ctrl = c.cfg[1]
+            self.assertEquals(ctrl.disabled, 'no')
+            self.assertEquals(ctrl.order, 8)
+            self.assertEquals(ctrl.controller, 'mypackage.mycontroller')
+            self.assertNotEquals(ctrl.mod, None)
+            self.assertEquals(ctrl.extra_arg, 'hello there')
+            
+            original_ctrl = ctrl.mod
+            self.assertEquals(ctrl.mod.startCalled, False)
+            self.assertEquals(ctrl.mod.stopCalled, False)
+            self.assertEquals(ctrl.mod.tearDownCalled, False)
+            self.assertEquals(ctrl.mod.isStartedCheck, False)
+            self.assertEquals(ctrl.mod.isStoppedCheck, False)
+            self.assertEquals(ctrl.mod.extraArg, 'hello there')
+
+            # Start the controller before we do a reload
+            #
+            get_log().info("testControllerConfigReload 0. Calling controllerStart...")
+            rc = d.controllerStart('mycontroller')
+            self.assertEquals(rc['result'], 'ok')
+            self.assertEquals(rc['data'], True)
+
+            # Create the new configuration and then tell the 
+            # controller to reload it. This should cause the
+            # running controller to be stopped. The tearDown
+            # method will also be called. The controller
+            # name cannot be changed. This is used to refer to
+            # the original configuration section. It is needed
+            # when saving the configuration to disk.
+            #
+            # This configuration replaces what was there.
+            new_config = dict(
+                order = 4,
+                name = "mycontroller",
+                disabled = 'no',
+                controller = 'mypackage.mycontroller2'
+            )
+
+            # Do the reload:
+            rc = d.controllerReload('mycontroller', new_config)
+            self.assertEquals(rc['result'], 'ok')
+            self.assertEquals(rc['data'], True)
+            
+            # Check controller is different and that the original
+            # controller got shutdown correctly:
+            self.assertEquals(original_ctrl.startCalled, True)
+            self.assertEquals(original_ctrl.stopCalled, True)
+            self.assertEquals(original_ctrl.tearDownCalled, True)
+            
+           
+            # Get the newly updated configuration and check the 
+            # new controllers state.
+            #
+            c = director.config.get_cfg()
+            ctrl = c.cfg[1]
+            self.assertNotEquals(ctrl, original_ctrl)
+            self.assertNotEquals(c.director, None)
+            self.assertEquals(len(c.cfg), 2)
+
+            # Check out the new controller state:
+            #
+            self.assertEquals(ctrl.mod.startCalled, False)
+            self.assertEquals(ctrl.mod.stopCalled, False)
+            self.assertEquals(ctrl.mod.tearDownCalled, False)
+            self.assertEquals(ctrl.mod.isStartedCheck, False)
+            self.assertEquals(ctrl.mod.isStoppedCheck, False)
+            self.assertEquals(hasattr(ctrl.mod, 'extraArg'), False)
+            
+            # Huzzagh!
+  
+  
+        try:
+            # Run inside the messaging system:
+            message_main(self, testmain, cfg=messenger.default_config['stomp'])
+            
+        except:
+            self.cleanUp(pkg_path)
+            raise
+
+
+    def testControllerStartStop(self):
+        """Test starting and stopping a loaded controller.
         """
         my_controller = r"""
 import logging
@@ -154,17 +388,6 @@ class Controller(base.Controller):
             self.assertEquals(ctrl.mod.isStartedCheck, False)
             self.assertEquals(ctrl.mod.isStoppedCheck, False)
             self.assertEquals(ctrl.mod.extraArg, 'hello there')
-
-            def err_msg(correct, rc):
-                return """rc != correct
-                
-                correct:
-                %s
-                
-                rc:
-                %s
-                
-                """ % (pprint.pformat(correct),pprint.pformat(rc))
 
 
             # Recover the current state of the controllers:

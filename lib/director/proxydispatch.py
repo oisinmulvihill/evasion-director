@@ -73,13 +73,13 @@ class XmlRpcServer:
 
 
     def xmlrpc_exitall(self):
-        """Broadcasts a EVT_EXIT_ALL which will tell the director to shut all parts down
+        """Sends a EVT_DIRECTOR_EXIT_ALL which will tell the director to shut all parts down
         in an orderly fashion.
         """
         def sendexit(data):
-            self.log.debug("xmlrpc_exitall: sending EVT_EXIT_ALL to the director.")
-            messenger.send(messenger.EVT('EVT_EXIT_ALL'), {})
-            self.log.debug("xmlrpc_exitall: sent EVT_EXIT_ALL OK.")
+            self.log.debug("xmlrpc_exitall: sending EVT_DIRECTOR_EXIT_ALL to the director.")
+            messenger.send(messenger.EVT('EVT_DIRECTOR_EXIT_ALL'), {})
+            self.log.debug("xmlrpc_exitall: sent EVT_DIRECTOR_EXIT_ALL OK.")
 
         # be nice, return so otherside can close without errors.
         thread.start_new_thread(sendexit, (0,))

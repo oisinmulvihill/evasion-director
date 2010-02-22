@@ -34,6 +34,7 @@ import director.config
 DEFAULT_TIMEOUT = 60
 
 
+
 class SignalTimeout(Exception):
     """
     Raise by the SignalsSender when no reponse has been
@@ -103,7 +104,7 @@ class SignalsSender(object):
         sig = messenger.EVT("EVT_DIRECTOR_CTRLSTATE")
         try:
             self.log.debug("controllerState: (request sig id %s) getting controller state." % sig.uid)
-            rc = messenger.send_await(sig)
+            rc = messenger.send_await(sig, timeout=timeout)
 
         except messenger.EventTimeout, e:
             self.log.error("controllerState: (request sig id %s) event timeout!" % sig.uid)
@@ -136,15 +137,15 @@ class SignalsSender(object):
         """
         sig = messenger.EVT("EVT_DIRECTOR_CTRLSTART")
         try:
-            self.log.debug("controllerStart: (request sig id %s) getting controller state." % sig.uid)
-            rc = messenger.send_await(sig, name)
+            self.log.debug("controllerStart: (request sig id %s) starting controller." % sig.uid)
+            rc = messenger.send_await(sig, name, timeout=timeout)
 
         except messenger.EventTimeout, e:
             self.log.error("controllerStart: (request sig id %s) event timeout!" % sig.uid)
             raise SignalTimeout("Director communication timeout (%s)s! Is it running?" % timeout)
 
         else:
-            self.log.debug("controllerStart: (reply for sig id %s) recovered controller state ok." % sig.uid)
+            self.log.debug("controllerStart: (reply for sig id %s) start called ok." % sig.uid)
             rc = rc['data']
         
         return rc    
@@ -163,22 +164,63 @@ class SignalsSender(object):
         isn't received within this then SignalTimeout will be 
         raised.
         
-        :returns: See SignalReceiver controllerStart.
+        :returns: See SignalReceiver controllerStop.
 
         Event Dispatched: EVT_DIRECTOR_CTRLSTOP
 
         """
         sig = messenger.EVT("EVT_DIRECTOR_CTRLSTOP")
         try:
-            self.log.debug("controllerStop: (request sig id %s) getting controller state." % sig.uid)
-            rc = messenger.send_await(sig, name)
+            self.log.debug("controllerStop: (request sig id %s) stopping controller." % sig.uid)
+            rc = messenger.send_await(sig, name, timeout=timeout)
 
         except messenger.EventTimeout, e:
             self.log.error("controllerStop: (request sig id %s) event timeout!" % sig.uid)
             raise SignalTimeout("Director communication timeout (%s)s! Is it running?" % timeout)
 
         else:
-            self.log.debug("controllerStop: (reply for sig id %s) recovered controller state ok." % sig.uid)
+            self.log.debug("controllerStop: (reply for sig id %s) stop called ok." % sig.uid)
+            rc = rc['data']
+        
+        return rc    
+
+
+    def controllerReload(self, name, new_config, timeout=DEFAULT_TIMEOUT):
+        """
+        Called to tell a controller reload and use the new 
+        configuration. 
+        
+        This will stop it if its running, tear it down and replace
+        it with whatever the new_config contains.
+
+        :param name: This will contain the name of the controller 
+        to be started. This name is the same name as that in the 
+        configuration section.
+
+        :param new_config: This is any valid controller 
+        configuration
+        
+        :param timeout: This is the amount of time (in seconds) 
+        used to wait for the director to respond. If a response 
+        isn't received within this then SignalTimeout will be 
+        raised.
+        
+        :returns: See SignalReceiver controllerReload.
+
+        Event Dispatched: EVT_DIRECTOR_CTRLRELOAD
+
+        """
+        sig = messenger.EVT("EVT_DIRECTOR_CTRLRELOAD")
+        try:
+            self.log.debug("controllerReload: (request sig id %s) calling reload." % sig.uid)
+            rc = messenger.send_await(sig, [name, new_config], timeout=timeout)
+            
+        except messenger.EventTimeout, e:
+            self.log.error("controllerReload: (request sig id %s) event timeout!" % sig.uid)
+            raise SignalTimeout("Director communication timeout (%s)s! Is it running?" % timeout)
+
+        else:
+            self.log.debug("controllerReload: (reply for sig id %s) reload called ok." % sig.uid)
             rc = rc['data']
         
         return rc    
@@ -348,10 +390,10 @@ class SignalsReceiver(object):
         Event Dispatched: EVT_DIRECTOR_CTRLSTART
 
         """
-        name = data['data']
         msg = ''
         try:
             self.log.debug("signalControllerStart: received request (sig id %s)." % signal.uid)
+            name = data['data']
             
             c = director.config.get_cfg()
             for ctrl in c.cfg:
@@ -403,10 +445,10 @@ class SignalsReceiver(object):
         Event Dispatched: EVT_DIRECTOR_CTRLSTOP
 
         """
-        name = data['data']
         msg = ''
         try:
             self.log.debug("signalControllerStop: received request (sig id %s)." % signal.uid)
+            name = data['data']
     
             c = director.config.get_cfg()
             for ctrl in c.cfg:
@@ -422,7 +464,7 @@ class SignalsReceiver(object):
         except:
             self.log.exception("signalControllerStop: error handling signal (sig id %s) - " % signal.uid)
             msg = self.formatError()
-            rc = self.resultDict(msg)
+            rc = self.resultDict(msg, 'error')
 
         else:
             rc = self.resultDict(msg)
@@ -431,13 +473,69 @@ class SignalsReceiver(object):
         messenger.reply(signal, rc)
 
 
+    def signalControllerReload(self, signal, sender, **data):
+        """
+        Called to handle the EVT_DIRECTOR_CTRLRELOAD signal, which 
+        is used to return the result of a stop command. 
+        
+        :param data['data]: This will contain the name and
+        new configuration dict to use.
+        
+        :returns: a call result dict.
+            
+            rc['result'] = 'ok' | 'error'
+        
+            For ok result:
+            
+            rc['data'] = ''
+            
+            For error result:
+            
+            rc['data'] = 'Error / Exception message'
+
+        Note: this will stop and tearDown the current controller
+        mod. The new mod will be (re)loaded and recreated based 
+        on the new config dict given.
+            
+        Event Dispatched: EVT_DIRECTOR_CTRLRELOAD
+
+        """
+        msg = ''
+        error = False
+        try:
+            self.log.debug("signalControllerReload: received request (sig id %s)." % signal.uid)
+            name, new_config = data['data']
+            try:
+                director.config.reload_controller(name, new_config)
+                
+            except director.config.ControllerReloadError, e:
+                error = True
+                msg = str(e)
+            
+            else:
+                msg = True
+
+        except:
+            self.log.exception("signalControllerReload: error handling signal (sig id %s) - " % signal.uid)
+            msg = self.formatError()
+            rc = self.resultDict(msg, 'error')
+
+        else:
+            rc = self.resultDict(msg)
+            if error:
+                rc = self.resultDict(msg, 'error')
+
+        self.log.debug("signalControllerReload: replying to request (sig id %s) - " % signal.uid)
+        messenger.reply(signal, rc)
+
+
     def signalExit(self, signal, sender, **data):
         """
-        Called to handle the EVT_EXIT_ALL signal, which tells
+        Called to handle the EVT_DIRECTOR_EXIT_ALL signal, which tells
         the director to shutdown normally.
         
         """
-        self.log.warn("main: EVT_EXIT_ALL received, exiting...")
+        self.log.warn("main: EVT_DIRECTOR_EXIT_ALL received, exiting...")
         rc = self.resultDict('ok')
         messenger.reply(signal, rc)
         
@@ -475,10 +573,16 @@ class SignalsReceiver(object):
             signal=messenger.EVT("EVT_DIRECTOR_CTRLSTOP")
         )        
         
+        dispatcher.connect(
+            self.signalControllerReload,
+            signal=messenger.EVT("EVT_DIRECTOR_CTRLRELOAD")
+        )        
+        
         # Register messenger hook for shutdown()
         dispatcher.connect(
             self.signalExit,
-            signal=messenger.EVT("EVT_EXIT_ALL")
+            signal=messenger.EVT("EVT_DIRECTOR_EXIT_ALL")
         )        
-        self.log.info("signalSetup: EVT_EXIT_ALL signal setup.")
+        
+        self.log.info("signalSetup: signals set up ok.")
 

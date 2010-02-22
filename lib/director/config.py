@@ -15,6 +15,8 @@ This module provides the director configuration parsing and handling.
 
 .. autoexception:: director.config.ConfigError
 
+.. autoexception:: director.config.ControllerReloadError
+
 .. autoclass:: director.config.ConfigStore
    :members:
 
@@ -23,6 +25,8 @@ This module provides the director configuration parsing and handling.
 .. autofunction:: director.config.get_cfg
 
 .. autofunction:: director.config.set_cfg
+
+.. autofunction:: director.config.update_objs
 
 .. autoclass:: director.config.Container
    :members:
@@ -35,6 +39,8 @@ This module provides the director configuration parsing and handling.
 .. autofunction:: director.config.load_agents
 
 .. autofunction:: director.config.load_controllers
+
+.. autofunction:: director.config.reload_controller
 
 """
 import copy
@@ -52,7 +58,7 @@ from configobjs import *
 
 
 def get_log():
-    return logging.getLogger('agency.config')
+    return logging.getLogger('director.config')
 
 
 class ConfigInvalid(Exception):
@@ -69,6 +75,12 @@ class ConfigError(Exception):
     """
 
 
+class ControllerReloadError(Exception):
+    """
+    Raise by reload_controller for problems it encounters.
+    """
+
+
 # Private: represents the current ConfigStore instance
 # holding the config and configobj instance.
 #
@@ -82,21 +94,55 @@ class ConfigStore:
 
     The original config data is stored as the 'raw' member variable.
 
-    The ConfigObj instance is stored as the 'cfg' member variable.
+    The list of configuration objects is stored in the cfg member variable.
+    
+    The ConfigObj instance is stored as the 'configobj' member variable.
     
     The director, broker, agency and webadmin are members which will
     not be None. These will be set up if the are present in the cfg
     configuration objects.
     
     """
-    def __init__(self, raw, cfg, file):
+    def __init__(self, raw, cfg, configobj, filename):
+        """
+        Set up the config store for later reference via
+        get_config() / set_config() / update_config()
+        
+        :param raw: The raw string contents of the original 
+        config file.
+        
+        :param cfg: The list of recovered config objects.
+        
+        :param configobj: The original configobj.ConfigObj 
+        instance which contains the origial processed raw 
+        config.
+        
+        :param filename: The file name and path to save 
+        changes to or reload from.
+        
+        """
         self.raw = raw
         self.cfg = cfg
+        self.configobj = configobj
+        self.filename = filename
+        
+        # Quick access. Director will always be present.
+        # The others depend on the configuration.
         self.director = None
         self.broker = None
         self.agency = None
         self.webadmin = None
-        for i in cfg:
+        self.findInstances()
+
+
+    def findInstances(self):
+        """
+        Locate director, broker, agency and webadmin instances
+        in the cfg objects and store them as attributes for easy
+        access.
+        
+        """
+        for i in self.cfg:
             if i.name == 'director':
                 self.director = i
             if i.name == 'broker':
@@ -141,14 +187,14 @@ def get_cfg():
     return __config
     
 
-def update_objs(objs):
-    """Called to updated the current cached store of config objs.
+def update_objs(cfg_objs):
+    """Called to updated the current store of config objs.
 
-    :param objs: this is a list of configuration object
+    :param cfg_objs: this is a list of configuration objects
     as returned by a call from recover_objects.
     
-    This function will typically be done after a load_agents 
-    or load_controllers.
+    This function will typically be done after a load_agents,
+    load_controllers or reload_controller.
     
     If no config has been set up, via a call to set_config, then
     ConfigNotSetup will be raised to indicate so.
@@ -157,31 +203,64 @@ def update_objs(objs):
     global __config
     if not __config:
         raise ConfigNotSetup("No configuration has been setup.")
+        
     __configLock.acquire()
     try:
-        __config = ConfigStore(__config.raw, objs)
+        __config = ConfigStore(
+            cfg=cfg_objs, 
+            # reuse the old instances versions of these:
+            raw=__config.raw, 
+            configobj=__config.configobj, 
+            filename=__config.filename
+        )
     finally:
         __configLock.release()
 
 
-def set_cfg(raw):
+def set_cfg(raw, filename=''):
     """Called to set up the configuration used for the project.
     
     :param raw: this is a string representing the raw
     configuration data read from the config file.
     
+    :param filename: this is a the file name and path
+    of the original configuration file. This will be 
+    used to save or reload the configuration from if
+    needed at a later stage.
+    
     """
     global __config
     
     # Recover the objects and store them:
-    objs = recover_objects(raw)
+    cfg_objs = recover_objects(raw)
     
     __configLock.acquire()
     try:
-        __config = ConfigStore(raw, objs)
+        __config = ConfigStore(
+            raw, 
+            cfg_objs, 
+            configobj.ConfigObj(StringIO.StringIO(raw)), 
+            filename
+        )
     finally:
         __configLock.release()
+
+
+def save_cfg(filename=None):
+    """Called to write the configuration to disk after 
+    updating the internal configobj instance.
+    """
+    global __config
     
+    __configLock.acquire()
+    try:
+        # Lock other's out of saving until I've finished.
+        pass
+        
+    finally:
+        __configLock.release()
+
+  
 
 MAPPED_SECTIONS = dict(
     # (Default order, class to store details in) 
@@ -200,12 +279,8 @@ def recover_objects(config):
     simply creates the main containers. The load_modules() 
     function does this on this functions output.
     
-    The webadmin_modules() function uses the output of this 
-    function to recover its information from.
-    
-    config:
-        This is a string representing the contents of the
-        configuration file.
+    :param config: This is a string representing the contents 
+    of the configuration file.
     
     returned:
         A list of configuration objects which with the default 
@@ -375,6 +450,9 @@ def import_module(import_type, obj):
         # absolute imports only (level=0):
         #get_log().debug("import_module: import<%s> fromlist<%s>" % (importmod, fromlist))
         imported_agent = __import__(importmod, fromlist=fromlist, level=0)
+        # Force a reload if this is the second time round to pickup 
+        # source level module changes.
+        reload(imported_agent)
         
     except ImportError, e:
          raise ImportError("The controller '%s' from '%s' could not be imported! %s" % (
@@ -440,4 +518,124 @@ def load_controllers(config_objs):
     [doimp(obj) for obj in config_objs]
     
     return config_objs
+
+    
+    
+def reload_controller(name, new_config):
+    """
+    Called replace a controller entry and (re)load the 
+    controller based on 
+    
+    :params name: This is the string section name as
+    found in the configuration which is also the 
+    controller name.
+    
+    :params new_config: This is any valid dict representing
+    a valid entry as a controller. For Example::
+    
+        new_config = dict(
+                order = 4,
+                name = "mycontroller",
+                disabled = 'no',
+                controller = 'mypackage.mycontroller2'
+                :
+                user args
+            )
+    
+    :returns: None
+    
+    The system wide configuration will have been updated with
+    the new controller.
+    
+    """
+    # Find the controller in the configuration
+    c = get_cfg()
+    
+    ctrl = None
+    for c in c.cfg: 
+        if c.name == name:
+            ctrl = c
+            break
+        
+    if not ctrl:
+        msg = "Unable to find the controller '%s' in the configuration!" % name
+        get_log().error("reload_controller: %s")
+        raise ControllerReloadError(msg)
+        
+    get_log().debug("reload_controller: found controller '%s'." % ctrl)
+    
+    # Stop the controller if its running:
+    #
+    if ctrl.mod:
+        get_log().debug("reload_controller: '%s' has a loaded module '%s'." % (ctrl, ctrl.mod))
+        if ctrl.mod.isStarted():
+            get_log().debug("reload_controller: '%s' stopping." % ctrl)
+            ctrl.mod.stop()
+            
+        ctrl.mod.stop()
+    
+        # Clean up the controller:
+        get_log().debug("reload_controller: ctrl.mod '%s' calling tearDown()." % (ctrl.mod))
+        ctrl.mod.tearDown()
+        
+    # Create a new controller using the new_config
+    #
+    get_log().debug("reload_controller: creating new controller.")
+    container = Controller()
+    for key, value in new_config.items():
+        #get_log().debug("reload_controller: setting key '%s' to value '%s' on '%s' " % (key, value, container))
+        if key == 'order':
+            # Make these numbers and not strings.
+            value = int(value)
+        setattr(container, key, value)
+        
+    container.config = new_config
+    container.name = name
+    if 'order' not in new_config:
+        get_log().debug("reload_controller: no order found using old controllers order '%s'." % ctrl.order)
+        container.order = ctrl.order
+        
+    # Check the controller is ok:
+    get_log().debug("reload_controller: validating new controller.")
+    container.validate()
+        
+    # Attempt to load the controller module if it is not disabled:
+    disabled = new_config.get('disabled', 'no')
+    if disabled == 'no':
+        m = container.controller
+        get_log().debug("reload_controller: new controller isn't disabled. Loading module '%s'." % m)
+        container.mod = import_module('Controller', container)
+        
+        # We need to call the modules setUp()
+        get_log().debug("reload_controller: Calling new modules '%s' setUp." % container.mod)
+        container.mod.setUp(new_config)
+
+    # Remove the old controller and replace it with the new one:
+    get_log().debug("reload_controller: Removing old controller '%s' from system config." % ctrl)
+    c = get_cfg()
+    current_list = c.cfg
+    new_list = [container,]
+    for c in current_list:
+        if c.name != name:
+            new_list.append(c)
+
+    # Re-order the config objects
+    reordered = [(c.order, c) for c in new_list]
+    reordered.sort()
+
+    get_log().debug("reordered: %s" % reordered)
+    cfg_objs = [c[1] for c in reordered]
+    get_log().debug("cfg_objs: %s " % cfg_objs)
+    
+    # Store the newly sorted and updated config objects:
+    get_log().debug("reload_controller: updating system wide configuration.")
+    update_objs(cfg_objs)
+
+    # Finally update the the original configobj instance section
+    # for this controller. This will allow changes to be saved.
+    # 
+    get_log().debug("reload_controller: updating configobj instance with new config for section '%s'." % name)
+    c = get_cfg()
+    c.configobj[name] = new_config
+    
 
