@@ -644,6 +644,7 @@ def export_configuration():
     
         returned = dict(
             cfg = [..list of controller dicts from export call..],
+            filename = '..name and path of config..',
             director = '' | director.export(),
             agency = '' | agency.export(),
             broker = '' | broker.export(),
@@ -655,6 +656,7 @@ def export_configuration():
     
     returned = dict(
         cfg = [co.export() for co in c.cfg],
+        filename = c.filename,
         director = '',
         agency = '',
         broker = '',
