@@ -213,10 +213,11 @@ def main():
         # Ok, clear to import:
         import director.config
 
-        fd = file(options.config_filename)
+        cfg_file = os.path.abspath(options.config_filename)
+        fd = file(cfg_file, 'rb')
         raw = fd.read()
         fd.close()
-        director.config.set_cfg(raw, filename=options.config_filename)
+        director.config.set_cfg(raw, filename=cfg_file)
 
         # Set up python logging if a config file is given:
         if os.path.isfile(options.logconfig_filename):

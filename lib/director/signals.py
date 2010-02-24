@@ -21,6 +21,7 @@
 
 """
 import uuid
+import time
 import pprint
 import logging
 import traceback
@@ -85,6 +86,33 @@ class SignalsSender(object):
         except messenger.EventTimeout, e:
             raise SignalTimeout("Director presence check failed! Is it running?")        
 
+
+    def exitAll(self, timeout=10):
+        """
+        Called to tell the director to shutdown stopped ALL
+        controllers and child processes.
+
+        :param timeout: This is the amount of time (in seconds) 
+        used to wait for the director to respond. If a response 
+        isn't received within this then SignalTimeout will be 
+        raised.
+
+        Event Dispatched: EVT_DIRECTOR_EXIT_ALL
+
+        """
+        sig = messenger.EVT("EVT_DIRECTOR_EXIT_ALL")
+        self.log.warn("exitAll: (request sig id %s) shutdown signal received!" % sig.uid)
+        try:
+            rc = messenger.send_await(sig, timeout=timeout)
+
+        except messenger.EventTimeout, e:
+            raise SignalTimeout("exitAll: Director presence check failed! Is it running?")        
+
+        else:
+            self.log.debug("exitAll: (request sig id %s) shutting down." % sig.uid)
+            rc = rc['data']
+        
+        return rc    
 
     def controllerState(self, timeout=DEFAULT_TIMEOUT):
         """
@@ -431,8 +459,12 @@ class SignalsReceiver(object):
                     if ctrl.disabled == "yes":
                         msg = "The controller '%s' is disabled and cannot be started" % name
                     else:
+                        # indicate we're that the process should be start
+                        # if it stops or exits.
+                        #
+                        ctrl.wasStopped = False
                         ctrl.mod.start()
-                        msg = ctrl.mod.isStarted()
+                        msg = "Service '%s' start called." % ctrl.name
                         
                     break
 
@@ -486,8 +518,13 @@ class SignalsReceiver(object):
                     if ctrl.disabled == "yes":
                         msg = "The controller '%s' is disabled and cannot be stopped" % name
                     else:
+                        # indicate we're stopping the controller and it is 
+                        # not to be started by the maintenance loop
+                        #
+                        ctrl.wasStopped = True
                         ctrl.mod.stop()
-                        msg = ctrl.mod.isStopped()
+                        msg = "Service '%s' stop called." % ctrl.name
+                        
                     
                     break
 

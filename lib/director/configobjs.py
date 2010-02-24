@@ -61,6 +61,9 @@ class Base(object):
         # This is the loaded module as recovered by import_module
         # via a call to load_agents / load_controllers.
         self.mod = None
+        
+        # Set by the director so it knows this was deliberately stopped.
+        self.wasStopped = False
 
 
     def __str__(self):
