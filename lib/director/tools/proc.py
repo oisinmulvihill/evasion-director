@@ -93,5 +93,40 @@ def check(subproc):
         returned = True
         
     return returned
-        
-        
+
+    
+def call(cmd):
+    """
+    Called to run a command an return its output and return code.
+
+    :param cmd: This a string representing a command 
+    that can be run in the shell.
+
+    :returns: (rc, stdout, stderr)
+    
+    """
+    rc = 1
+    out = ''
+    err = ''
+    
+    try:
+        get_log().info("call: running command <%s>" % cmd)
+        r = subprocess.Popen(
+            cmd, 
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        out, err = r.communicate()
+        rc = r.returncode
+
+    except OSError, e:
+        err = "Error - %s" % str(e)
+        get_log().warn("call: Error <%s>" % err)
+    
+    else:
+        get_log().info("call: command <%s> run %s" % (cmd, rc))
+    
+    return (rc, out, err)
+    
+    

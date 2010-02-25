@@ -22,6 +22,7 @@ import agency
 import director
 from agency.manager import Manager
 from director.controllers import base
+from webadmin.scripts import runwebadmin
 
 
 class Controller(base.Controller):
@@ -43,32 +44,55 @@ class Controller(base.Controller):
         # parts are plugged. This is the default but it can be easily
         # switched and overridden.
         webadmin = 'webadmin'
+        
+        # The configuration to use for the webadmin. By default it will 
+        # use its own which is packaged with the evasion-webadmin
+        #config_file = "/path/to/pylons/paste/compatibile/config.ini"
 
     """
-    log = logging.getLogger('director.controllers.agencyctrl')
-        
-   def setUp(self, config):
+
+    def setUp(self, config):
         base.Controller.setUp(self, config)
-        self.log.info("setUp: Not Implemented.")
+        self.log = logging.getLogger('director.controllers.webadminctrl')
+    
+        config_file = self.config.get('config_file', None)
+        if config_file:
+            self.log.info("setUp: creating webadmin with user given config '%s'." % config_file)
+        else:
+            self.log.info("setUp: creating webadmin with internal configuration.")
+            
+        self.webadmin = runwebadmin.Run(config_file)
 
 
     def start(self):
-        self.log.info("start: Not Implemented.")
+        from twisted.internet import reactor
+        
+        if self.webadmin.directorIntegrationIsStarted():
+            self.log.error("start: server started already!")
+            
+        else:
+            def _main(data=0):
+                self.log.info("start: creating webadmin with internal configuration.")
+                self.webadmin.directorIntegrationStart()
+            import thread
+            thread.start_new_thread(_main, (0,))
 
 
     def isStarted(self):
-        self.log.info("isStarted: Not Implemented.")
-        return True
+        rc = self.webadmin.directorIntegrationIsStarted()
+        self.log.debug("isStarted: rc:%s." % rc)
+        return rc
     
 
     def stop(self):
-        self.log.info("stop: Not Implemented.")
+        self.log.info("stop: shutting down server.")
+        self.webadmin.directorIntegrationStop()
+        self.log.info("stop: server stop called ok.")
         
 
     def isStopped(self):
-        self.log.info("isStopped: Not Implemented.")
-        return True
+        return not self.isStarted()
 
 
     def tearDown(self):
-        self.log.info("tearDown: Not Implemented.")
+        pass

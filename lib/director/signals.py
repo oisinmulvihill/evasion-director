@@ -642,14 +642,16 @@ class SignalsReceiver(object):
         the director to shutdown normally.
         
         """
-        self.log.warn("main: EVT_DIRECTOR_EXIT_ALL received, exiting...")
+        self.log.warn("signalExit: EVT_DIRECTOR_EXIT_ALL received, exiting...")
         rc = self.resultDict('ok')
         messenger.reply(signal, rc)
         
         # allow time for message to reply of make its 
         # way out of director process if needs be.
         time.sleep(2)
+        self.log.warn("signalExit: calling manager exit.")
         self.manager.exit()
+        self.log.warn("signalExit: bye, bye.")
 
 
     def setup(self):

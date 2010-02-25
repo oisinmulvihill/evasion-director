@@ -382,23 +382,8 @@ class WebAdmin(Base):
     A config section can have the following options::
     
         [webadmin]
-        # The interface to bind to (default is localhost):
-        host = '127.0.0.1'
-        
-        # The TCP port to open on (default is 29875):
-        port = 29875
-        
         # OPTIONAL: This is the order in which it will be started.
         order = 3
-        
-        # OPTIONAL: The webadmin is using the command line controller 
-        # for the moment. The controller/command/workingdir are args
-        # for the commandline controller. In future the webadmin may
-        # run as a thread under the director.
-        #
-        controller = 'director.controllers.commandline'
-        command = "runwebadmin --config development.ini"
-        workingdir = ""
         
         # OPTIONAL: disable the start/stop of the controller. It will
         # still be loaded and created.
@@ -412,13 +397,7 @@ class WebAdmin(Base):
         self.name = self.type
         self.order = 4
         self.disabled = 'no'
-        self.host = '127.0.0.1'
-        self.port = 29875
-        
-        # noop for the moment:
-        self.controller = 'director.controllers.base'
-        self.command = "runwebadmin --config development.ini"
-        self.workingdir = ""
+        self.controller = 'director.controllers.webadminctrl'
 
 
     def __str__(self):
