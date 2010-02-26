@@ -102,6 +102,51 @@ def create_config(cfg_dict):
     print("Success, '%s', '%s' and '%s' created ok." % (DEFAULT_CONFIG_NAME, DEFAULT_LOGCONFIG_NAME, DEFAULT_SERVICESTATION_NAME))
 
 
+class StreamPassThrough:
+    """
+    Provide a means to channel stdout and stderror
+    through the log set up. 
+    
+    """
+    def __init__(self, log=None, trap=False):
+        """
+        """
+        self.trap = trap
+        self.origStderr = sys.stderr
+        self.origStdout = sys.stdout
+        
+        class Err:
+            def __init__(self, parent):
+                self.p = parent
+            def write(self, msg):
+                self.p.stderrWrite(msg)
+        sys.stderr = Err(self)
+        
+        class Out:
+            def __init__(self, parent):
+                self.p = parent
+            def write(self, msg):
+                self.p.stdoutWrite(msg)
+        sys.stdout = Out(self)
+        
+    def write(self, msg):
+        log = logging.getLogger("director.stdouterr")
+        log.info('\n------\nstdout/err: %s\n------\n' % msg)
+        #self.origStdout.write(msg)
+        
+    def stderrWrite(self, msg):
+        log = logging.getLogger("director.stdouterr")
+        log.info('stderr: %s' % msg)
+        if not self.trap:
+            self.origStderr.write(msg)
+        
+    def stdoutWrite(self, msg):
+        log = logging.getLogger("director.stdouterr")
+        log.info('stdout: %s' % msg)
+        if not self.trap:
+            self.origStdout.write(msg)
+
+        
 def main():
     """
     """
@@ -117,9 +162,9 @@ def main():
                     help="This director configuration file to use at run time."
                     )
     
-    parser.add_option("--logconfig", action="store", dest="logconfig_filename", 
-                    default=directorlog_cfg,
-                    help="This is the log configuration file to use at run time."
+    parser.add_option("--logtoconsole", action="store_true", dest="logtoconsole", 
+                    default=False,
+                    help="Override log setup from configuration and log to the console instead."
                     )
     
     parser.add_option("--create", action="store_true", dest="create_config", 
@@ -182,10 +227,13 @@ def main():
                         "Used with --create to set the path and name of the director log output"
                         "file used in the generated configuration output."
                     ))
+    parser.add_option("--logstdouterr", action="store_true", dest="logstdouterr", 
+                    default=False,
+                    help="Filter stdout and stderr through our logging set up (default).")
 
     (options, args) = parser.parse_args()
 
-    log = logging.getLogger("")
+    log = logging.getLogger("director.scripts.main")
 
     # Create the default app manager config:
     if options.create_config:
@@ -203,36 +251,40 @@ def main():
         create_config(cfg)
         sys.exit(0)
 
-
     # Load the system config:
     if not os.path.isfile(options.config_filename):
         sys.stderr.write("The config file name '%s' wasn't found" % options.config_filename)
         sys.exit(1)
 
     else:    
-        # Ok, clear to import:
-        import director.config
-
-        cfg_file = os.path.abspath(options.config_filename)
-        fd = file(cfg_file, 'rb')
-        raw = fd.read()
-        fd.close()
-        director.config.set_cfg(raw, filename=cfg_file)
-
-        # Set up python logging if a config file is given:
-        if os.path.isfile(options.logconfig_filename):
-            logging.config.fileConfig(options.logconfig_filename)
-            
+        if not options.logtoconsole:
+            # Set up logging from director.cfg
+            logging.config.fileConfig(options.config_filename)
         else:
-            # No log configuration file given or it has been overidden
-            # by the user, just print out to console instead:
-            print "The log config file name '%s' wasn't found" % options.logconfig_filename 
+            # Log to console instead:
             hdlr = logging.StreamHandler()
             formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
             hdlr.setFormatter(formatter)
             log.addHandler(hdlr)
             log.setLevel(logging.DEBUG)
             log.propagate = False        
+
+        # Filter stdout and stderr through logging now its up 
+        # and running to aid debug in case of problems
+        #
+        if options.logstdouterr:
+            spt = StreamPassThrough()    
+            
+        # Ok, clear to import:
+        import director.config
+
+        # Set up the director config and recover the object from it:
+        cfg_file = os.path.abspath(options.config_filename)
+        fd = file(cfg_file, 'rb')
+        raw = fd.read()
+        fd.close()
+        
+        director.config.set_cfg(raw, filename=cfg_file)
 
         from director import manager
         manager.Manager().main()

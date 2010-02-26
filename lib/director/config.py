@@ -338,6 +338,7 @@ def recover_objects(config):
 
         def recover(self, section):
             """Convert to configobjs"""
+            skip = False
             rsection = cfg[section]
             if section in MAPPED_SECTIONS:
                 default_order, container = MAPPED_SECTIONS[section]
@@ -381,13 +382,21 @@ def recover_objects(config):
                     container.order = self.sectionCounter.next()
             
             else:
-                container = Container()
-                self.setup(container, rsection)
-                container.name = section
-                if 'order' not in rsection:
-                    container.order = self.sectionCounter.next()
+                # Ignore so I can have logging as part of the director
+                # configuration.
+                get_log().info("recover_objects: unknown section, skipping '%s'." % (section))
+                skip = True
+                # if 'drignore' in cfg[section]:
+                    # get_log().info("recover_objects: skipping section '%s' as 'drignore' is present." % (section))
+                    # return
+                # container = Container()
+                # self.setup(container, rsection)
+                # container.name = section
+                # if 'order' not in rsection:
+                #    # container.order = self.sectionCounter.next()
             
-            self.returned.append([container.order, container])
+            if not skip:
+                self.returned.append([container.order, container])
 
     r = R()
     [r.recover(section) for section in cfg]
