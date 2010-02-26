@@ -61,7 +61,8 @@ class Controller(base.Controller):
         else:
             self.log.info("setUp: creating webadmin with internal configuration.")
             
-        self.webadmin = runwebadmin.Run(config_file)
+        # Tell run to use our logger which will be set up:
+        self.webadmin = runwebadmin.Run(config_file, nologsetup=True)
 
 
     def start(self):

@@ -130,19 +130,16 @@ class StreamPassThrough:
         sys.stdout = Out(self)
         
     def write(self, msg):
-        log = logging.getLogger("director.stdouterr")
-        log.info('\n------\nstdout/err: %s\n------\n' % msg)
+        get_log().info('\n------\nstdout/err: %s\n------\n' % msg)
         #self.origStdout.write(msg)
         
     def stderrWrite(self, msg):
-        log = logging.getLogger("director.stdouterr")
-        log.info('stderr: %s' % msg)
+        get_log().info('stderr: %s' % msg)
         if not self.trap:
             self.origStderr.write(msg)
         
     def stdoutWrite(self, msg):
-        log = logging.getLogger("director.stdouterr")
-        log.info('stdout: %s' % msg)
+        get_log().info('stdout: %s' % msg)
         if not self.trap:
             self.origStdout.write(msg)
 
