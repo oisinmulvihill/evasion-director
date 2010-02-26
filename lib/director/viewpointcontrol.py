@@ -81,3 +81,18 @@ class BrowserCalls(object):
             
         return resp
 
+    
+    def viewpointQuit(self):
+        """
+        Called to instruct the viewpoint to close and exit normally.
+        
+        This method sends the VIEWPOINT_QUIT event.
+
+        """
+        evt = messenger.EVT("VIEWPOINT_QUIT")
+        
+        self.log.debug("viewpointQuit: instructing viewpoint to quit.")
+        resp = messenger.eventutils.send_await(evt)
+            
+        return resp
+

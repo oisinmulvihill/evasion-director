@@ -135,6 +135,11 @@ class Controller(viewpoint.Controller):
             signal = 'VIEWPOINT_REPLACE',
             sender = dispatcher.Any,
         )
+        dispatcher.connect(
+            self.viewpointQuit,
+            signal = 'VIEWPOINT_QUIT',
+            sender = dispatcher.Any,
+        )
         self.log.info("setUp: VIEWPOINT_* signals.")
         
         
@@ -189,6 +194,17 @@ class Controller(viewpoint.Controller):
        
         rc = self.dbc.replaceContent(content_id, content)
         self.reply(signal, rc)
+
+        
+    def viewpointQuit(self, signal, sender, **kw):
+        """Handle the VIEWPOINT_QUIT command and return the reply.
+        """
+        self.log.warn("""replaceContent (VIEWPOINT_QUIT)""")
+        self.reply(signal, 'ok')
+        try:
+            self.dbc.browserQuit()
+        except viewpointdirect.BrowserNotPresent, e:
+            self.log.warn("Viewpoint not present to shutdown.")
 
         
     def start(self):
