@@ -7,6 +7,7 @@ import os
 import sys
 import os.path
 import logging
+import ConfigParser
 import logging.config
 from configobj import ConfigObj
 from optparse import OptionParser
@@ -108,9 +109,7 @@ class StreamPassThrough:
     through the log set up. 
     
     """
-    def __init__(self, log=None, trap=False):
-        """
-        """
+    def __init__(self, trap=False):
         self.trap = trap
         self.origStderr = sys.stderr
         self.origStdout = sys.stdout
@@ -128,10 +127,6 @@ class StreamPassThrough:
             def write(self, msg):
                 self.p.stdoutWrite(msg)
         sys.stdout = Out(self)
-        
-    def write(self, msg):
-        get_log().info('\n------\nstdout/err: %s\n------\n' % msg)
-        #self.origStdout.write(msg)
         
     def stderrWrite(self, msg):
         get_log().info('stderr: %s' % msg)
@@ -254,10 +249,7 @@ def main():
         sys.exit(1)
 
     else:    
-        if not options.logtoconsole:
-            # Set up logging from director.cfg
-            logging.config.fileConfig(options.config_filename)
-        else:
+        def logtoconsolefallback(log):
             # Log to console instead:
             hdlr = logging.StreamHandler()
             formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
@@ -265,6 +257,16 @@ def main():
             log.addHandler(hdlr)
             log.setLevel(logging.DEBUG)
             log.propagate = False        
+            
+        if not options.logtoconsole:
+            # Set up logging from director.cfg
+            try:
+                logging.config.fileConfig(options.config_filename)
+            except ConfigParser.NoSectionError, e:
+                logtoconsolefallback(log)
+                log.warn("No valid logging found in configuration. Using console logging.")
+        else:
+            logtoconsolefallback(log)
 
         # Filter stdout and stderr through logging now its up 
         # and running to aid debug in case of problems
