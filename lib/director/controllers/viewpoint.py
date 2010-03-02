@@ -46,6 +46,9 @@ class Controller(base.Controller):
         # is ready to recieve requests. The viewpoint will also be kept
         # looking at this URI so it can't navigate away out of the app.
         uri = "http://myhost:myport/myapp"        
+        # The admin uri which is allowed. If this isn't set then the
+        # viewpoint will repoint at the 'uri'
+        admin_uri = "http://myhost:myport/myapp"        
         
         # The method to use to check that web application is ready
         # for requests:
@@ -213,7 +216,9 @@ class Controller(base.Controller):
                 rc = simplejson.loads(data)
                 vp_uri = rc['data']
                 
-                if vp_uri.startswith(uri):
+                admin_uri = self.config.get('admin_uri', None)
+                
+                if vp_uri.startswith(uri) or vp_uri.startswith(admin_uri):
                     returned = True
                 else:
                     self.log.info("isURICorrect: current URI:'%s', correct URI:'%s'." % (vp_uri, uri))            
