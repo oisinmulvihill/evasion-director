@@ -1,30 +1,17 @@
 [director]
-# The broker connection details:
-msg_host = "127.0.0.1"
-msg_port = 61613
-msg_username = ''
-msg_password = ''
 msg_channel = 'evasion'
-disable_broker = ${disable_broker}
-
-[broker]
-disabled = 'no'
-order = 1
-controller = 'director.controllers.commandline'
-command = "python scripts//morbidsvr -p 61613 -i 127.0.0.1"
-workingdir = "${install_dir}"
-
+internal_broker = 'yes'
 
 [agencyhq]
 disabled = '${disable_agency}'
 order = 2
-controller = 'director.controllers.agencyhq'
+controller = 'director.controllers.agencyctrl'
 
-[testagent]
-# Example of an agent entry
-alias = 1
-cat = 'service'
-agent = 'agency.agents.testing.fake'
+    [testagent]
+    # Example of an agent entry
+    alias = 1
+    cat = 'service'
+    agent = 'agency.agents.testing.fake'
 
 
 # Example of starting a third-party web application:
