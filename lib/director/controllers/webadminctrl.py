@@ -29,7 +29,7 @@ class Controller(base.Controller):
     """
     This controller typically has the following configuration::
 
-        [agency]
+        [webadminctrl]
         # Standard options example:
         controller = 'director.controllers.webadminctrl'
         
