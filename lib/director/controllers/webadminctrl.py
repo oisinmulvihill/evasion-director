@@ -7,7 +7,7 @@
    :synopsis: This provides the interface to command line processes.
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
 
-This runs the webadmin without needing to spawnit under another python process.
+This runs the evasion.web without needing to spawnit under another python process.
 
 .. autoclass:: director.controllers.webadminctrl.Controller
    :members:
@@ -22,7 +22,7 @@ import agency
 import director
 from agency.manager import Manager
 from director.controllers import base
-from webadmin.scripts import runwebadmin
+from evasion.web.scripts import runwebadmin
 
 
 class Controller(base.Controller):
@@ -36,7 +36,7 @@ class Controller(base.Controller):
         # (OPTIONAL) Uncomment to prevent this controller from being used.
         #disabled = 'yes'
         
-        # (OPTIONAL) When to start the webadmin. It needs the broker
+        # (OPTIONAL) When to start the evasion.web. It needs the broker
         # running before it will fully start up.
         order = 4
         
@@ -46,7 +46,7 @@ class Controller(base.Controller):
         webadmin = 'webadmin'
         
         # The configuration to use for the webadmin. By default it will 
-        # use its own which is packaged with the evasion-webadmin
+        # use its own which is packaged with the evasion-web
         #config_file = "/path/to/pylons/paste/compatibile/config.ini"
 
     """
@@ -57,9 +57,9 @@ class Controller(base.Controller):
     
         config_file = self.config.get('config_file', None)
         if config_file:
-            self.log.info("setUp: creating webadmin with user given config '%s'." % config_file)
+            self.log.info("setUp: creating evasion.web with user given config '%s'." % config_file)
         else:
-            self.log.info("setUp: creating webadmin with internal configuration.")
+            self.log.info("setUp: creating evasion.web with internal configuration.")
             
         # Tell run to use our logger which will be set up:
         self.webadmin = runwebadmin.Run(config_file, nologsetup=True)
