@@ -93,8 +93,8 @@ class DirectBrowserCalls(object):
             s.close()
             
         except socket.error, e:
-            self.log.error("write: socket send error - Is browser running? ")
             raise BrowserNotPresent("Viewpoint/Browser Control COMMS Error")
+            
         ##print "rc:",rc
 
         return rc
