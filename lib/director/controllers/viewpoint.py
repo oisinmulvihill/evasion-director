@@ -210,18 +210,23 @@ class Controller(base.Controller):
         try:
             data = self.dbc.getBrowserUri()
         except viewpointdirect.BrowserNotPresent, e:
-            self.log.error("isURICorrect: %s" % str(e))            
+            pass #self.log.error("isURICorrect: %s" % str(e))            
         else:
             if data:
                 rc = simplejson.loads(data)
                 vp_uri = rc['data']
                 
                 admin_uri = self.config.get('admin_uri', None)
-                
-                if vp_uri.startswith(uri) or vp_uri.startswith(admin_uri):
-                    returned = True
+                if admin_uri:
+                    if vp_uri.startswith(uri) or vp_uri.startswith(admin_uri):
+                        returned = True
+                    else:
+                        self.log.info("isURICorrect: allowed URI:'%s', incorrect URI:'%s'." % ((vp_uri, admin_uri), uri))            
                 else:
-                    self.log.info("isURICorrect: current URI:'%s', correct URI:'%s'." % (vp_uri, uri))            
+                    if vp_uri.startswith(uri):
+                        returned = True
+                    else:
+                        self.log.info("isURICorrect: current URI:'%s', incorrect URI:'%s'." % (vp_uri, uri))            
                 
         return returned
         
