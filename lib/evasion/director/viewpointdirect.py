@@ -10,9 +10,9 @@ import logging
 
 import simplejson
 
-import messenger
-from tools.net import wait_for_service
-from messenger import xulcontrolprotocol
+from evasion.messenger import events
+from evasion.messenger import xulcontrolprotocol
+from evasion.director.tools.net import wait_for_service
 
 
 class BrowserCallReplyTimeout(Exception):
@@ -223,7 +223,7 @@ class DirectBrowserCalls(object):
         # we won't miss the reponse if it happens quickly.
         #
         sessionid = simplejson.loads(sessionid)
-        reply_event = messenger.EVT(sessionid)
+        reply_event = events.EVT(sessionid)
         async_reply_catch = messenger.Catcher(reply_event, timeout)        
         self.log.debug("callBrowserWithReply: creating reply signal for browser reply: '%s' " % sessionid)
 

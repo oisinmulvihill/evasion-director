@@ -20,11 +20,11 @@ License=''
 ShortDescription=Summary
 
 # Recover the ReStructuredText docs:
-fd = file("lib/director/docs/director.rtx")
+fd = file("lib/evasion/director/docs/director.rtx")
 Description=fd.read()
 fd.close()
 
-TestSuite = 'director.tests'
+TestSuite = 'evasion.director.tests'
 
 needed = [
     # third party deps:
@@ -46,6 +46,7 @@ if not sys.platform.startswith('win'):
 # If new directories are added then I'll need to rerun this command.
 #
 EagerResources = [
+    'evasion',
 ]
 
 ProjectScripts = [
@@ -80,4 +81,5 @@ setup(
     package_dir = {'': 'lib'},
     eager_resources = EagerResources,
     entry_points = EntryPoints,
+    namespace_packages = ['evasion'],
 )

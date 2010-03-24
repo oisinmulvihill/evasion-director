@@ -2,14 +2,14 @@
 :mod:`agency` -- This runs the agency without needing to spawnit under another python process.
 =================================================================================================
 
-.. module:: agency
+.. module:: evasion.director.controllers.agencyctrl
    :platform: Unix, MacOSX, Windows
    :synopsis: This provides the interface to command line processes.
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
 
 This runs the agency without needing to spawnit under another python process.
 
-.. autoclass:: director.controllers.agencyhq.Controller
+.. autoclass:: evasion.director.controllers.agencyctrl.Controller
    :members:
    :undoc-members:
 
@@ -18,10 +18,8 @@ import os
 import logging
 import subprocess
 
-import agency
-import director
-from agency.manager import Manager
-from director.controllers import base
+from evasion.agency.manager import Manager
+from evasion.director.controllers import base
 
 
 class Controller(base.Controller):
@@ -30,7 +28,7 @@ class Controller(base.Controller):
 
         [agency]
         # Standard options example:
-        controller = 'director.controllers.agencyctrl'
+        controller = 'evasion.director.controllers.agencyctrl'
         
         # (OPTIONAL) Uncomment to prevent this controller
         # from being used. If the agency is disabled no agents
@@ -45,7 +43,7 @@ class Controller(base.Controller):
     up by the time setUp method is called.
 
     """
-    log = logging.getLogger('director.controllers.agencyctrl')
+    log = logging.getLogger('evasion.director.controllers.agencyctrl')
         
     def setUp(self, config):
         """

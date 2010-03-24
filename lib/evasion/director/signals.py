@@ -28,8 +28,8 @@ import traceback
 
 from pydispatch import dispatcher
 
-import messenger
-import director.config
+from evasion import messenger
+from evasion.director import config
 
 # Default time in seconds before raising timeout:
 DEFAULT_TIMEOUT = 60
@@ -385,7 +385,7 @@ class SignalsReceiver(object):
         try:
             self.log.debug("controllerState: received request (sig id %s)." % signal.uid)
             
-            c = director.config.get_cfg()
+            c = config.get_cfg()
             
             for ctrl in c.cfg:
                 if ctrl.name == 'director':
@@ -453,7 +453,7 @@ class SignalsReceiver(object):
             self.log.debug("signalControllerStart: received request (sig id %s)." % signal.uid)
             name = data['data']
             
-            c = director.config.get_cfg()
+            c = config.get_cfg()
             for ctrl in c.cfg:
                 if ctrl.name == name:
                     if ctrl.disabled == "yes":
@@ -512,7 +512,7 @@ class SignalsReceiver(object):
             self.log.debug("signalControllerStop: received request (sig id %s)." % signal.uid)
             name = data['data']
     
-            c = director.config.get_cfg()
+            c = config.get_cfg()
             for ctrl in c.cfg:
                 if ctrl.name == name:
                     if ctrl.disabled == "yes":
@@ -573,9 +573,9 @@ class SignalsReceiver(object):
             self.log.debug("signalControllerReload: received request (sig id %s)." % signal.uid)
             name, new_config = data['data']
             try:
-                director.config.reload_controller(name, new_config)
+                config.reload_controller(name, new_config)
                 
-            except director.config.ControllerReloadError, e:
+            except config.ControllerReloadError, e:
                 error = True
                 msg = str(e)
             
@@ -622,7 +622,7 @@ class SignalsReceiver(object):
         cfg = None
         try:
             self.log.debug("signalConfiguration: received request (sig id %s)." % signal.uid)
-            cfg = director.config.export_configuration()
+            cfg = config.export_configuration()
             
         except:
             self.log.exception("signalConfiguration: error handling signal (sig id %s) - " % signal.uid)

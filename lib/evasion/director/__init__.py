@@ -13,8 +13,8 @@ The director provides a number of modules:
 
 """
 
-from director import config
-from director import scripts
-from director import manager
-from director import controllers
+from evasion.director import config
+from evasion.director import scripts
+from evasion.director import manager
+from evasion.director import controllers
 

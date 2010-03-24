@@ -8,7 +8,7 @@ import logging
 #from twisted.web import xmlrpc
 
 
-import messenger
+from evasion import messenger
 
 
 class XmlRpcServer:
@@ -17,7 +17,7 @@ class XmlRpcServer:
     # Used to prevent actual send of messaging (testing only)
     testing = False
 
-    log = logging.getLogger("director.proxydispatch.XmlRpcServer")
+    log = logging.getLogger("evasion.director.proxydispatch.XmlRpcServer")
 
 
     def xmlrpc_ping(self):
@@ -94,7 +94,7 @@ def setup(port, testing=False):
     from twisted.web import static, server
     from twisted.web.resource import Resource
 
-    log = logging.getLogger("director.proxydispatch.setup")
+    log = logging.getLogger("evasion.director.proxydispatch.setup")
 
     from twisted.web import xmlrpc    
     

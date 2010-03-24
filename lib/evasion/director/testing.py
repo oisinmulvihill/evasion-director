@@ -17,7 +17,7 @@ import threading
 
 from pydispatch import dispatcher        
 
-from director.morbid import setup
+from evasion.director.morbid import setup
 
 
 class FakeViewpoint(object):

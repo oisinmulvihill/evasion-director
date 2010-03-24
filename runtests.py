@@ -11,7 +11,7 @@ import nose
 
 sys.path.insert(0, "./lib")
 
-from director import utils
+from evasion.director import utils
 utils.log_init(logging.CRITICAL)
 
 result = nose.core.TestProgram().success

@@ -2,14 +2,14 @@
 :mod:`commandline` -- This provides the interface to command line processes.
 =============================================================================
 
-.. module:: config
+.. module:: evasion.director.controllers.commandline
    :platform: Unix, MacOSX, Windows
    :synopsis: This provides the interface to command line processes.
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
 
 This provides the interface to command line processes.
 
-.. autoclass:: director.controllers.commandline.Controller
+.. autoclass:: evasion.director.controllers.commandline.Controller
    :members:
    :undoc-members:
 
@@ -18,9 +18,8 @@ import os
 import logging
 import subprocess
 
-import director
-from director.tools import proc
-from director.controllers import base
+from evasion.director.tools import proc
+from evasion.director.controllers import base
 
 
 class Controller(base.Controller):
@@ -49,7 +48,7 @@ class Controller(base.Controller):
     needs there and it will find them in the current path.
 
     """
-    log = logging.getLogger('director.controllers.commandline')    
+    log = logging.getLogger('evasion.director.controllers.commandline')    
 
     def setUp(self, config):
         """

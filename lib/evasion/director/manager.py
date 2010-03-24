@@ -2,12 +2,12 @@
 :mod:`manager` -- Main director control code.
 ==============================================
 
-.. module:: directorX
+.. module:: evasion.director
    :platform: Unix, MacOSX, Windows
    :synopsis: Main director control code.
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
 
-.. autoclass:: director.manager.Manager
+.. autoclass:: evasion.director.manager.Manager
    :members:
    :undoc-members:
 
@@ -17,16 +17,17 @@ import time
 import logging
 import traceback
 
-import agency
-import director
-import messenger
-import director.config
-from director import testing
-from director import signals
 from pydispatch import dispatcher
-from director import proxydispatch
-from director import viewpointdirect
-from messenger import xulcontrolprotocol
+
+from evasion import agency
+#from evasion import director
+from evasion import messenger
+from evasion.director import config
+from evasion.director import testing
+from evasion.director import signals
+from evasion.director import proxydispatch
+from evasion.director import viewpointdirect
+from evasion.messenger import xulcontrolprotocol
 
 try:
 	import decorator # help for bbfreeze.
@@ -35,7 +36,7 @@ except ImportError, e:
 
 
 def get_log():
-    return logging.getLogger("director.manager")
+    return logging.getLogger("evasion.director.manager")
 
     
     
@@ -48,7 +49,7 @@ class Manager(object):
     For more on this see director.configobjs.Director doc string.
 
     """
-    log = logging.getLogger("director.manager.Manager")
+    log = logging.getLogger("evasion.director.manager.Manager")
 
     def __init__(self):
         """
