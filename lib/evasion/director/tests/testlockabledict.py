@@ -1,6 +1,6 @@
 import unittest
 
-from director import lockabledict
+from evasion.director import lockabledict
 
 
 class LockableDictionaryTestCase(unittest.TestCase):

@@ -11,7 +11,7 @@ Oisin Mulvihill
 """
 import logging
 
-import messenger
+from evasion import messenger
 
 
 class BrowserCalls(object):
@@ -23,7 +23,7 @@ class BrowserCalls(object):
     
     """
     def __init__(self):
-        self.log = logging.getLogger("director.viewpointcontrol.BrowserCalls")
+        self.log = logging.getLogger("evasion.director.viewpointcontrol.BrowserCalls")
   
   
     def getBrowserUri(self):

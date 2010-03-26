@@ -2,20 +2,20 @@
 :mod:`base` -- This is the base interface for a controller which the director can load.
 ========================================================================================
 
-.. module:: base
+.. module:: evasion.director.controllers.base
    :platform: Unix, MacOSX, Windows
    :synopsis: This is the base interface for a controller which the director can load.
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
 
 This is the base interface for a controller which the director can load.
 
-.. autoclass:: director.controllers.base.FailedToStart
+.. autoclass:: evasion.director.controllers.base.FailedToStart
    :members:
 
-.. autoclass:: director.controllers.base.FailedToStop
+.. autoclass:: evasion.director.controllers.base.FailedToStop
    :members:
 
-.. autoclass:: director.controllers.base.Controller
+.. autoclass:: evasion.director.controllers.base.Controller
    :members:
    :undoc-members:
 

@@ -2,7 +2,7 @@
 :mod:`net` -- This provides handy utiliy functions for network services.
 ==============================================================================
 
-.. module:: net
+.. module:: evasion.director.tools.net
    :platform: Unix, MacOSX, Windows
    :synopsis: This provides handy utiliy functions for network services.
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
@@ -10,10 +10,15 @@
 .. data:: PORT_RETRIES the amount of times get_free_port and wait_for_ready
 will retry for by default.
 
-.. autoclass:: director.controllers.Controller
-   :members:
+.. autoexception:: evasion.director.tools.net.NoFreePort
 
-.. autofunction:: director.tools.net.get_free_port
+.. autofunction:: evasion.director.tools.net.get_free_port
+
+.. autofunction:: evasion.director.tools.net.wait_for_service
+
+.. autofunction:: evasion.director.tools.net.wait_for_ready
+
+
 
 """
 import time
@@ -26,7 +31,7 @@ import urlparse
 
 
 def get_log():
-    return logging.getLogger('director.tools.net')
+    return logging.getLogger('evasion.director.tools.net')
 
 
 PORT_RETRIES = 40

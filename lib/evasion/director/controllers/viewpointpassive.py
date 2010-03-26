@@ -2,12 +2,12 @@
 :mod:`viewpointpassive` -- This doesn't start a viewpoint but controls one if runnning.
 =========================================================================================
 
-.. module:: viewpointpassive
+.. module:: evasion.director.controllers.viewpointpassive
    :platform: Unix, MacOSX, Windows
    :synopsis: This doesn't start a viewpoint but controls one if runnning.
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
 
-.. autoclass:: director.controllers.viewpointctrl.Controller
+.. autoclass:: evasion.director.controllers.viewpointpassive.Controller
    :members:
    :undoc-members:
 
@@ -20,11 +20,11 @@ import pkg_resources
 
 import simplejson
 
-import agency
-import director
-from director.tools import net
-from director import viewpointdirect
-from director.controllers import viewpoint
+from evasion import agency
+from evasion import director
+from evasion.director.tools import net
+from evasion.director import viewpointdirect
+from evasion.director.controllers import viewpoint
 
 
 class Controller(viewpoint.Controller):
@@ -35,7 +35,7 @@ class Controller(viewpoint.Controller):
         # Standard options example:
         disabled = 'no'
         order = 1
-        controller = 'director.controllers.viewpointpassive'
+        controller = 'evasion.director.controllers.viewpointpassive'
 
         # The URI to connect to when the URI is present and the viewpoint
         # is ready to recieve requests. The viewpoint will also be kept
@@ -58,7 +58,7 @@ class Controller(viewpoint.Controller):
         port = '7055'
         
     """
-    log = logging.getLogger('director.controllers.viewpointctrl.Controller')
+    log = logging.getLogger('evasion.director.controllers.viewpointctrl.Controller')
 
     def setUp(self, config):
         """

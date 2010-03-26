@@ -2,35 +2,31 @@
 :mod:`config` -- This supervises then agents under its control.
 =================================================================
 
-.. module:: config
+.. module:: evasion.director.config
    :platform: Unix, MacOSX, Windows
    :synopsis: This supervises then agents under its control.
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
 
 This module provides the director configuration parsing and handling. 
 
-.. autoexception:: director.config.ConfigInvalid
+.. autoexception:: evasion.director.config.ConfigInvalid
 
-.. autoexception:: director.config.ConfigNotSetup
+.. autoexception:: evasion.director.config.ConfigNotSetup
 
-.. autoexception:: director.config.ConfigError
+.. autoexception:: evasion.director.config.ConfigError
 
-.. autoexception:: director.config.ControllerReloadError
+.. autoexception:: evasion.director.config.ControllerReloadError
 
-.. autoclass:: director.config.ConfigStore
+.. autoclass:: evasion.director.config.ConfigStore
    :members:
 
-.. autofunction:: director.config.clear
+.. autofunction:: evasion.director.config.clear
 
-.. autofunction:: director.config.get_cfg
+.. autofunction:: evasion.director.config.get_cfg
 
-.. autofunction:: director.config.set_cfg
+.. autofunction:: evasion.director.config.set_cfg
 
-.. autofunction:: director.config.update_objs
-
-.. autoclass:: director.config.Container
-   :members:
-   :undoc-members:
+.. autofunction:: evasion.director.config.update_objs
 
 .. autofunction:: director.config.recover_objects
 
@@ -58,7 +54,7 @@ from configobjs import *
 
 
 def get_log():
-    return logging.getLogger('director.config')
+    return logging.getLogger('evasion.director.config')
 
 
 class ConfigInvalid(Exception):
@@ -685,3 +681,6 @@ def export_configuration():
         returned['webadmin'] = c.webadmin.export()
     
     return returned
+
+
+

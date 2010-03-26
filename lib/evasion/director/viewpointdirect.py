@@ -11,6 +11,7 @@ import logging
 import simplejson
 
 from evasion.messenger import events
+from evasion.messenger import eventutils
 from evasion.messenger import xulcontrolprotocol
 from evasion.director.tools.net import wait_for_service
 
@@ -33,7 +34,7 @@ class DirectBrowserCalls(object):
     def __init__(self, port=7055, interface='127.0.0.1'):
         """Give the post an host we should talk too.
         """
-        self.log = logging.getLogger("director.viewpointdirect.DirectBrowserCalls")
+        self.log = logging.getLogger("evasion.director.viewpointdirect.DirectBrowserCalls")
         self.port = 7055
         self.interface = '127.0.0.1'
         
@@ -224,7 +225,7 @@ class DirectBrowserCalls(object):
         #
         sessionid = simplejson.loads(sessionid)
         reply_event = events.EVT(sessionid)
-        async_reply_catch = messenger.Catcher(reply_event, timeout)        
+        async_reply_catch = eventutils.Catcher(reply_event, timeout)        
         self.log.debug("callBrowserWithReply: creating reply signal for browser reply: '%s' " % sessionid)
 
         # Create the call to the browser:
@@ -248,11 +249,11 @@ class DirectBrowserCalls(object):
 def main():
     """Command line interface to remote call
     """
-    from director import utils
+    from evasion.director import utils
     from optparse import OptionParser
 
     utils.log_init(logging.DEBUG)
-    log = logging.getLogger("")
+    log = logging.getLogger("evasion.director.viewpointdirect.main")
     
     parser = OptionParser()
 

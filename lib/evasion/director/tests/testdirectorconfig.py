@@ -4,7 +4,9 @@ import os.path
 import pprint
 import unittest
 import tempfile
-import director
+
+from evasion import director
+from evasion.director import config 
 
 
 class DirectorConfigTC(unittest.TestCase):
@@ -56,7 +58,7 @@ class Agent(object):
             class Obj:
                 type = 'agent'
                 agent = 'mypackage.myagent'
-            director.config.import_module(Obj.type, Obj())
+            config.import_module(Obj.type, Obj())
             
             # Try this from configuration file:
             test_config = """
@@ -80,10 +82,10 @@ class Agent(object):
             port = 59876
             
             """
-            director.config.set_cfg(test_config)
-            c = director.config.get_cfg()
+            config.set_cfg(test_config)
+            c = config.get_cfg()
             
-            objs = director.config.load_agents(c.cfg)
+            objs = config.load_agents(c.cfg)
 
             # The agency will be in position 1 (order 1). There should be
             # two agents present, even though the second one is disabled.
@@ -107,8 +109,8 @@ class Agent(object):
             self.assertEquals(objs[1].agents[1].mod, None, "Agent was imported when it should not have been!")
             
             # try updating the config_objs and recheck that the change has been stored.
-            director.config.update_objs(objs)
-            c = director.config.get_cfg()
+            config.update_objs(objs)
+            c = config.get_cfg()
             self.assertEquals(isinstance(objs[1].agents[0].mod, m.Agent), True, "Agent not stored+updated correctly!")
             self.assertEquals(isinstance(c.agency.agents[0].mod, m.Agent), True, "Agent not stored+updated correctly!")
             
@@ -129,7 +131,7 @@ class Controller(object):
             class Obj:
                 type = 'controller'
                 controller = 'mypackage.mycontroller'
-            director.config.import_module(Obj.type, Obj())
+            config.import_module(Obj.type, Obj())
             
             # Try this from configuration file:
             test_config = """
@@ -144,11 +146,11 @@ class Controller(object):
             controller = 'mypackage.mycontroller'
             
             """
-            director.config.set_cfg(test_config)
-            c = director.config.get_cfg()
+            config.set_cfg(test_config)
+            c = config.get_cfg()
             
             self.assertEquals(len(c.cfg), 3)
-            objs = director.config.load_controllers(c.cfg)
+            objs = config.load_controllers(c.cfg)
             
             msg = """
             Inital config != result from load_controllers
@@ -169,8 +171,8 @@ class Controller(object):
             self.assertEquals(isinstance(objs[2].mod, m.Controller), True, "Controller not recovered correctly!")
 
             # try updating the config_objs and recheck that the change has been stored.
-            director.config.update_objs(objs)
-            c = director.config.get_cfg()
+            config.update_objs(objs)
+            c = config.get_cfg()
             self.assertEquals(len(objs), 3)
             m = __import__('mypackage.mycontroller', fromlist=['mypackage',])
             self.assertEquals(isinstance(objs[2].mod, m.Controller), True, "Controller not recovered correctly!")
@@ -204,9 +206,9 @@ class Controller(object):
             agent = myswipe
             
         """
-        director.config.clear()
-        director.config.set_cfg(test_config)
-        c = director.config.get_cfg()
+        config.clear()
+        config.set_cfg(test_config)
+        c = config.get_cfg()
         
         self.assertEquals(c.director is None, False)
         self.assertEquals(c.broker is None, False)
@@ -233,8 +235,8 @@ class Controller(object):
         """
         # No director section
         test_config = ""
-        director.config.clear()
-        self.assertRaises(director.config.ConfigError, director.config.set_cfg, test_config)
+        config.clear()
+        self.assertRaises(config.ConfigError, config.set_cfg, test_config)
 
         # Two+ director sections:
         test_config = """
@@ -242,8 +244,8 @@ class Controller(object):
         
         [director]
         """
-        director.config.clear()
-        self.assertRaises(director.config.ConfigError, director.config.set_cfg, test_config)
+        config.clear()
+        self.assertRaises(config.ConfigError, config.set_cfg, test_config)
 
         # Two+ broker sections:
         test_config = """
@@ -253,8 +255,8 @@ class Controller(object):
         
         [broker]
         """
-        director.config.clear()
-        self.assertRaises(director.config.ConfigError, director.config.set_cfg, test_config)
+        config.clear()
+        self.assertRaises(config.ConfigError, config.set_cfg, test_config)
 
         # Two+ agency sections:
         test_config = """
@@ -265,8 +267,8 @@ class Controller(object):
         [agency]
         
         """
-        director.config.clear()
-        self.assertRaises(director.config.ConfigError, director.config.set_cfg, test_config)
+        config.clear()
+        self.assertRaises(config.ConfigError, config.set_cfg, test_config)
 
         # Two+ webadmin sections:
         test_config = """
@@ -277,8 +279,8 @@ class Controller(object):
         [webadmin]
         
         """
-        director.config.clear()
-        self.assertRaises(director.config.ConfigError, director.config.set_cfg, test_config)
+        config.clear()
+        self.assertRaises(config.ConfigError, config.set_cfg, test_config)
 
 
     def testdirectorConfig(self):
@@ -307,14 +309,14 @@ class Controller(object):
         """
         
         # Reset and Check that no setup done is caught:
-        director.config.clear()
+        config.clear()
         
-        self.assertRaises(director.config.ConfigNotSetup, director.config.get_cfg)
+        self.assertRaises(config.ConfigNotSetup, config.get_cfg)
 
         # Check we don't get and problems with files...
-        director.config.set_cfg(test_config)
+        config.set_cfg(test_config)
         
-        c = director.config.get_cfg()
+        c = config.get_cfg()
         
         # This should only contain 5 as the agents should be part of 
         # the agency.agents member:
@@ -375,7 +377,7 @@ class Controller(object):
         webadmin = 'bob.webadmin'
 
         """
-        objs = director.config.recover_objects(test_config)
+        objs = config.recover_objects(test_config)
         
         # This should only contain 5 as the agents should be part of 
         # the agency.agents member:
@@ -444,16 +446,16 @@ class Controller(object):
         workingdir = "/tmp"
         
         [somerandomsection]
-        # This will become a catch all container object.
+        # This will be ignored entirely and will not appear in the recovered objects.
         bob = '1234'
         uptime = True
 
         """
-        objs = director.config.recover_objects(test_config)
+        objs = config.recover_objects(test_config)
         
         # This should only contain 6 as the agents should be part of 
         # the agency.agents member:
-        self.assertEquals(len(objs), 6)
+        self.assertEquals(len(objs), 5)
         
         # This is the default order in which the objects should be recovered:
         self.assertEquals(objs[0].name, 'director')
@@ -466,8 +468,6 @@ class Controller(object):
         self.assertEquals(objs[3].order, 3)
         self.assertEquals(objs[4].name, 'checkdir')
         self.assertEquals(objs[4].order, 4)
-        self.assertEquals(objs[5].name, 'somerandomsection')
-        self.assertEquals(objs[5].order, 5)
         
         # Check the agents are present:
         agents = objs[2].agents

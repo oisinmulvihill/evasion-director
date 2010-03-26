@@ -20,7 +20,6 @@ import traceback
 from pydispatch import dispatcher
 
 from evasion import agency
-#from evasion import director
 from evasion import messenger
 from evasion.director import config
 from evasion.director import testing
@@ -74,10 +73,10 @@ class Manager(object):
 
         """
         self.log.info("controllerSetup: loading controllers from config.")
-        c = director.config.get_cfg()
+        c = config.get_cfg()
         
         # Recover and import the controllers:
-        self.controllers = director.config.load_controllers(c.cfg)
+        self.controllers = config.load_controllers(c.cfg)
         self.log.info("controllerSetup: %s controller(s) recovered." % len(self.controllers))
         
         if self.controllers:
@@ -138,7 +137,7 @@ class Manager(object):
         between controller checks.
         
         """
-        c = director.config.get_cfg()
+        c = config.get_cfg()
         poll_time = float(c.director.poll_time)
         
         # Set up all signals handlers provided by the director:
@@ -216,7 +215,7 @@ class Manager(object):
         
         """
         self.log.info("main: setting up stomp connection.")        
-        c = director.config.get_cfg()
+        c = config.get_cfg()
         
         disable_broker = c.director.disable_broker
         if disable_broker == 'no':
@@ -241,7 +240,7 @@ class Manager(object):
         #
         if c.director.internal_broker == 'yes':
             self.log.warn("main: Starting the interal light weight broker (internal_broker = 'yes').")
-            from director import testing
+            from evasion.director import testing
             testing.setup_broker(
                 int(c.director.msg_port), 
                 c.director.msg_interface

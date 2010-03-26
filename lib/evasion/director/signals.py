@@ -2,20 +2,20 @@
 :mod:`signals` -- Signals handled by the director
 =================================================
 
-.. module:: director.signals
+.. module:: evasion.director.signals
    :platform: Unix, MacOSX, Windows
    :synopsis: Main director control code.
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
 
-.. autoclass:: director.signals.SignalTimeout
+.. autoclass:: evasion.director.signals.SignalTimeout
    :members:
    :undoc-members:
    
-.. autoclass:: director.signals.SignalsReceiver
+.. autoclass:: evasion.director.signals.SignalsReceiver
    :members:
    :undoc-members:
 
-.. autoclass:: director.signals.SignalsSender
+.. autoclass:: evasion.director.signals.SignalsSender
    :members:
    :undoc-members:
 
@@ -52,7 +52,7 @@ class SignalsSender(object):
     
     """
     def __init__(self):
-        self.log = logging.getLogger('director.signals.SignalsSender')
+        self.log = logging.getLogger('evasion.director.signals.SignalsSender')
 
 
     def ping(self, timeout=10, testing=None):
@@ -298,7 +298,7 @@ class SignalsReceiver(object):
         can use.
         
         """
-        self.log = logging.getLogger('director.signals.SignalsReceiver')
+        self.log = logging.getLogger('evasion.director.signals.SignalsReceiver')
         self.manager = manager
 
 

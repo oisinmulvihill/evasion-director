@@ -2,32 +2,30 @@
 :mod:`configobjs` -- Provides objects that represent config sections
 ===================================================================
 
-.. module:: config
+.. module:: evasion.director.configobjs
    :platform: Unix, MacOSX, Windows
    :synopsis: Provide objects that represent config sections from the director.cfg
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
 
 This module provides the director configuration parsing and handling. 
 
-.. autoexception:: director.configobjs.ConfigError
+.. autoexception:: evasion.director.configobjs.ConfigError
 
-.. autoclass:: director.configobjs.Director
+.. autoclass:: evasion.director.configobjs.Director
    :members:
 
-.. autoclass:: director.configobjs.Broker
+.. autoclass:: evasion.director.configobjs.Broker
    :members:
 
-.. autoclass:: director.configobjs.WebAdmin
+.. autoclass:: evasion.director.configobjs.WebAdmin
    :members:
 
-.. autoclass:: director.configobjs.Controller
+.. autoclass:: evasion.director.configobjs.Controller
    :members:
 
-.. autoclass:: director.configobjs.Agent
+.. autoclass:: evasion.director.configobjs.Agent
    :members:
 
-.. autoclass:: director.configobjs.Container
-   :members:
 
 """
 import logging
@@ -86,7 +84,6 @@ class Base(object):
             disabled = self.disabled,
             config = self.config,
         )
-
         
 
     def validate(self):
@@ -221,7 +218,7 @@ class Broker(Base):
         # for the commandline controller. In future the broker may
         # run as a thread under the director.
         #
-        controller = 'director.controllers.commandline'
+        controller = 'evasion.director.controllers.commandline'
         command = "morbidsvr -p 61613 -i 127.0.0.1"
         workingdir = ""
         
@@ -237,7 +234,7 @@ class Broker(Base):
         self.name = self.type
         self.order = 1
         self.disabled = 'no'
-        self.controller = 'director.controllers.commandline'
+        self.controller = 'evasion.director.controllers.commandline'
         self.command = "morbidsvr -p 61613 -i 127.0.0.1"
         self.workingdir = ""
 
@@ -268,10 +265,8 @@ class Agency(Base):
         [agency]
         order = 2
         
-        # (OPTIONAL): This is the option web interface to be used if 
-        # webadmin is used.
-        #
-        webadmin = 'agency.webadmin'
+        # OPTIONAL: This is the default controller for the agency
+        controller = 'evasion.director.controllers.agencyctrl'
         
         # OPTIONAL: disable the setup/tearDown/start/stop of the
         # agent. It will still be loaded and created.
@@ -288,7 +283,7 @@ class Agency(Base):
         self.name = self.type
         self.order = 2
         self.disabled = 'no'
-        self.controller = 'director.controllers.agencyctrl'
+        self.controller = 'evasion.director.controllers.agencyctrl'
         self.agents = []
 
     
@@ -320,8 +315,8 @@ class Agent(Base):
     A config section can have the following options::
     
         [name]
-        # The python path to agent to import e.g.
-        agent = 'agency.testing.fake'
+        # The python path to agent to import For example
+        agent = 'evasion.agency.testing.fake'
         
         # A category from agency.AGENT_CATEGORIES
         cat = 'general'
@@ -329,7 +324,7 @@ class Agent(Base):
         # OPTIONAL: the order in which the agent will be 
         # started. By default it will be given an order 
         # based on when it was recoverd.
-        # order = 0+
+        # order = 1+
         
         # OPTIONAL: a unique number which can be used instead of name
         # to refer to this agent.
@@ -397,7 +392,7 @@ class WebAdmin(Base):
         self.name = self.type
         self.order = 4
         self.disabled = 'no'
-        self.controller = 'director.controllers.webadminctrl'
+        self.controller = 'evasion.director.controllers.webadminctrl'
 
 
     def __str__(self):
@@ -415,7 +410,7 @@ class Controller(Base):
         # order = 10+
 
         # The python path to agent to import e.g.
-        controller = 'director.controllers.program'
+        controller = 'evasion.director.controllers.program'
                         
         # OPTIONAL: disable the start/stop of the controller. It will
         # still be loaded and created.
@@ -438,28 +433,6 @@ class Controller(Base):
         return "<Controller: order:%s name:%s disabled:%s>" % (self.order, self.name, self.disabled)
 
 
-class Container(Base):
-    """This represents an abitrary (unknown) section recovered 
-    from the configuration. The '[<section>]' will become the 
-    name of the container.
-    """
-    type = 'container'
-    
-    def __init__(self):
-        Base.__init__(self)
 
-    
-    def export(self):
-        """Called to return an exportable dict representing this object"""
-        return dict(
-            type = self.type,
-        )
-
-    def validate(self):
-        """No validation is performed on arbitrary containers."""
-        pass
-
-    def __str__(self):
-        return "<Container: %s>" % (self.name)
 
 

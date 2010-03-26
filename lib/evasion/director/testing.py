@@ -7,7 +7,7 @@
    :synopsis: This provides some handy testing controllers.
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
 
-.. autoclass:: director.testing.FakeViewpoint
+.. autoclass:: evasion.director.testing.FakeViewpoint
    :members:
    :undoc-members:
 
@@ -32,7 +32,7 @@ class FakeViewpoint(object):
         get URI requests.
         
         """
-        self.log = logging.getLogger('director.testing.FakeViewpoint')
+        self.log = logging.getLogger('evasion.director.testing.FakeViewpoint')
         
         # This is returned when we receive a get uri request.
         # This will also be updated and set to that from a set
@@ -72,7 +72,7 @@ class FakeViewpoint(object):
         """Called to handle the reply for a VIEWPOINT_* command event.
         """
         # Lazy import so unless this class is used its import won't be needed.
-        import messenger
+        from evasion import messenger
         
         # The uid of the signal is used as the 'address' that
         # a reply goes back to. We'll forward the replyto which
@@ -170,9 +170,9 @@ def director_setup(test_config):
     
     """
     # lazy import to prevent loops:
-    import director
-    from director import manager
-    from director.tools import net
+    from evasion import director
+    from evasion.director import manager
+    from evasion.director.tools import net
 
     broker_interface = '127.0.0.1'
     broker_port = net.get_free_port()

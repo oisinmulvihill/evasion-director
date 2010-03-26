@@ -18,10 +18,10 @@ import os
 import logging
 import subprocess
 
-import agency
-import director
-from agency.manager import Manager
-from director.controllers import base
+from evasion import agency
+from evasion import director
+from evasion.agency.manager import Manager
+from evasion.director.controllers import base
 from evasion.web.scripts import runwebadmin
 
 

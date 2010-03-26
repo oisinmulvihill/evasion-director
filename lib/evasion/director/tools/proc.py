@@ -2,15 +2,19 @@
 :mod:`proc` -- This provides handy utiliy functions dealing with processes.
 ==============================================================================
 
-.. module:: proc
+.. module:: evasion.director.tools.proc
    :platform: Unix, MacOSX, Windows
    :synopsis: This provides handy utiliy functions for network services.
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
 
 
-.. autofunction:: director.tools.proc.pkill
+.. autofunction:: evasion.director.tools.proc.pkill
 
-.. autofunction:: director.tools.proc.kill
+.. autofunction:: evasion.director.tools.proc.kill
+
+.. autofunction:: evasion.director.tools.proc.check
+
+.. autofunction:: evasion.director.tools.proc.call
 
 """
 import os
@@ -20,7 +24,7 @@ import subprocess
 
 
 def get_log():
-    return logging.getLogger('director.tools.proc')
+    return logging.getLogger('evasion.director.tools.proc')
 
 
 def pkill(cmd):

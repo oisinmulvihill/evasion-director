@@ -2,14 +2,19 @@
 :mod:`viewpointpassive` -- This doesn't start a viewpoint but controls one if runnning.
 =========================================================================================
 
-.. module:: viewpointpassive
+.. module:: evasion.director.controllers.viewpointpassive
    :platform: Unix, MacOSX, Windows
    :synopsis: This doesn't start a viewpoint but controls one if runnning.
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
 
-.. autoclass:: director.controllers.viewpointctrl.Controller
+.. autoclass:: evasion.director.controllers.viewpointctrl.Controller
    :members:
    :undoc-members:
+   
+.. autofunction:: evasion.director.controllers.dump
+   
+.. autofunction:: evasion.director.controllers.load
+
 
 """
 import os
@@ -21,17 +26,17 @@ import pkg_resources
 import simplejson
 from pydispatch import dispatcher
 
-import agency
-import director
-import messenger
-from director.tools import net
-from director import viewpointdirect
-from director.controllers import viewpoint
+from evasion import agency
+from evasion import director
+from evasion import messenger
+from evasion.director.tools import net
+from evasion.director import viewpointdirect
+from evasion.director.controllers import viewpoint
 
 
 
 def get_log():
-    return logging.getLogger("director.controllers.viewpointxulcontrol")
+    return logging.getLogger("evasion.director.controllers.viewpointxulcontrol")
 
 
 

@@ -14,7 +14,7 @@ from optparse import OptionParser
 
 
 def get_log():
-    return logging.getLogger("director.managermain")
+    return logging.getLogger("evasion.director.scripts.main")
 
 
 
@@ -225,7 +225,7 @@ def main():
 
     (options, args) = parser.parse_args()
 
-    log = logging.getLogger("director.scripts.main")
+    log = logging.getLogger("evasion.director.scripts.main.main")
 
     # Create the default app manager config:
     if options.create_config:
@@ -275,7 +275,7 @@ def main():
             spt = StreamPassThrough()    
             
         # Ok, clear to import:
-        import director.config
+        from evasion.director import config
 
         # Set up the director config and recover the object from it:
         cfg_file = os.path.abspath(options.config_filename)
@@ -283,9 +283,9 @@ def main():
         raw = fd.read()
         fd.close()
         
-        director.config.set_cfg(raw, filename=cfg_file)
+        config.set_cfg(raw, filename=cfg_file)
 
-        from director import manager
+        from evasion.director import manager
         manager.Manager().main()
 
         

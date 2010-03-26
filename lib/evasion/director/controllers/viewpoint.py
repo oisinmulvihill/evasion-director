@@ -2,12 +2,12 @@
 :mod:`viewpointctrl` -- This is the director compatible controller for the viewpoint.
 ======================================================================================
 
-.. module:: viewpointctrl
+.. module:: evasion.director.controllers.viewpointctrl
    :platform: Unix, MacOSX, Windows
    :synopsis: This is the director compatible controller for the viewpoint.
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
 
-.. autoclass:: director.controllers.viewpointctrl.Controller
+.. autoclass:: evasion.director.controllers.viewpointctrl.Controller
    :members:
    :undoc-members:
 
@@ -21,13 +21,13 @@ import pkg_resources
 
 import simplejson
 
-import agency
-import director
-from director.tools import net
-from director.tools import proc
-from agency.manager import Manager
-from director import viewpointdirect
-from director.controllers import base
+from evasion import agency
+from evasion import director
+from evasion.director.tools import net
+from evasion.director.tools import proc
+from evasion.agency.manager import Manager
+from evasion.director import viewpointdirect
+from evasion.director.controllers import base
 
 
 class Controller(base.Controller):
@@ -38,7 +38,7 @@ class Controller(base.Controller):
         # Standard options example:
         disabled = 'no'
         order = 1
-        controller = 'director.controllers.viewpoint'
+        controller = 'evasion.director.controllers.viewpoint'
         
         # Specific configuration:
         #
@@ -90,7 +90,7 @@ class Controller(base.Controller):
         args = ''
 
     """
-    log = logging.getLogger('director.controllers.viewpointctrl.Controller')
+    log = logging.getLogger('evasion.director.controllers.viewpointctrl.Controller')
 
     def setUp(self, config):
         """

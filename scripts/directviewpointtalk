@@ -1,4 +1,4 @@
-from director import viewpointdirect
+from evasion.director import viewpointdirect
         
 if __name__ == "__main__":
     viewpointdirect.main()

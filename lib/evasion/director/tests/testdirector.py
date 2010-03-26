@@ -9,16 +9,16 @@ import unittest
 import tempfile
 
 
-
-import director
-import messenger
-from director import signals
-from messenger.testing import message_main
-from director.testing import director_setup
+from evasion import director
+from evasion import messenger
+from evasion.director import config
+from evasion.director import signals
+from evasion.messenger.testing import message_main
+from evasion.director.testing import director_setup
 
 
 def get_log():
-    return logging.getLogger('director.tests.testdirector')
+    return logging.getLogger('evasion.director.tests.testdirector')
 
 
 def err_msg(correct, rc):
@@ -83,10 +83,10 @@ class DirectorTC(unittest.TestCase):
         """
         my_controller = r"""
 import logging
-from director.controllers import base
+from evasion.director.controllers import base
 
 def get_log():
-    return logging.getLogger('director.tests.testdirector')
+    return logging.getLogger('evasion.director.tests.testdirector')
 
 class Controller(base.Controller):
 
@@ -126,10 +126,10 @@ class Controller(base.Controller):
         
         my_agent = r"""
 import logging
-from agency import agent
+from evasion.agency import agent
 
 def get_log():
-    return logging.getLogger('director.tests.testdirector.testControllerConfigRecovery')
+    return logging.getLogger('evasion.director.tests.testdirector.testControllerConfigRecovery')
 
 class Agent(agent.Base):
 
@@ -184,7 +184,7 @@ class Agent(agent.Base):
         
         def testmain(tc):
             """"""
-            c = director.config.get_cfg()
+            c = config.get_cfg()
             self.assertNotEquals(c.director, None)
             self.assertNotEquals(c.agency, None)
             self.assertEquals(len(c.cfg), 3)
@@ -233,10 +233,10 @@ class Agent(agent.Base):
         """
         my_controller = r"""
 import logging
-from director.controllers import base
+from evasion.director.controllers import base
 
 def get_log():
-    return logging.getLogger('director.tests.testdirector')
+    return logging.getLogger('evasion.director.tests.testdirector')
 
 class Controller(base.Controller):
 
@@ -280,10 +280,10 @@ class Controller(base.Controller):
         #
         my_controller2 = r"""
 import logging
-from director.controllers import base
+from evasion.director.controllers import base
 
 def get_log():
-    return logging.getLogger('director.tests.testdirector')
+    return logging.getLogger('evasion.director.tests.testdirector')
 
 class Controller(base.Controller):
 
@@ -351,7 +351,7 @@ class Controller(base.Controller):
             # controller with the load module instance from our
             # test controller
             #
-            c = director.config.get_cfg()
+            c = config.get_cfg()
             self.assertNotEquals(c.director, None)
             self.assertEquals(len(c.cfg), 2)
             
@@ -415,7 +415,7 @@ class Controller(base.Controller):
             # Get the newly updated configuration and check the 
             # new controllers state.
             #
-            c = director.config.get_cfg()
+            c = config.get_cfg()
             ctrl = c.cfg[1]
             self.assertNotEquals(ctrl, original_ctrl)
             self.assertNotEquals(c.director, None)
@@ -447,10 +447,10 @@ class Controller(base.Controller):
         """
         my_controller = r"""
 import logging
-from director.controllers import base
+from evasion.director.controllers import base
 
 def get_log():
-    return logging.getLogger('director.tests.testdirector')
+    return logging.getLogger('evasion.director.tests.testdirector')
 
 class Controller(base.Controller):
 
@@ -517,7 +517,7 @@ class Controller(base.Controller):
             # controller with the load module instance from our
             # test controller
             #
-            c = director.config.get_cfg()
+            c = config.get_cfg()
             self.assertNotEquals(c.director, None)
             self.assertEquals(len(c.cfg), 2)
             
@@ -579,7 +579,7 @@ class Controller(base.Controller):
             
             self.assertEquals(rc['data'], correct, err_msg(correct, rc['data']))
             
-            c = director.config.get_cfg()
+            c = config.get_cfg()
             self.assertEquals(ctrl.mod.startCalled, True)
             self.assertEquals(ctrl.mod.stopCalled, False)
 
@@ -601,7 +601,7 @@ class Controller(base.Controller):
             
             self.assertEquals(rc['data'], correct, err_msg(correct, rc['data']))
             
-            c = director.config.get_cfg()
+            c = config.get_cfg()
             self.assertEquals(ctrl.mod.startCalled, True)
             self.assertEquals(ctrl.mod.stopCalled, True)
             
