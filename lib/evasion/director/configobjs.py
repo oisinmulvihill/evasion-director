@@ -107,6 +107,8 @@ class Director(Base):
         [director]
         # The broker connection details. Required if disable_broker = 'no' (default):
         msg_host = "127.0.0.1"
+        # If internal_broker is 'yes' then this will also be the port 
+        # the internal_broker binds to listen on:
         msg_port = 61613
         msg_username = ''
         msg_password = ''
