@@ -81,7 +81,6 @@ class Controller(base.Controller):
 
     def isStarted(self):
         rc = self.webadmin.directorIntegrationIsStarted()
-        self.log.debug("isStarted: rc:%s." % rc)
         return rc
     
 
