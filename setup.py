@@ -36,11 +36,6 @@ needed = [
     'evasion-agency',
 ]
 
-import sys
-if not sys.platform.startswith('win'):
-    needed.append('twisted')
-
-
 #  find lib/director/viewpoint -type d -exec touch {}//__init__.py \;
 #
 # If new directories are added then I'll need to rerun this command.
