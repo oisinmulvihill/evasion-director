@@ -197,7 +197,13 @@ class Controller(viewpoint.Controller):
         content_id = data['content_id']
         content = data['content']
        
-        rc = self.dbc.replaceContent(content_id, content)
+        try:
+            rc = self.dbc.replaceContent(content_id, content)
+            
+        except viewpointdirect.BrowserNotPresent, e:
+            rc = "Replace Failed! - content_id:%s,  content:%s" % (content_id, content)
+            self.log.warn("Viewpoint not present? It could also be busy: %s" % rc)
+            
         self.reply(signal, rc)
 
         
