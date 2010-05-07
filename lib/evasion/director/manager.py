@@ -149,6 +149,32 @@ class Manager(object):
         return poll_time
 
 
+    def step(self):
+        """Perform a single pass through the controllers maintenance steps.
+
+        This is used by appmain or from the tests.
+        
+        """
+        # Check the controllers are alive and restat if needs be:
+        for ctl in self.controllers:
+            if ctl.wasStopped and ctl.mod:
+                if ctl.mod.isStarted():
+                    self.log.info("appmain: The controller '%s' needs to be stopped." % (ctl))
+                    ctl.mod.stop()
+                    self.log.info("appmain: The controller '%s' stop has been called." % (ctl))
+        
+            elif ctl.disabled == 'no' and ctl.mod:
+                try:
+                    if not ctl.mod.isStarted():
+                        self.log.info("appmain: The controller '%s' needs to be started." % (ctl))
+                        ctl.mod.start()
+                        rc = ctl.mod.isStarted()
+                        self.log.info("appmain: Started ok '%s'? '%s'" % (ctl.name, rc))            
+                except:
+                    self.log.exception("%s appmain error: " % ctl)
+                    sys.stderr.write("%s appmain error: %s" % (ctl, self.formatError()))
+
+
     def appmain(self, isExit):
         """
         Run the main program loop.
@@ -164,25 +190,8 @@ class Manager(object):
         poll_time = self.appmainSetup()
 
         while not isExit():
-            # Check the controllers are alive and restat if needs be:
-            for ctl in self.controllers:
-                if ctl.wasStopped and ctl.mod:
-                    if ctl.mod.isStarted():
-                        self.log.info("appmain: The controller '%s' needs to be stopped." % (ctl))
-                        ctl.mod.stop()
-                        self.log.info("appmain: The controller '%s' stop has been called." % (ctl))
-            
-                elif ctl.disabled == 'no' and ctl.mod:
-                    try:
-                        if not ctl.mod.isStarted():
-                            self.log.info("appmain: The controller '%s' needs to be started." % (ctl))
-                            ctl.mod.start()
-                            rc = ctl.mod.isStarted()
-                            self.log.info("appmain: Started ok '%s'? '%s'" % (ctl.name, rc))            
-                    except:
-                        self.log.exception("%s appmain error: " % ctl)
-                        sys.stderr.write("%s appmain error: %s" % (ctl, self.formatError()))
-
+            self.step()
+    
             # Don't busy wait if nothing needs doing:
             time.sleep(poll_time)
 

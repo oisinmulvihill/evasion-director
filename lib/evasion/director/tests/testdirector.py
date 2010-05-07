@@ -156,7 +156,7 @@ class Agent(agent.Base):
         msg_port = %(broker_port)s
         msg_username = ''
         msg_password = ''
-        msg_channel = 'evasion'
+        msg_channel = '%(broker_channel)s'
         msg_interface = '%(broker_interface)s'
         proxy_dispatch_port = %(proxy_port)s
         

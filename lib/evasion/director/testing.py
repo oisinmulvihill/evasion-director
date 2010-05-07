@@ -158,7 +158,7 @@ def setup_broker(port=61613, interface='127.0.0.1'):
     return setup(reactor, port, interface)
     
     
-def director_setup(test_config):
+def director_setup(test_config, **kw):
     """
     Create a director manager instance which can be used
     from unit/acceptance/functional tests.
@@ -174,9 +174,11 @@ def director_setup(test_config):
     from evasion.director import manager
     from evasion.director.tools import net
 
-    broker_interface = '127.0.0.1'
-    broker_port = net.get_free_port()
+    broker_interface = kw.get('broker_interface', '127.0.0.1')
+    broker_port = kw.get('broker_port', net.get_free_port())
+    broker_channel = kw.get('broker_channel', 'evasion')
     proxy_port = net.get_free_port(exclude_ports=[broker_port,])
+    proxy_port = kw.get('proxy_port', proxy_port)
     
     # load this configuration into the director:
     #
@@ -190,5 +192,11 @@ def director_setup(test_config):
     m.main(director_testing=True)
     m.appmainSetup() # need this as mainloop is not in main now.
     
-    return m
+    return dict(
+        manager=m,
+        broker_interface=broker_interface,
+        broker_port=broker_port,
+        broker_channel=broker_channel,
+        proxy_port=proxy_port,
+    )
     

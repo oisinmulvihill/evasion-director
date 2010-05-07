@@ -454,7 +454,12 @@ def import_module(import_type, obj):
         fromlist = import_string.split('.')
         # absolute imports only (level=0):
         #get_log().debug("import_module: import<%s> fromlist<%s>" % (importmod, fromlist))
-        imported_agent = __import__(importmod, fromlist=fromlist, level=0)
+        try:
+            imported_agent = __import__(importmod, fromlist=fromlist, level=0)
+        except TypeError, e:
+            # possibly running under python24, retry in a compatible way:
+            imported_agent = __import__(importmod, globals(), locals(), fromlist)
+            #print "imported_agent: ", imported_agent
         
     except ImportError, e:
          raise ImportError("The controller '%s' from '%s' could not be imported! %s" % (
