@@ -18,11 +18,7 @@ Maintainer=' Oisin Mulvihill'
 Summary='This provides a daemon like running and monitoring application'
 License=''
 ShortDescription=Summary
-
-# Recover the ReStructuredText docs:
-fd = file("lib/evasion/director/docs/director.rtx")
-Description=fd.read()
-fd.close()
+Description=Summary
 
 TestSuite = 'evasion.director.tests'
 
