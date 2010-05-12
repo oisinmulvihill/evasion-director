@@ -501,11 +501,15 @@ def load_agents(config_objs):
     return config_objs
 
     
-def load_controllers(config_objs):
+def load_controllers(config_objs, ignore_exceptions=False):
     """Called to test and then load the controllers from the configuration.
     
-    config_objs:
+    :param config_objs:
         This is a list as returned by recover_objects()
+        
+    :param ignore_exceptions:
+        True means a module will be ignored if it causes an
+        exception will being loaded.
     
     Note: the broker, agency and webadmin are also considered 
     controllers in addition to the explicit controllers.
@@ -520,7 +524,15 @@ def load_controllers(config_objs):
     
     def doimp(obj):
         if obj.disabled == 'no' and obj.type not in skip:
-            obj.mod = import_module(obj.type, obj)
+            if ignore_exceptions:
+                try:
+                    obj.mod = import_module(obj.type, obj)
+                except:
+                    get_log().exception("load_controllers: the module '%s' could not import - " % (obj))
+                    
+            else:
+                obj.mod = import_module(obj.type, obj)
+
             
     [doimp(obj) for obj in config_objs]
     

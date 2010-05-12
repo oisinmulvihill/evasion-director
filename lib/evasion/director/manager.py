@@ -76,7 +76,7 @@ class Manager(object):
         c = config.get_cfg()
         
         # Recover and import the controllers:
-        self.controllers = config.load_controllers(c.cfg)
+        self.controllers = config.load_controllers(c.cfg, ignore_exceptions=True)
         self.log.info("controllerSetup: %s controller(s) recovered." % len(self.controllers))
         
         if self.controllers:
