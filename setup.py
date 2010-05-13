@@ -16,7 +16,7 @@ Author='Oisin Mulvihill'
 AuthorEmail='oisinmulvihill at gmail dot com'
 Maintainer=' Oisin Mulvihill'
 Summary='This provides a daemon like running and monitoring application'
-License=''
+License='Evasion Project CDDL License'
 ShortDescription=Summary
 Description=Summary
 
