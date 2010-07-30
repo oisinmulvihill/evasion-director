@@ -9,13 +9,13 @@
 
 The director provides a number of modules:
 
-.. automodule:: director.config
+.. automodule:: evasion.director.config
 
-.. automodule:: director.scripts
+.. automodule:: evasion.director.scripts
 
-.. automodule:: director.manager
+.. automodule:: evasion.director.manager
 
-.. automodule:: director.controllers
+.. automodule:: evasion.director.controllers
 
 """
 
