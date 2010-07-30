@@ -20,9 +20,9 @@ import subprocess
 
 from evasion import agency
 from evasion import director
+from evasion.web.scripts import main
 from evasion.agency.manager import Manager
 from evasion.director.controllers import base
-from evasion.web.scripts import runwebadmin
 
 
 class Controller(base.Controller):
@@ -62,7 +62,7 @@ class Controller(base.Controller):
             self.log.info("setUp: creating evasion.web with internal configuration.")
             
         # Tell run to use our logger which will be set up:
-        self.webadmin = runwebadmin.Run(config_file, nologsetup=True)
+        self.webadmin = main.Run(config_file, nologsetup=True)
 
 
     def start(self):
