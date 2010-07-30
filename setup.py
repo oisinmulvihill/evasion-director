@@ -7,11 +7,17 @@ Oisin Mulvihill
 2008-12-23
 
 """
-from setuptools import setup, find_packages
+try:
+    from setuptools import setup, find_packages
+except ImportError:
+    from ez_setup import use_setuptools
+    use_setuptools()
+    from setuptools import setup, find_packages
+
 
 Name='evasion-director'
 ProjecUrl="" #""
-Version='1.0.0'
+Version='1.0.1'
 Author='Oisin Mulvihill'
 AuthorEmail='oisinmulvihill at gmail dot com'
 Maintainer=' Oisin Mulvihill'
@@ -52,7 +58,11 @@ PackageData = {
 
 # Make exe versions of the scripts:
 EntryPoints = {
+    'console_scripts': [
+        'director = evasion.director.scripts.main:main',
+    ]
 }
+
 
 setup(
 #    url=ProjecUrl,
