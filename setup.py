@@ -60,6 +60,7 @@ PackageData = {
 EntryPoints = {
     'console_scripts': [
         'director = evasion.director.scripts.main:main',
+        'viewpointdirect = evasion.director.viewpointdirect:main',
     ]
 }
 
