@@ -1,6 +1,6 @@
 """
 The script easy install produces isn't very reliable so I'm
-adding this script to run morbid that is now part of the 
+adding this script to run morbid that is now part of the
 app manager module.
 
 Oisin Mulvihill
@@ -10,8 +10,8 @@ Oisin Mulvihill
 import sys
 import logging
 
-from director import utils
-from director import morbid
+from evasion.director import utils
+from evasion.director import morbid
 
 utils.log_init(logging.INFO)
 
@@ -26,6 +26,3 @@ sys.stderr = FakeStream()
 
 if __name__ == "__main__":
     morbid.main()
-
-
-

@@ -2,10 +2,10 @@
 msg_channel = 'evasion'
 internal_broker = 'yes'
 
-[agencyhq]
+[agency]
 disabled = '${disable_agency}'
 order = 2
-controller = 'director.controllers.agencyctrl'
+controller = 'evasion.director.controllers.agencyctrl'
 
     [testagent]
     # Example of an agent entry
@@ -18,15 +18,15 @@ controller = 'director.controllers.agencyctrl'
 [yourwebapp]
 disabled = 'yes'
 order = 3
-controller = 'director.controllers.commandline'
+controller = 'evasion.director.controllers.commandline'
 command = "yourwebapp start cmd: start-app.exe"
 workingdir = "${install_dir}"
 
 
 [viewpoint]
-#disabled = 'yes'
+disabled = 'yes'
 order = 4
-controller = 'director.controllers.viewpoint'
+controller = 'evasion.director.controllers.viewpoint'
 xulrunner = "xulrunner"
 uri = "http://localhost:9808/"
 args = "-nofullscreen yes"
@@ -64,7 +64,7 @@ formatter=default
 #
 #[handler_default]
 #class=handlers.RotatingFileHandler
-#args=("director.log", "au", 10 * 1024 * 1024, 2)
+#args=("evasion-director.log", "au", 10 * 1024 * 1024, 2)
 #level=INFO
 #formatter=default
 
@@ -72,4 +72,3 @@ formatter=default
 [formatter_default]
 format=%(asctime)s %(name)s %(levelname)s %(message)s
 datefmt=
-

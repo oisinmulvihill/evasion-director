@@ -7,7 +7,7 @@
    :synopsis: Provide objects that represent config sections from the director.cfg
 .. moduleauthor:: Oisin Mulvihill <oisin.mulvihill@gmail.com>
 
-This module provides the director configuration parsing and handling. 
+This module provides the director configuration parsing and handling.
 
 .. autoexception:: evasion.director.configobjs.ConfigError
 
@@ -31,7 +31,7 @@ This module provides the director configuration parsing and handling.
 import logging
 
 all = [
-    'SectionError', 'Director', 'Broker', 'WebAdmin', 
+    'SectionError', 'Director', 'Broker', 'WebAdmin',
     'Controller', 'Agency', 'Agent', 'Container',
 ]
 
@@ -40,12 +40,12 @@ class SectionError(Exception):
     """This is raised for problems with loading and using the configuration.
     """
 
-    
+
 class Base(object):
     """This is the base for all objects converted to from configuration sections.
     """
     type = 'base'
-    
+
     def __init__(self):
         """
         Set up the base members name, order, disabled = 'no', config
@@ -59,7 +59,7 @@ class Base(object):
         # This is the loaded module as recovered by import_module
         # via a call to load_agents / load_controllers.
         self.mod = None
-        
+
         # Set by the director so it knows this was deliberately stopped.
         self.wasStopped = False
 
@@ -69,7 +69,7 @@ class Base(object):
         #print "self:", self.__dict__
         return "<%s: order %s>" % (self.name, self.order)
 
-    
+
     def __repr__(self):
         """This is a string the represents us, can be used as a dict key."""
         return self.__str__()
@@ -84,38 +84,38 @@ class Base(object):
             disabled = self.disabled,
             config = self.config,
         )
-        
+
 
     def validate(self):
         """Called to check that all the required fields have been provided.
-        
+
         If one or more aren't provided then SectionError
         will be raised to indicate so.
-        
+
         """
         for i in self.required:
             if i and not getattr(self, i, None):
                 raise SectionError("'%s' The member '%s' must be provided in the configuration." % (str(self), i))
-    
+
 
 class Director(Base):
-    """This represents a director section as recovered from the 
-    configuration section.    
-    
+    """This represents a director section as recovered from the
+    configuration section.
+
     A config section can have the following options::
-    
+
         [director]
         # The broker connection details. Required if disable_broker = 'no' (default):
         msg_host = "127.0.0.1"
-        # If internal_broker is 'yes' then this will also be the port 
+        # If internal_broker is 'yes' then this will also be the port
         # the internal_broker binds to listen on:
         msg_port = 61613
         msg_username = ''
         msg_password = ''
         msg_channel = 'evasion'
         msg_interface = '127.0.0.1'
-        
-        # Start a light weight broker running as part of the 
+
+        # Start a light weight broker running as part of the
         # director process. This simplies certain installs
         internal_broker = 'yes'
 
@@ -135,7 +135,7 @@ class Director(Base):
         # (OPTIONAL): This is the option web interface to be used if webadmin is used.
         webadmin = 'director.webadmin'
 
-        # Notes: 
+        # Notes:
         #
         # The director has an implicit order of 0
         # order = 0
@@ -146,7 +146,7 @@ class Director(Base):
 
     """
     type = 'director'
-    
+
     def __init__(self):
         Base.__init__(self)
         self.name = self.type
@@ -162,11 +162,11 @@ class Director(Base):
         self.disable_broker = 'no'
         self.noproxydispatch = 'no'
         self.proxy_dispatch_port = 1901
-        
+
         # Fake the director's mod so it can be used like a controller.
         #
         class F:
-            """Based on director.controllers.base:Base but 
+            """Based on director.controllers.base:Base but
             there is no point importing it just for this.
             """
             def setUp(self, config): pass
@@ -177,7 +177,7 @@ class Director(Base):
             def tearDown(self): pass
         self.mod = F()
 
-    
+
     def export(self):
         """Called to return an exportable dict representing this object"""
         return dict(
@@ -205,17 +205,17 @@ class Director(Base):
 
 
 class Broker(Base):
-    """This represents a broker section as recovered from the 
-    configuration.    
-    
+    """This represents a broker section as recovered from the
+    configuration.
+
     A config section can have the following options::
-    
+
         [broker]
         # OPTIONAL: This is the order in which it will be started.
         # The default is 1 to come after the directors implicit 0.
         order = 1
-        
-        # OPTIONAL: The broker is using the command line controller 
+
+        # OPTIONAL: The broker is using the command line controller
         # for the moment. The controller/command/workingdir are args
         # for the commandline controller. In future the broker may
         # run as a thread under the director.
@@ -223,14 +223,14 @@ class Broker(Base):
         controller = 'evasion.director.controllers.commandline'
         command = "morbidsvr -p 61613 -i 127.0.0.1"
         workingdir = ""
-        
+
         # OPTIONAL: disable the start/stop of the controller. It will
         # still be loaded and created.
         disabled = 'yes' | 'no'
 
     """
     type = 'broker'
-    
+
     def __init__(self):
         Base.__init__(self)
         self.name = self.type
@@ -240,7 +240,7 @@ class Broker(Base):
         self.command = "morbidsvr -p 61613 -i 127.0.0.1"
         self.workingdir = ""
 
-    
+
     def export(self):
         """Called to return an exportable dict representing this object"""
         return dict(
@@ -259,27 +259,27 @@ class Broker(Base):
 
 
 class Agency(Base):
-    """This represents the Agency configuration as recoverd 
-    from the configuration.    
-    
+    """This represents the Agency configuration as recoverd
+    from the configuration.
+
     A config section can have the following options::
-    
+
         [agency]
         order = 2
-        
+
         # OPTIONAL: This is the default controller for the agency
         controller = 'evasion.director.controllers.agencyctrl'
-        
+
         # OPTIONAL: disable the setup/tearDown/start/stop of the
         # agent. It will still be loaded and created.
         disabled = 'yes' | 'no'
-        
+
     Note: the 'agents' member will contain a list agent instances
     recovered.
-    
+
     """
     type = 'agency'
-    
+
     def __init__(self):
         Base.__init__(self)
         self.name = self.type
@@ -288,14 +288,14 @@ class Agency(Base):
         self.controller = 'evasion.director.controllers.agencyctrl'
         self.agents = []
 
-    
+
     def export(self):
         """Called to return an exportable dict representing this object"""
-        
+
         agents = []
         if self.agents:
             agents = [a.export() for a in self.agents]
-        
+
         return dict(
             type = self.type,
             name = self.name,
@@ -311,34 +311,34 @@ class Agency(Base):
 
 
 class Agent(Base):
-    """This represents an agent configuration section as recoverd 
-    from the agent configuration.    
-    
+    """This represents an agent configuration section as recoverd
+    from the agent configuration.
+
     A config section can have the following options::
-    
+
         [name]
         # The python path to agent to import For example
         agent = 'evasion.agency.testing.fake'
-        
+
         # A category from agency.AGENT_CATEGORIES
         cat = 'general'
-        
-        # OPTIONAL: the order in which the agent will be 
-        # started. By default it will be given an order 
+
+        # OPTIONAL: the order in which the agent will be
+        # started. By default it will be given an order
         # based on when it was recoverd.
         # order = 1+
-        
+
         # OPTIONAL: a unique number which can be used instead of name
         # to refer to this agent.
         alias = 1
-        
+
         # OPTIONAL: disable the setup/tearDown/start/stop of the
         # agent. It will still be loaded and created.
         disabled = 'yes' | 'no'
-    
+
     """
     type = 'agent'
-    
+
     def __init__(self):
         Base.__init__(self)
         self.agent = None
@@ -346,11 +346,11 @@ class Agent(Base):
         self.alias = None
         self.node = None
         # This will be set if its not provided:
-        self.order = None 
+        self.order = None
         # alias is no longer required.
         self.required = ['name','agent', 'cat']
 
-    
+
     def export(self):
         """Called to return an exportable dict representing this object"""
         return dict(
@@ -366,29 +366,29 @@ class Agent(Base):
 
     def __str__(self):
         return "<Agent: name:%s agent order:%s disabled:%s>" % (
-            self.name, 
-            self.order, 
+            self.name,
+            self.order,
             self.disabled
         )
 
 
 class WebAdmin(Base):
-    """This represents a broker section as recovered from the 
-    configuration.    
-    
+    """This represents a broker section as recovered from the
+    configuration.
+
     A config section can have the following options::
-    
+
         [webadmin]
         # OPTIONAL: This is the order in which it will be started.
         order = 3
-        
+
         # OPTIONAL: disable the start/stop of the controller. It will
         # still be loaded and created.
         disabled = 'yes' | 'no'
 
     """
     type = 'webadmin'
-    
+
     def __init__(self):
         Base.__init__(self)
         self.name = self.type
@@ -402,18 +402,18 @@ class WebAdmin(Base):
 
 
 class Controller(Base):
-    """This represents a controller section as recovered from the 
-    configuration section.    
-    
+    """This represents a controller section as recovered from the
+    configuration section.
+
     A config section can have the following options::
-    
-        [name]        
+
+        [name]
         # Order in which to start programs (must be unique)
         # order = 10+
 
         # The python path to agent to import e.g.
         controller = 'evasion.director.controllers.program'
-                        
+
         # OPTIONAL: disable the start/stop of the controller. It will
         # still be loaded and created.
         disabled = 'yes' | 'no'
@@ -421,10 +421,10 @@ class Controller(Base):
         # Other customer configuration can also be put in each
         # section. I just look for the above alone and ignore
         # anything else.
-    
+
     """
     type = 'controller'
-    
+
     def __init__(self):
         Base.__init__(self)
         self.required = ['name','order','controller']
@@ -433,8 +433,3 @@ class Controller(Base):
 
     def __str__(self):
         return "<Controller: order:%s name:%s disabled:%s>" % (self.order, self.name, self.disabled)
-
-
-
-
-

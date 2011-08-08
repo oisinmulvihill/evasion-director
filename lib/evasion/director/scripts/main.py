@@ -25,10 +25,10 @@ DEFAULT_SERVICESTATION_NAME = "servicestation.cfg"
 
 def render_config(cfg, template_data, outputfile):
     """Render the mako template to plain text or print useful traceback for missing config variables.
-    
+
     """
     ok = True
-    
+
     # lazy import do this module can be included without import mako.
     import pprint
     from mako import exceptions
@@ -41,7 +41,7 @@ def render_config(cfg, template_data, outputfile):
         fd.close()
 
     try:
-        data = Template(template_data, output_encoding='utf8', encoding_errors='strict').render(**cfg)        
+        data = Template(template_data, output_encoding='utf8', encoding_errors='strict').render(**cfg)
     except:
         ok = False
         get_log().debug("""Template data:
@@ -56,7 +56,7 @@ outfile:
 %s
 
 """ % exceptions.text_error_template().render())
-        
+
     else:
         writeout(outputfile, data)
 
@@ -69,10 +69,10 @@ outfile:
 def create_config(cfg_dict):
     """Create the default director.ini in the current directory based
     on a the template stored in director.templatecfg
-    
+
     """
-    import director
-    import director.templatecfg
+    from evasion import director
+    from evasion.director import templatecfg
     from pkg_resources import resource_string
     from mako.template import Template
 
@@ -90,14 +90,10 @@ def create_config(cfg_dict):
         cfg_dict['viewpoint_path'] = os.path.abspath(viewpoint.__path__[0])
 
     # Fill in the template information with XUL Browser path:
-    t = resource_string(director.templatecfg.__name__, 'director.cfg.mako')
+    t = resource_string(templatecfg.__name__, 'director.cfg.mako')
     render_config(cfg_dict, t, DEFAULT_CONFIG_NAME)
 
-    t = resource_string(director.templatecfg.__name__, 'director-log.cfg.mako')
-    #cfg_dict['log_dir'] = cfg_dict['log_dir'].replace("\\","/")
-    render_config(cfg_dict, t, DEFAULT_LOGCONFIG_NAME)
-
-    t = resource_string(director.templatecfg.__name__, 'servicestation.cfg.mako')
+    t = resource_string(templatecfg.__name__, 'servicestation.cfg.mako')
     render_config(cfg_dict, t, DEFAULT_SERVICESTATION_NAME)
 
     print("Success, '%s', '%s' and '%s' created ok." % (DEFAULT_CONFIG_NAME, DEFAULT_LOGCONFIG_NAME, DEFAULT_SERVICESTATION_NAME))
@@ -106,39 +102,39 @@ def create_config(cfg_dict):
 class StreamPassThrough:
     """
     Provide a means to channel stdout and stderror
-    through the log set up. 
-    
+    through the log set up.
+
     """
     def __init__(self, trap=False):
         self.trap = trap
         self.origStderr = sys.stderr
         self.origStdout = sys.stdout
-        
+
         class Err:
             def __init__(self, parent):
                 self.p = parent
             def write(self, msg):
                 self.p.stderrWrite(msg)
         sys.stderr = Err(self)
-        
+
         class Out:
             def __init__(self, parent):
                 self.p = parent
             def write(self, msg):
                 self.p.stdoutWrite(msg)
         sys.stdout = Out(self)
-        
+
     def stderrWrite(self, msg):
         get_log().info('stderr: %s' % msg)
         if not self.trap:
             self.origStderr.write(msg)
-        
+
     def stdoutWrite(self, msg):
         get_log().info('stdout: %s' % msg)
         if not self.trap:
             self.origStdout.write(msg)
 
-        
+
 def main():
     """
     """
@@ -146,52 +142,52 @@ def main():
     director_cfg = current_dir + os.path.sep + DEFAULT_CONFIG_NAME
     directorlog_cfg = current_dir + os.path.sep + DEFAULT_LOGCONFIG_NAME
     directorlog_output = current_dir + os.path.sep + 'director.log'
-    
+
     parser = OptionParser()
-                      
-    parser.add_option("--config", action="store", dest="config_filename", 
+
+    parser.add_option("--config", action="store", dest="config_filename",
                     default=director_cfg,
                     help="This director configuration file to use at run time."
                     )
-    
-    parser.add_option("--logtoconsole", action="store_true", dest="logtoconsole", 
+
+    parser.add_option("--logtoconsole", action="store_true", dest="logtoconsole",
                     default=False,
                     help="Override log setup from configuration and log to the console instead."
                     )
-    
-    parser.add_option("--create", action="store_true", dest="create_config", 
+
+    parser.add_option("--create", action="store_true", dest="create_config",
                     default=False,
                     help="Create configuration files from the internal templates"
                     )
-                      
+
     parser.add_option("--installdir", action="store", dest="install_dir",
                     default=current_dir,
                     help=(
                         "Used with the --create to setup the install folder in which the director"
                         "is found in the generated configuration output."
                     ))
-                      
+
     parser.add_option("--exe", action="store", dest="exe",
                     default=r"director",
                     help=(
                         "Used with the --create to set the executeable name that servicestation calls"
                         "in its generated servicestation.ini."
                     ))
-                      
-    parser.add_option("--logdir", action="store", dest="log_dir", 
+
+    parser.add_option("--logdir", action="store", dest="log_dir",
                     default=current_dir,
                     help=(
                         "Used with --create to set the folder the director.log file will"
                         "be written in the generated configuration output."
                     ))
-                                          
+
     parser.add_option("--disableagency", action="store", dest="disable_agency",
                     default="no",
                     help=(
                         "Used with --create to disable the agency in the"
                         "generated configuration output."
                     ))
-                      
+
     parser.add_option("--disablebroker", action="store", dest="disable_broker",
                     default="no",
                     help=(
@@ -199,7 +195,7 @@ def main():
                         "generated configuration output."
                     ))
 
-    parser.add_option("--servicestationdir", action="store", dest="servicestation_dir", 
+    parser.add_option("--servicestationdir", action="store", dest="servicestation_dir",
                     default=current_dir,
                     help=(
                         "Used with --create to set the servicestation install folder in the"
@@ -219,7 +215,7 @@ def main():
                         "Used with --create to set the path and name of the director log output"
                         "file used in the generated configuration output."
                     ))
-    parser.add_option("--logstdouterr", action="store_true", dest="logstdouterr", 
+    parser.add_option("--logstdouterr", action="store_true", dest="logstdouterr",
                     default=False,
                     help="Filter stdout and stderr through our logging set up (default).")
 
@@ -233,7 +229,7 @@ def main():
             install_dir= options.install_dir,
             exe=options.exe,
             log_dir=options.log_dir,
-            logconfig_filename=options.logconfig_filename,
+            logconfig_filename='',
             disable_agency = options.disable_agency,
             disable_broker = options.disable_broker,
             servicestation_dir=options.servicestation_dir,
@@ -248,7 +244,7 @@ def main():
         sys.stderr.write("The config file name '%s' wasn't found" % options.config_filename)
         sys.exit(1)
 
-    else:    
+    else:
         def logtoconsolefallback(log):
             # Log to console instead:
             hdlr = logging.StreamHandler()
@@ -256,8 +252,8 @@ def main():
             hdlr.setFormatter(formatter)
             log.addHandler(hdlr)
             log.setLevel(logging.DEBUG)
-            log.propagate = False        
-            
+            log.propagate = False
+
         if not options.logtoconsole:
             # Set up logging from director.cfg
             try:
@@ -268,12 +264,12 @@ def main():
         else:
             logtoconsolefallback(log)
 
-        # Filter stdout and stderr through logging now its up 
+        # Filter stdout and stderr through logging now its up
         # and running to aid debug in case of problems
         #
         if options.logstdouterr:
-            spt = StreamPassThrough()    
-            
+            spt = StreamPassThrough()
+
         # Ok, clear to import:
         from evasion.director import config
 
@@ -282,11 +278,12 @@ def main():
         fd = file(cfg_file, 'rb')
         raw = fd.read()
         fd.close()
-        
+
         config.set_cfg(raw, filename=cfg_file)
 
         from evasion.director import manager
-        manager.Manager().main()
-
-        
-        
+        m = manager.Manager()
+        try:
+            m.main()
+        except (KeyboardInterrupt) as e:
+            m.exit()
