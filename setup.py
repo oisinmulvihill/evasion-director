@@ -16,8 +16,8 @@ except ImportError:
 
 
 Name='evasion-director'
-ProjecUrl="" #""
-Version='1.0.1'
+ProjecUrl="http://github.com/oisinmulvihill/evasion-director/tarball/master#egg=evasion_director"
+Version='1.1.0dev'
 Author='Oisin Mulvihill'
 AuthorEmail='oisinmulvihill at gmail dot com'
 Maintainer=' Oisin Mulvihill'
@@ -31,8 +31,8 @@ TestSuite = 'evasion.director.tests'
 needed = [
     # third party deps:
     'configobj',
-    'mako', 
-    
+    'mako',
+
     # evasion deps:
     'evasion-messenger',
     'evasion-agency',
