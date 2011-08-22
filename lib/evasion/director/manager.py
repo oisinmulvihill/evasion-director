@@ -29,16 +29,18 @@ from evasion.director import viewpointdirect
 from evasion.messenger import xulcontrolprotocol
 
 try:
-	import decorator # help for bbfreeze.
+    import decorator # help for bbfreeze.
 except ImportError, e:
-	pass
+    pass
+
+
 
 
 def get_log():
     return logging.getLogger("evasion.director.manager")
 
-    
-    
+
+
 
 class Manager(object):
     """Manages the running services determined by the configuration
@@ -55,7 +57,7 @@ class Manager(object):
         """
         self.controllers = []
         self.signals = signals.SignalsReceiver(self)
-        
+
 
     def controllerSetup(self):
         """
@@ -74,11 +76,11 @@ class Manager(object):
         """
         self.log.info("controllerSetup: loading controllers from config.")
         c = config.get_cfg()
-        
+
         # Recover and import the controllers:
         self.controllers = config.load_controllers(c.cfg, ignore_exceptions=True)
         self.log.info("controllerSetup: %s controller(s) recovered." % len(self.controllers))
-        
+
         if self.controllers:
             # Setup all enabled controllers:
             for ctl in self.controllers:
@@ -101,7 +103,7 @@ class Manager(object):
         Shutdown any remaining services and call their tearDown methods.
 
         This is called before exit() is called.
-        
+
         """
         # Stop all enabled controllers:
         for ctl in self.controllers:
@@ -127,25 +129,25 @@ class Manager(object):
                 self.log.exception("%s tearDown error: " % ctl)
                 sys.stderr.write("%s tearDown error: %s" % (ctl, self.formatError()))
 
-                
+
     def appmainSetup(self):
         """
         Called from appmain or from testing to set up the signal
         handling and other items ready for a run / test run.
-        
+
         :returns: poll_time used by the director as a sleep
         between controller checks.
-        
+
         """
         c = config.get_cfg()
         poll_time = float(c.director.poll_time)
-        
+
         # Set up all signals handlers provided by the director:
         self.signals.setup()
 
         # Recover the controllers from director configuration.
         self.controllerSetup()
-        
+
         return poll_time
 
 
@@ -153,7 +155,7 @@ class Manager(object):
         """Perform a single pass through the controllers maintenance steps.
 
         This is used by appmain or from the tests.
-        
+
         """
         # Check the controllers are alive and restat if needs be:
         for ctl in self.controllers:
@@ -162,14 +164,14 @@ class Manager(object):
                     self.log.info("appmain: The controller '%s' needs to be stopped." % (ctl))
                     ctl.mod.stop()
                     self.log.info("appmain: The controller '%s' stop has been called." % (ctl))
-        
+
             elif ctl.disabled == 'no' and ctl.mod:
                 try:
                     if not ctl.mod.isStarted():
                         self.log.info("appmain: The controller '%s' needs to be started." % (ctl))
                         ctl.mod.start()
                         rc = ctl.mod.isStarted()
-                        self.log.info("appmain: Started ok '%s'? '%s'" % (ctl.name, rc))            
+                        self.log.info("appmain: Started ok '%s'? '%s'" % (ctl.name, rc))
                 except:
                     self.log.exception("%s appmain error: " % ctl)
                     sys.stderr.write("%s appmain error: %s" % (ctl, self.formatError()))
@@ -184,19 +186,19 @@ class Manager(object):
 
         Note: this is a thread which we are running in and the
         messenger will determine when its time to exit.
-        
+
         """
         # Perform signal, controller, etc setup
         poll_time = self.appmainSetup()
 
         while not isExit():
             self.step()
-    
+
             # Don't busy wait if nothing needs doing:
             time.sleep(poll_time)
 
         self.log.info("appmain: Finished.")
-        
+
 
     def exit(self):
         """
@@ -206,13 +208,13 @@ class Manager(object):
         self.log.warn("exit: the director is shutting down.")
         messenger.quit()
         time.sleep(2)
-    
-    
+
+
     def formatError(self):
         """Return a string representing the last traceback.
         """
         exception, instance, tb = traceback.sys.exc_info()
-        error = "".join(traceback.format_tb(tb))      
+        error = "".join(traceback.format_tb(tb))
         return error
 
 
@@ -221,62 +223,83 @@ class Manager(object):
         The main thread in which twisted and the messagin system runs. The
         manager main run inside its own thread. The appman(...) is the
         main of the director.
-        
+
         """
-        self.log.info("main: setting up stomp connection.")        
+        self.log.info("main: setting up stomp connection.")
         c = config.get_cfg()
-        
-        disable_broker = c.director.disable_broker
-        if disable_broker == 'no':
-            # Set up the messenger protocols where using:
-            self.log.info("main: setting up stomp connection to broker.")
-            
-            messenger.stompprotocol.setup(dict(
-                    host=c.director.msg_host,
-                    port=int(c.director.msg_port),
-                    username=c.director.msg_username,
-                    password=c.director.msg_password,
-                    channel=c.director.msg_channel,
-            ))
-            
-        else:
-            self.log.warn("main: the director's broker connection is disabled (disable_broker = 'yes').")
 
+        class ExitTime(object):
+            def __init__(self):
+                self.exitTime = False
+            def isExit(self):
+                return self.exitTime
+        et = ExitTime()
 
-        # Use internal broker? This allow simplifies things and
-        # means we don't have to run a morbid/other program as
-        # a child process.
-        #
-        if c.director.internal_broker == 'yes':
-            self.log.warn("main: Starting the interal light weight broker (internal_broker = 'yes').")
-            from evasion.director import testing
-            testing.setup_broker(
-                int(c.director.msg_port), 
-                c.director.msg_interface
-            )
-
-        noproxydispatchbroker = c.director.noproxydispatch
-        if noproxydispatchbroker == 'no':
-            port = int(c.director.proxy_dispatch_port)
-            self.log.info("main: setting up reply proxy dispatch http://127.0.0.1:%s/ ." % port)
-            proxydispatch.setup(port)
-
-        else:
-            self.log.warn("main: the director's proxydispatch is disabled (noproxydispatch = 'yes').")
-
-        if director_testing:
-            self.log.warn("main: testing active! The main loop is running elsewhere.")
-            
-        else:
+        # Allow twisted to be disable if no messaging is used or an alternative
+        # approach is used.
+        if c.director.messaging == 'no':
             try:
-                self.log.info("main: Running.")
-                messenger.run(self.appmain)
-                
+                self.appmain(et.isExit)
+
+            except KeyboardInterrupt as e:
+                self.log.warn("Ctrl-C, Exiting.")
+
+            except:
+                self.log.exception("Exiting on exception: ")
+
             finally:
-                self.log.info("main: shutdown!")
+                # Indicate the director should exit then call shutdown to
+                # cleanly tell all controllers to shutdown as well
+                et.exitTime = True
                 self.shutdown()
-                self.exit()
 
+        else:
+            disable_broker = c.director.disable_broker
+            if disable_broker == 'no':
+                # Set up the messenger protocols where using:
+                self.log.info("main: setting up stomp connection to broker.")
 
-            
+                messenger.stompprotocol.setup(dict(
+                        host=c.director.msg_host,
+                        port=int(c.director.msg_port),
+                        username=c.director.msg_username,
+                        password=c.director.msg_password,
+                        channel=c.director.msg_channel,
+                ))
 
+            else:
+                self.log.warn("main: the director's broker connection is disabled (disable_broker = 'yes').")
+
+            # Use internal broker? This allow simplifies things and
+            # means we don't have to run a morbid/other program as
+            # a child process.
+            #
+            if c.director.internal_broker == 'yes':
+                self.log.warn("main: Starting the interal light weight broker (internal_broker = 'yes').")
+                from evasion.director import testing
+                testing.setup_broker(
+                    int(c.director.msg_port),
+                    c.director.msg_interface
+                )
+
+            noproxydispatchbroker = c.director.noproxydispatch
+            if noproxydispatchbroker == 'no':
+                port = int(c.director.proxy_dispatch_port)
+                self.log.info("main: setting up reply proxy dispatch http://127.0.0.1:%s/ ." % port)
+                proxydispatch.setup(port)
+
+            else:
+                self.log.warn("main: the director's proxydispatch is disabled (noproxydispatch = 'yes').")
+
+            if director_testing:
+                self.log.warn("main: testing active! The main loop is running elsewhere.")
+
+            else:
+                try:
+                    self.log.info("main: Running.")
+                    messenger.run(self.appmain)
+
+                finally:
+                    self.log.info("main: shutdown!")
+                    self.shutdown()
+                    self.exit()

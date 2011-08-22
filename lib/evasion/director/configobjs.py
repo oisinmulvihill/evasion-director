@@ -105,6 +105,13 @@ class Director(Base):
     A config section can have the following options::
 
         [director]
+        # Use twisted and enable messaging. The director will then run in a
+        # thread while twisted runs the mainloop. If this is set to 'no' then
+        # all signalling will be disable and twisted won't be used. The director
+        # will run in the main loop. Default: 'yes'
+        # messaging = yes
+
+
         # The broker connection details. Required if disable_broker = 'no' (default):
         msg_host = "127.0.0.1"
         # If internal_broker is 'yes' then this will also be the port
@@ -150,6 +157,7 @@ class Director(Base):
     def __init__(self):
         Base.__init__(self)
         self.name = self.type
+        self.messaging = 'yes'
         self.order = 0
         self.poll_time = float(1.0)
         self.msg_host = '127.0.0.1'
@@ -185,6 +193,7 @@ class Director(Base):
             name = self.name,
             order = self.order,
             disabled = self.disabled,
+            messaging = self.messaging,
             config = self.config,
             poll_time = self.poll_time,
             msg_host = self.msg_host,
