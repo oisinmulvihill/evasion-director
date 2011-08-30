@@ -57,6 +57,26 @@ class Manager(object):
         """
         self.controllers = []
         self.signals = signals.SignalsReceiver(self)
+        self.nameLookup = {}
+
+
+    def controller(self, name):
+        """Called to recover a loaded controller based on the given name.
+
+        The name lookup is only set up after controllerSetup() has
+        been called.
+
+        KeyError will be raised if no entry for the given name was
+        found.
+
+        :returns: The loaded instance implementing Controller.
+
+        This will be the Controller instace from the config:
+        
+            controller = '<package string>'
+
+        """
+        return self.nameLookup[name].mod
 
 
     def controllerSetup(self):
@@ -84,6 +104,7 @@ class Manager(object):
         if self.controllers:
             # Setup all enabled controllers:
             for ctl in self.controllers:
+                self.nameLookup[ctl.name] = ctl
                 controller = ctl.mod
                 if not controller:
                     self.log.warn("controllerSetup: %s module isn't loaded!" % ctl)
