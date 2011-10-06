@@ -463,11 +463,12 @@ def import_module(import_type, obj):
             #print "imported_agent: ", imported_agent
 
     except ImportError, e:
-         raise ImportError("The controller '%s' from '%s' could not be imported! %s" % (
-             importmod,
-             obj,
-             traceback.format_exc()
-         ))
+        get_log().error("Error loading '%s', it raised the error: '%s'." % (importmod, str(e)))
+        raise ImportError("The controller '%s' from '%s' could not be imported! %s" % (
+            importmod,
+            obj,
+            str(e)
+        ))
 
     # Now see if it contains a Controller category all agent must have to load:
     if hasattr(imported_agent, import_class):
