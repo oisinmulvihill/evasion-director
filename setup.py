@@ -32,9 +32,6 @@ needed = [
     # third party deps:
     'configobj',
     'mako',
-
-    # evasion deps:
-    'evasion-messenger',
     'evasion-agency',
 ]
 

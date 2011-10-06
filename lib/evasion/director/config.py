@@ -346,7 +346,7 @@ def recover_objects(config):
                     container.order = default_order
                 if section == 'director':
                     self.director = container
-                    self.director.messaging = rsection.get('messaging', 'yes')
+                    self.director.messaging = rsection.get('messaging', 'no')
                     #get_log().debug("recover_objects: 'director' found.")
                 if section == 'broker':
                     self.broker = container
