@@ -17,16 +17,17 @@ import time
 import logging
 import traceback
 
-from pydispatch import dispatcher
+NO_MESSAGING = False
+try:
+    from evasion import messenger
+    from evasion.director import signals
 
-from evasion import agency
-from evasion import messenger
+except ImportError,e:
+    # disable messaging, this will get logged later.
+    # The evasion-messenger is not installed.
+    NO_MESSAGING = True
+
 from evasion.director import config
-from evasion.director import testing
-from evasion.director import signals
-from evasion.director import proxydispatch
-from evasion.director import viewpointdirect
-from evasion.messenger import xulcontrolprotocol
 
 try:
     import decorator # help for bbfreeze.
@@ -56,7 +57,11 @@ class Manager(object):
         """
         """
         self.controllers = []
-        self.signals = signals.SignalsReceiver(self)
+        if not NO_MESSAGING:
+            self.log.warn("Messaging disable as evasion-messenger is not installed.")
+            self.signals = signals.SignalsReceiver(self)
+        else:
+            self.signals = None
         self.nameLookup = {}
 
 
@@ -72,7 +77,7 @@ class Manager(object):
         :returns: The loaded instance implementing Controller.
 
         This will be the Controller instace from the config:
-        
+
             controller = '<package string>'
 
         """
@@ -163,8 +168,9 @@ class Manager(object):
         c = config.get_cfg()
         poll_time = float(c.director.poll_time)
 
-        # Set up all signals handlers provided by the director:
-        self.signals.setup()
+        if not NO_MESSAGING:
+            # Set up all signals handlers provided by the director:
+            self.signals.setup()
 
         # Recover the controllers from director configuration.
         self.controllerSetup()
@@ -246,7 +252,7 @@ class Manager(object):
         main of the director.
 
         """
-        self.log.info("main: setting up stomp connection.")
+        self.log.info("main: running.")
         c = config.get_cfg()
 
         class ExitTime(object):
@@ -256,9 +262,10 @@ class Manager(object):
                 return self.exitTime
         et = ExitTime()
 
+
         # Allow twisted to be disable if no messaging is used or an alternative
         # approach is used.
-        if c.director.messaging == 'no':
+        if NO_MESSAGING or c.director.messaging == 'no':
             try:
                 self.appmain(et.isExit)
 
@@ -305,6 +312,8 @@ class Manager(object):
 
             noproxydispatchbroker = c.director.noproxydispatch
             if noproxydispatchbroker == 'no':
+                from evasion.director import proxydispatch
+
                 port = int(c.director.proxy_dispatch_port)
                 self.log.info("main: setting up reply proxy dispatch http://127.0.0.1:%s/ ." % port)
                 proxydispatch.setup(port)
