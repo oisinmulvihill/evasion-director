@@ -17,7 +17,7 @@ except ImportError:
 
 Name='evasion-director'
 ProjecUrl="http://github.com/oisinmulvihill/evasion-director/tarball/master#egg=evasion_director"
-Version='1.1.2'
+Version='1.1.3'
 Author='Oisin Mulvihill'
 AuthorEmail='oisinmulvihill at gmail dot com'
 Maintainer=' Oisin Mulvihill'
@@ -32,7 +32,7 @@ needed = [
     # third party deps:
     'configobj',
     'mako',
-    'evasion-agency',
+    'evasion-agency==1.1.3',
 ]
 
 #  find lib/director/viewpoint -type d -exec touch {}//__init__.py \;
