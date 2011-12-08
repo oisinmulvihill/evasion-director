@@ -39,15 +39,11 @@ This module provides the director configuration parsing and handling.
 .. autofunction:: director.config.reload_controller
 
 """
-import copy
-import pprint
 import logging
 import StringIO
-import traceback
 import configobj
 import itertools
 import threading
-from configobj import ConfigObj
 
 
 from configobjs import *

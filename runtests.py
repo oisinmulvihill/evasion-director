@@ -12,7 +12,7 @@ import nose
 sys.path.insert(0, "./lib")
 
 from evasion.director import utils
-utils.log_init(logging.CRITICAL)
+utils.log_init(logging.DEBUG)
 
 result = nose.core.TestProgram().success
 nose.result.end_capture()

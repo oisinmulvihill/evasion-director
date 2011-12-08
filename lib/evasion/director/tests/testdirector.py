@@ -23,13 +23,13 @@ def get_log():
 
 def err_msg(correct, rc):
     return """rc != correct
-    
+
     correct:
     %s
-    
+
     rc:
     %s
-    
+
     """ % (pprint.pformat(correct),pprint.pformat(rc))
 
 
@@ -50,31 +50,31 @@ class DirectorTC(unittest.TestCase):
         p = tempfile.mkdtemp()
         sys.path.append(p)
         get_log().debug("DirectorTC.makeController: test package location '%s'." % p)
-        
+
         # Create a controller I can play with and test
         # the director behaviour with.
         #
         mypkg = os.path.join(p,'mypackage')
         os.mkdir(mypkg)
-        
+
         f = os.path.join(mypkg, '__init__.py')
         fd = open(f, 'wb')
         fd.write("\n")
         fd.close()
-        
+
         # Create an agent module that import_module should find and load.
         #
         f = os.path.join(mypkg, 'mycontroller.py')
         fd = open(f, 'wb')
         fd.write(my_controller)
         fd.close()
-        
+
         if my_agent:
             f = os.path.join(mypkg, 'myagent.py')
             fd = open(f, 'wb')
             fd.write(my_agent)
             fd.close()
-        
+
         return p
 
 
@@ -123,7 +123,7 @@ class Controller(base.Controller):
         get_log().info('Controller: tearDown Called!')
 
         """
-        
+
         my_agent = r"""
 import logging
 from evasion.agency import agent
@@ -137,19 +137,19 @@ class Agent(agent.Base):
         self.tearDownCalled = False
         self.startCalled = False
         self.stopCalled = False
-    
+
     def tearDown(self):
         self.tearDownCalled = True
 
     def start(self):
         self.startCalled = True
-        
+
     def stop(self):
         self.stopCalled = True
-        
+
         """
         pkg_path = self.makeController(my_controller, my_agent)
-        
+
         test_config = """
         [director]
         msg_host = '%(broker_interface)s'
@@ -159,20 +159,20 @@ class Agent(agent.Base):
         msg_channel = '%(broker_channel)s'
         msg_interface = '%(broker_interface)s'
         proxy_dispatch_port = %(proxy_port)s
-        
+
         # sets up a broker running when twisted runs:
         internal_broker = 'yes'
-        
+
         [agency]
         #disabled = 'yes'
         order = 1
-            
+
             [fancyagent]
             #disabled = 'yes'
             order = 1
             cat = 'general'
-            agent = 'mypackage.myagent'        
-        
+            agent = 'mypackage.myagent'
+
         [mycontroller]
         #disabled = 'yes'
         order = 4
@@ -181,7 +181,7 @@ class Agent(agent.Base):
 
         """
         m = director_setup(test_config)
-        
+
         def testmain(tc):
             """"""
             c = config.get_cfg()
@@ -189,13 +189,13 @@ class Agent(agent.Base):
             self.assertNotEquals(c.agency, None)
             self.assertEquals(len(c.cfg), 3)
             self.assertEquals(len(c.agency.agents), 1)
-            
+
             # Quick ping to see if messaging is up and running:
             d = signals.SignalsSender()
             get_log().info("testControllerConfigReload: calling ping")
             d.ping()
-            
-            # Check the initial state of our test controller. 
+
+            # Check the initial state of our test controller.
             #
             ctrl = c.cfg[2]
             self.assertEquals(ctrl.disabled, 'no')
@@ -214,16 +214,16 @@ class Agent(agent.Base):
 
             import pprint
             get_log().debug("""
-            
-            
+
+
             rc['data']
-            
+
             %s
-            
-            
+
+
             """ % (pprint.pformat(rc['data'])))
-            
-            
+
+
         # Run inside the messaging system:
         message_main(self, testmain, cfg=messenger.default_config['stomp'])
 
@@ -322,7 +322,7 @@ class Controller(base.Controller):
         fd = open(f, 'wb')
         fd.write(my_controller2)
         fd.close()
-        
+
         test_config = """
         [director]
         msg_host = '%(broker_interface)s'
@@ -332,19 +332,19 @@ class Controller(base.Controller):
         msg_channel = 'evasion'
         msg_interface = '%(broker_interface)s'
         proxy_dispatch_port = %(proxy_port)s
-        
+
         # sets up a broker running when twisted runs:
         internal_broker = 'yes'
-        
+
         [mycontroller]
         #disabled = 'yes'
         order = 8
         controller = 'mypackage.mycontroller'
         extra_arg = 'hello there'
-        
+
         """
         m = director_setup(test_config)
-        
+
         def testmain(tc):
             """Start-Stop-Restart"""
             # The configuration should contain the director and
@@ -354,13 +354,13 @@ class Controller(base.Controller):
             c = config.get_cfg()
             self.assertNotEquals(c.director, None)
             self.assertEquals(len(c.cfg), 2)
-            
+
             # Quick ping to see if messaging is up and running:
             d = signals.SignalsSender()
             get_log().info("testControllerConfigReload: calling ping")
             d.ping()
-            
-            # Check the initial state of our test controller. 
+
+            # Check the initial state of our test controller.
             #
             ctrl = c.cfg[1]
             self.assertEquals(ctrl.disabled, 'no')
@@ -368,7 +368,7 @@ class Controller(base.Controller):
             self.assertEquals(ctrl.controller, 'mypackage.mycontroller')
             self.assertNotEquals(ctrl.mod, None)
             self.assertEquals(ctrl.extra_arg, 'hello there')
-            
+
             original_ctrl = ctrl.mod
             self.assertEquals(ctrl.mod.startCalled, False)
             self.assertEquals(ctrl.mod.stopCalled, False)
@@ -384,7 +384,7 @@ class Controller(base.Controller):
             self.assertEquals(rc['result'], 'ok')
             self.assertEquals(rc['data'], True)
 
-            # Create the new configuration and then tell the 
+            # Create the new configuration and then tell the
             # controller to reload it. This should cause the
             # running controller to be stopped. The tearDown
             # method will also be called. The controller
@@ -404,15 +404,15 @@ class Controller(base.Controller):
             rc = d.controllerReload('mycontroller', new_config)
             self.assertEquals(rc['result'], 'ok')
             self.assertEquals(rc['data'], True)
-            
+
             # Check controller is different and that the original
             # controller got shutdown correctly:
             self.assertEquals(original_ctrl.startCalled, True)
             self.assertEquals(original_ctrl.stopCalled, True)
             self.assertEquals(original_ctrl.tearDownCalled, True)
-            
-           
-            # Get the newly updated configuration and check the 
+
+
+            # Get the newly updated configuration and check the
             # new controllers state.
             #
             c = config.get_cfg()
@@ -429,14 +429,14 @@ class Controller(base.Controller):
             self.assertEquals(ctrl.mod.isStartedCheck, False)
             self.assertEquals(ctrl.mod.isStoppedCheck, False)
             self.assertEquals(hasattr(ctrl.mod, 'extraArg'), False)
-            
+
             # Huzzagh!
-  
-  
+
+
         try:
             # Run inside the messaging system:
             message_main(self, testmain, cfg=messenger.default_config['stomp'])
-            
+
         except:
             self.cleanUp(pkg_path)
             raise
@@ -488,7 +488,7 @@ class Controller(base.Controller):
 
         """
         pkg_path = self.makeController(my_controller)
-        
+
         test_config = """
         [director]
         msg_host = '%(broker_interface)s'
@@ -498,19 +498,19 @@ class Controller(base.Controller):
         msg_channel = 'evasion'
         msg_interface = '%(broker_interface)s'
         proxy_dispatch_port = %(proxy_port)s
-        
+
         # sets up a broker running when twisted runs:
         internal_broker = 'yes'
-        
+
         [mycontroller]
         #disabled = 'yes'
         order = 8
         controller = 'mypackage.mycontroller'
         extra_arg = 'hello there'
-        
+
         """
         m = director_setup(test_config)
-        
+
         def testmain(tc):
             """Start-Stop-Restart"""
             # The configuration should contain the director and
@@ -520,11 +520,11 @@ class Controller(base.Controller):
             c = config.get_cfg()
             self.assertNotEquals(c.director, None)
             self.assertEquals(len(c.cfg), 2)
-            
+
             # Quick ping to see if messaging is up and running:
             d = signals.SignalsSender()
             d.ping()
-            
+
             # Check the initial state of our test controller. Its
             # loaded under a partial director. This is missing the
             # start although each controller will have had its setUp
@@ -537,7 +537,7 @@ class Controller(base.Controller):
             self.assertEquals(ctrl.controller, 'mypackage.mycontroller')
             self.assertNotEquals(ctrl.mod, None)
             self.assertEquals(ctrl.extra_arg, 'hello there')
-            
+
             self.assertEquals(ctrl.mod.startCalled, False)
             self.assertEquals(ctrl.mod.stopCalled, False)
             self.assertEquals(ctrl.mod.tearDownCalled, False)
@@ -551,13 +551,13 @@ class Controller(base.Controller):
             print "Calling controllerState..."
             rc = d.controllerState()
             self.assertEquals(rc['result'], 'ok')
-            
+
             correct = [
-                # The director won't appear in this list although its technically 
+                # The director won't appear in this list although its technically
                 # a controller.
                 dict(name='mycontroller', disabled='no', started=False, config=ctrl.mod.config),
             ]
-            
+
             self.assertEquals(len(rc['data']), 1)
             self.assertEquals(rc['data'], correct, err_msg(correct, rc['data']))
 
@@ -568,17 +568,17 @@ class Controller(base.Controller):
             rc = d.controllerStart('mycontroller')
             self.assertEquals(rc['result'], 'ok')
             self.assertEquals(rc['data'], True)
-            
+
             print "Calling controllerState..."
             rc = d.controllerState()
             self.assertEquals(rc['result'], 'ok')
-            
+
             correct = [
                 dict(name='mycontroller', disabled='no', started=True, config=ctrl.mod.config),
             ]
-            
+
             self.assertEquals(rc['data'], correct, err_msg(correct, rc['data']))
-            
+
             c = config.get_cfg()
             self.assertEquals(ctrl.mod.startCalled, True)
             self.assertEquals(ctrl.mod.stopCalled, False)
@@ -590,26 +590,26 @@ class Controller(base.Controller):
             rc = d.controllerStop('mycontroller')
             self.assertEquals(rc['result'], 'ok')
             self.assertEquals(rc['data'], True)
-            
+
             print "Calling controllerState..."
             rc = d.controllerState()
             self.assertEquals(rc['result'], 'ok')
-            
+
             correct = [
                 dict(name='mycontroller', disabled='no', started=True, config=ctrl.mod.config),
             ]
-            
+
             self.assertEquals(rc['data'], correct, err_msg(correct, rc['data']))
-            
+
             c = config.get_cfg()
             self.assertEquals(ctrl.mod.startCalled, True)
             self.assertEquals(ctrl.mod.stopCalled, True)
-            
+
 
         try:
             # Run inside the messaging system:
             message_main(self, testmain, cfg=messenger.default_config['stomp'])
-            
+
         except:
             self.cleanUp(pkg_path)
             raise
@@ -627,19 +627,19 @@ class Controller(base.Controller):
         msg_channel = 'evasion'
         msg_interface = '%(broker_interface)s'
         proxy_dispatch_port = %(proxy_port)s
-        
+
         # sets up a broker running when twisted runs:
         internal_broker = 'yes'
-        
+
         """
         m = director_setup(test_config)
-        
+
         def testmain(tc):
             """This should ping without raising a timeout exceptions"""
             d = signals.SignalsSender()
             d.ping()
-       
-            
+
+
         # Run inside the messaging system:
         message_main(self, testmain, cfg=messenger.default_config['stomp'])
 
