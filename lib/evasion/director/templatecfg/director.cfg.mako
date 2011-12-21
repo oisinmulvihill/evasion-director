@@ -1,7 +1,5 @@
 [director]
-msg_channel = 'evasion'
-internal_broker = 'yes'
-messaging = 'yes'
+messaging = 'no'
 
 [agency]
 disabled = '${disable_agency}'
