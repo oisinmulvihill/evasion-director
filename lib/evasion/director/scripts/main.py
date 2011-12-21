@@ -9,7 +9,6 @@ import os.path
 import logging
 import ConfigParser
 import logging.config
-from configobj import ConfigObj
 from optparse import OptionParser
 
 
@@ -19,7 +18,6 @@ def get_log():
 
 
 DEFAULT_CONFIG_NAME = "director.cfg"
-DEFAULT_LOGCONFIG_NAME = "director-log.cfg"
 DEFAULT_SERVICESTATION_NAME = "servicestation.cfg"
 
 
@@ -71,10 +69,8 @@ def create_config(cfg_dict):
     on a the template stored in director.templatecfg
 
     """
-    from evasion import director
     from evasion.director import templatecfg
     from pkg_resources import resource_string
-    from mako.template import Template
 
     get_log().debug("Creating initial configuration.")
 
@@ -83,8 +79,8 @@ def create_config(cfg_dict):
     try:
         # Attempt to set up the path to the evasion viewpoint XUL app
         # installed as a python package.
-        import viewpoint
-    except ImportError, e:
+        from evasion import viewpoint
+    except ImportError:
         pass
     else:
         cfg_dict['viewpoint_path'] = os.path.abspath(viewpoint.__path__[0])
@@ -96,7 +92,7 @@ def create_config(cfg_dict):
     t = resource_string(templatecfg.__name__, 'servicestation.cfg.mako')
     render_config(cfg_dict, t, DEFAULT_SERVICESTATION_NAME)
 
-    print("Success, '%s', '%s' and '%s' created ok." % (DEFAULT_CONFIG_NAME, DEFAULT_LOGCONFIG_NAME, DEFAULT_SERVICESTATION_NAME))
+    print("Success, '%s' and '%s' created ok." % (DEFAULT_CONFIG_NAME, DEFAULT_SERVICESTATION_NAME))
 
 
 class StreamPassThrough:
@@ -140,7 +136,6 @@ def main():
     """
     current_dir = "%s" % os.path.abspath(os.curdir)
     director_cfg = current_dir + os.path.sep + DEFAULT_CONFIG_NAME
-    directorlog_cfg = current_dir + os.path.sep + DEFAULT_LOGCONFIG_NAME
     directorlog_output = current_dir + os.path.sep + 'director.log'
 
     parser = OptionParser()
@@ -258,7 +253,7 @@ def main():
             # Set up logging from director.cfg
             try:
                 logging.config.fileConfig(options.config_filename)
-            except ConfigParser.NoSectionError, e:
+            except ConfigParser.NoSectionError:
                 logtoconsolefallback(log)
                 log.warn("No valid logging found in configuration. Using console logging.")
         else:
@@ -285,5 +280,5 @@ def main():
         m = manager.Manager()
         try:
             m.main()
-        except (KeyboardInterrupt) as e:
+        except (KeyboardInterrupt, SystemExit):
             m.exit()

@@ -1,6 +1,7 @@
 [director]
 msg_channel = 'evasion'
 internal_broker = 'yes'
+messaging = 'yes'
 
 [agency]
 disabled = '${disable_agency}'
@@ -11,7 +12,7 @@ controller = 'evasion.director.controllers.agencyctrl'
     # Example of an agent entry
     alias = 1
     cat = 'service'
-    agent = 'agency.agents.testing.fake'
+    agent = 'evasion.agency.agents.testing.fake'
 
 
 # Example of starting a third-party web application:

@@ -1,3 +1,5 @@
+*.cfg
+*.egg
 .bzr*
 dist*
 docs/build*

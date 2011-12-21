@@ -83,7 +83,7 @@ class SignalsSender(object):
             else:
                 self.log.debug("ping: received correct ping from director." % ())
 
-        except messenger.EventTimeout, e:
+        except messenger.EventTimeout:
             raise SignalTimeout("Director presence check failed! Is it running?")
 
 
@@ -105,7 +105,7 @@ class SignalsSender(object):
         try:
             rc = messenger.send_await(sig, timeout=timeout)
 
-        except messenger.EventTimeout, e:
+        except messenger.EventTimeout:
             raise SignalTimeout("exitAll: Director presence check failed! Is it running?")
 
         else:
@@ -134,7 +134,7 @@ class SignalsSender(object):
             self.log.debug("controllerState: (request sig id %s) getting controller state." % sig.uid)
             rc = messenger.send_await(sig, timeout=timeout)
 
-        except messenger.EventTimeout, e:
+        except messenger.EventTimeout:
             self.log.error("controllerState: (request sig id %s) event timeout!" % sig.uid)
             raise SignalTimeout("Director communication timeout (%s)s! Is it running?" % timeout)
 
@@ -168,7 +168,7 @@ class SignalsSender(object):
             self.log.debug("controllerStart: (request sig id %s) starting controller." % sig.uid)
             rc = messenger.send_await(sig, name, timeout=timeout)
 
-        except messenger.EventTimeout, e:
+        except messenger.EventTimeout:
             self.log.error("controllerStart: (request sig id %s) event timeout!" % sig.uid)
             raise SignalTimeout("Director communication timeout (%s)s! Is it running?" % timeout)
 
@@ -202,7 +202,7 @@ class SignalsSender(object):
             self.log.debug("controllerStop: (request sig id %s) stopping controller." % sig.uid)
             rc = messenger.send_await(sig, name, timeout=timeout)
 
-        except messenger.EventTimeout, e:
+        except messenger.EventTimeout:
             self.log.error("controllerStop: (request sig id %s) event timeout!" % sig.uid)
             raise SignalTimeout("Director communication timeout (%s)s! Is it running?" % timeout)
 
@@ -243,7 +243,7 @@ class SignalsSender(object):
             self.log.debug("controllerReload: (request sig id %s) calling reload." % sig.uid)
             rc = messenger.send_await(sig, [name, new_config], timeout=timeout)
 
-        except messenger.EventTimeout, e:
+        except messenger.EventTimeout:
             self.log.error("controllerReload: (request sig id %s) event timeout!" % sig.uid)
             raise SignalTimeout("Director communication timeout (%s)s! Is it running?" % timeout)
 
@@ -273,7 +273,7 @@ class SignalsSender(object):
             self.log.debug("configuration: (request sig id %s) getting director configuration." % sig.uid)
             rc = messenger.send_await(sig, timeout=timeout)
 
-        except messenger.EventTimeout, e:
+        except messenger.EventTimeout:
             self.log.error("configuration: (request sig id %s) event timeout!" % sig.uid)
             raise SignalTimeout("Director communication timeout (%s)s! Is it running?" % timeout)
 

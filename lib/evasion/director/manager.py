@@ -22,10 +22,11 @@ try:
     from evasion import messenger
     from evasion.director import signals
 
-except ImportError,e:
+except ImportError:
     # disable messaging, this will get logged later.
     # The evasion-messenger is not installed.
     NO_MESSAGING = True
+    sys.stdout.write("evasion.messenger not present. Messaging disabled.\n")
 
 from evasion.director import config
 
@@ -199,6 +200,8 @@ class Manager(object):
                         ctl.mod.start()
                         rc = ctl.mod.isStarted()
                         self.log.info("appmain: Started ok '%s'? '%s'" % (ctl.name, rc))
+                except (SystemExit, KeyboardInterrupt):
+                    raise
                 except:
                     self.log.exception("%s appmain error: " % ctl)
                     sys.stderr.write("%s appmain error: %s" % (ctl, self.formatError()))
@@ -269,7 +272,7 @@ class Manager(object):
             try:
                 self.appmain(et.isExit)
 
-            except KeyboardInterrupt as e:
+            except KeyboardInterrupt:
                 self.log.warn("Ctrl-C, Exiting.")
 
             except:
