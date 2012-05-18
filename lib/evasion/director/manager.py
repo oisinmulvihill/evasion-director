@@ -31,17 +31,13 @@ except ImportError:
 from evasion.director import config
 
 try:
-    import decorator # help for bbfreeze.
+    import decorator  # help for bbfreeze.
 except ImportError, e:
     pass
 
 
-
-
 def get_log():
     return logging.getLogger("evasion.director.manager")
-
-
 
 
 class Manager(object):
@@ -54,8 +50,14 @@ class Manager(object):
     """
     log = logging.getLogger("evasion.director.manager.Manager")
 
-    def __init__(self):
+    def __init__(self, eat_exceptions=False):
         """
+
+        :param eat_exceptions: True | False (default).
+
+        If True the director will attempt to keep going with controller
+        exceptions. All exceptions get logged regardless.
+
         """
         self.controllers = []
         if not NO_MESSAGING:
@@ -64,7 +66,11 @@ class Manager(object):
         else:
             self.signals = None
         self.nameLookup = {}
+        self.eat_agent_exceptions = eat_exceptions
 
+    def keep_going_on_exceptions(self):
+        """Return the state of eat_agent_exceptions True | False."""
+        return self.eat_agent_exceptions
 
     def controller(self, name):
         """Called to recover a loaded controller based on the given name.
@@ -83,7 +89,6 @@ class Manager(object):
 
         """
         return self.nameLookup[name].mod
-
 
     def controllerSetup(self):
         """
@@ -121,9 +126,11 @@ class Manager(object):
                 except:
                     self.log.exception("%s setUp error: " % ctl)
                     sys.stderr.write("%s setUp error: %s" % (ctl, self.formatError()))
+                    if not self.keep_going_on_exceptions():
+                        # Stop!
+                        raise
         else:
             self.log.warn("controllerSetup: no controllers found in config.")
-
 
     def shutdown(self):
         """
@@ -143,6 +150,9 @@ class Manager(object):
             except:
                 self.log.exception("%s stop error: " % ctl)
                 sys.stderr.write("%s stop error: %s" % (ctl, self.formatError()))
+                if not self.keep_going_on_exceptions():
+                    # Stop!
+                    raise
 
         # Teardown all enabled controllers:
         for ctl in self.controllers:
@@ -155,7 +165,9 @@ class Manager(object):
             except:
                 self.log.exception("%s tearDown error: " % ctl)
                 sys.stderr.write("%s tearDown error: %s" % (ctl, self.formatError()))
-
+                if not self.keep_going_on_exceptions():
+                    # Stop!
+                    raise
 
     def appmainSetup(self):
         """
@@ -177,7 +189,6 @@ class Manager(object):
         self.controllerSetup()
 
         return poll_time
-
 
     def step(self):
         """Perform a single pass through the controllers maintenance steps.
@@ -205,7 +216,10 @@ class Manager(object):
                 except:
                     self.log.exception("%s appmain error: " % ctl)
                     sys.stderr.write("%s appmain error: %s" % (ctl, self.formatError()))
-
+                    if not self.keep_going_on_exceptions():
+                        # Stop!
+                        self.log.exception("Shutting down now on exception in: %s " % ctl)
+                        self.exit()
 
     def appmain(self, isExit):
         """
@@ -229,7 +243,6 @@ class Manager(object):
 
         self.log.info("appmain: Finished.")
 
-
     def exit(self):
         """
         Called after shutdown() to tell twisted to exit causing the program
@@ -239,14 +252,12 @@ class Manager(object):
         messenger.quit()
         time.sleep(2)
 
-
     def formatError(self):
         """Return a string representing the last traceback.
         """
         exception, instance, tb = traceback.sys.exc_info()
         error = "".join(traceback.format_tb(tb))
         return error
-
 
     def main(self, director_testing=False):
         """
@@ -261,10 +272,11 @@ class Manager(object):
         class ExitTime(object):
             def __init__(self):
                 self.exitTime = False
+
             def isExit(self):
                 return self.exitTime
-        et = ExitTime()
 
+        et = ExitTime()
 
         # Allow twisted to be disable if no messaging is used or an alternative
         # approach is used.

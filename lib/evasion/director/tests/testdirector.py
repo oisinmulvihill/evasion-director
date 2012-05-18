@@ -21,6 +21,7 @@ from evasion.director.testing import director_setup
 def get_log():
     return logging.getLogger('evasion.director.tests.testdirector')
 
+
 def err_msg(correct, rc):
     return """rc != correct
 
@@ -30,7 +31,7 @@ def err_msg(correct, rc):
     rc:
     %s
 
-    """ % (pprint.pformat(correct),pprint.pformat(rc))
+    """ % (pprint.pformat(correct), pprint.pformat(rc))
 
 
 class DirectorTC(unittest.TestCase):
@@ -45,7 +46,6 @@ class DirectorTC(unittest.TestCase):
                 #print 'dir name:',name
                 os.rmdir(os.path.join(root, name))
 
-
     def makeController(self, my_controller, my_agent=None):
         p = tempfile.mkdtemp()
         sys.path.append(p)
@@ -54,7 +54,7 @@ class DirectorTC(unittest.TestCase):
         # Create a controller I can play with and test
         # the director behaviour with.
         #
-        mypkg = os.path.join(p,'mypackage')
+        mypkg = os.path.join(p, 'mypackage')
         os.mkdir(mypkg)
 
         f = os.path.join(mypkg, '__init__.py')
@@ -76,7 +76,6 @@ class DirectorTC(unittest.TestCase):
             fd.close()
 
         return p
-
 
     def testControllerConfigRecovery(self):
         """Test the controller config recovery.
@@ -150,7 +149,7 @@ class Agent(agent.Base):
         self.stopCalled = True
 
         """
-        pkg_path = self.makeController(my_controller, my_agent)
+        self.makeController(my_controller, my_agent)
 
         test_config = """
         [director]
@@ -182,7 +181,7 @@ class Agent(agent.Base):
         extra_arg = 'hello there'
 
         """
-        m = director_setup(test_config)
+        director_setup(test_config)
 
         def testmain(tc):
             """"""
@@ -225,10 +224,8 @@ class Agent(agent.Base):
 
             """ % (pprint.pformat(rc['data'])))
 
-
         # Run inside the messaging system:
         message_main(self, testmain, cfg=messenger.default_config['stomp'])
-
 
     def testControllerConfigReload(self):
         """Test the reloading of a new controller configuration.
@@ -347,7 +344,7 @@ class Controller(base.Controller):
         extra_arg = 'hello there'
 
         """
-        m = director_setup(test_config)
+        director_setup(test_config)
 
         def testmain(tc):
             """Start-Stop-Restart"""
@@ -398,10 +395,10 @@ class Controller(base.Controller):
             #
             # This configuration replaces what was there.
             new_config = dict(
-                order = 4,
-                name = "mycontroller",
-                disabled = 'no',
-                controller = 'mypackage.mycontroller2'
+                order=4,
+                name="mycontroller",
+                disabled='no',
+                controller='mypackage.mycontroller2'
             )
 
             # Do the reload:
@@ -414,7 +411,6 @@ class Controller(base.Controller):
             self.assertEquals(original_ctrl.startCalled, True)
             self.assertEquals(original_ctrl.stopCalled, True)
             self.assertEquals(original_ctrl.tearDownCalled, True)
-
 
             # Get the newly updated configuration and check the
             # new controllers state.
@@ -434,9 +430,7 @@ class Controller(base.Controller):
             self.assertEquals(ctrl.mod.isStoppedCheck, False)
             self.assertEquals(hasattr(ctrl.mod, 'extraArg'), False)
 
-            # Huzzagh!
-
-
+        # Huzzagh!
         try:
             # Run inside the messaging system:
             message_main(self, testmain, cfg=messenger.default_config['stomp'])
@@ -444,7 +438,6 @@ class Controller(base.Controller):
         except:
             self.cleanUp(pkg_path)
             raise
-
 
     def testControllerStartStop(self):
         """Test starting and stopping a loaded controller.
@@ -515,7 +508,7 @@ class Controller(base.Controller):
         extra_arg = 'hello there'
 
         """
-        m = director_setup(test_config)
+        director_setup(test_config)
 
         def testmain(tc):
             """Start-Stop-Restart"""
@@ -551,7 +544,6 @@ class Controller(base.Controller):
             self.assertEquals(ctrl.mod.isStoppedCheck, False)
             self.assertEquals(ctrl.mod.extraArg, 'hello there')
 
-
             # Recover the current state of the controllers:
             #
             print "Calling controllerState..."
@@ -566,7 +558,6 @@ class Controller(base.Controller):
 
             self.assertEquals(len(rc['data']), 1)
             self.assertEquals(rc['data'], correct, err_msg(correct, rc['data']))
-
 
             # Tell the controller to start and check it is:
             #
@@ -589,7 +580,6 @@ class Controller(base.Controller):
             self.assertEquals(ctrl.mod.startCalled, True)
             self.assertEquals(ctrl.mod.stopCalled, False)
 
-
             # Tell the controller to stop and check it is:
             #
             print "Calling controllerStop..."
@@ -611,7 +601,6 @@ class Controller(base.Controller):
             self.assertEquals(ctrl.mod.startCalled, True)
             self.assertEquals(ctrl.mod.stopCalled, True)
 
-
         try:
             # Run inside the messaging system:
             message_main(self, testmain, cfg=messenger.default_config['stomp'])
@@ -619,7 +608,6 @@ class Controller(base.Controller):
         except:
             self.cleanUp(pkg_path)
             raise
-
 
     def testPingSignal(self):
         """Test a ping signal to the director.
@@ -641,15 +629,12 @@ class Controller(base.Controller):
         internal_broker = 'yes'
 
         """
-        m = director_setup(test_config)
+        director_setup(test_config)
 
         def testmain(tc):
             """This should ping without raising a timeout exceptions"""
             d = signals.SignalsSender()
             d.ping()
 
-
         # Run inside the messaging system:
         message_main(self, testmain, cfg=messenger.default_config['stomp'])
-
-
