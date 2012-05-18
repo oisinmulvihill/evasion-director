@@ -28,13 +28,13 @@ class Controller(base.Controller):
         # Standard options example:
         controller = 'evasion.director.controllers.agencyctrl'
 
-        # Log exceptions but keep going:
-        eat_agent_exceptions = False
-
         # (OPTIONAL) Uncomment to prevent this controller
         # from being used. If the agency is disabled no agents
         # will be recovered from config or loaded.
         #disabled = 'yes'
+
+        # (Optional) Log exceptions but keep going True | False (default):
+        # eat_agent_exceptions = False
 
         # (OPTIONAL) When to start the agency. It should start after the
         # broker.

@@ -16,7 +16,6 @@ def get_log():
     return logging.getLogger("evasion.director.scripts.main")
 
 
-
 DEFAULT_CONFIG_NAME = "director.cfg"
 DEFAULT_SERVICESTATION_NAME = "servicestation.cfg"
 
@@ -109,15 +108,19 @@ class StreamPassThrough:
         class Err:
             def __init__(self, parent):
                 self.p = parent
+
             def write(self, msg):
                 self.p.stderrWrite(msg)
+
         sys.stderr = Err(self)
 
         class Out:
             def __init__(self, parent):
                 self.p = parent
+
             def write(self, msg):
                 self.p.stdoutWrite(msg)
+
         sys.stdout = Out(self)
 
     def stderrWrite(self, msg):
@@ -226,15 +229,15 @@ def main():
     # Create the default app manager config:
     if options.create_config:
         cfg = dict(
-            install_dir= options.install_dir,
+            install_dir=options.install_dir,
             exe=options.exe,
             log_dir=options.log_dir,
             logconfig_filename='',
-            disable_agency = options.disable_agency,
-            disable_broker = options.disable_broker,
+            disable_agency=options.disable_agency,
+            disable_broker=options.disable_broker,
             servicestation_dir=options.servicestation_dir,
             director_cfg=options.director_cfg,
-            directorlog_output=options.directorlog_output.replace('\\','/'),
+            directorlog_output=options.directorlog_output.replace('\\', '/'),
         )
         create_config(cfg)
         sys.exit(0)
