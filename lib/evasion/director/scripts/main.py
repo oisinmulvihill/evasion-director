@@ -145,6 +145,11 @@ def main():
                     help="This director configuration file to use at run time."
                     )
 
+    parser.add_option("--eat-exceptions", action="store_true", dest="eat_exceptions",
+                    default=False,
+                    help="Keep going if possible on Controller exceptions."
+                    )
+
     parser.add_option("--logtoconsole", action="store_true", dest="logtoconsole",
                     default=False,
                     help="Override log setup from configuration and log to the console instead."
