@@ -282,7 +282,9 @@ def main():
         config.set_cfg(raw, filename=cfg_file)
 
         from evasion.director import manager
-        m = manager.Manager()
+        m = manager.Manager(
+            eat_exceptions=options.eat_exceptions
+        )
         try:
             m.main()
         except (KeyboardInterrupt, SystemExit):

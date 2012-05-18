@@ -50,10 +50,13 @@ class Manager(object):
     """
     log = logging.getLogger("evasion.director.manager.Manager")
 
-    def __init__(self, eat_agent_exceptions=False):
+    def __init__(self, eat_exceptions=False):
         """
 
-        :param eat_agent_exceptions: True | False (default).
+        :param eat_exceptions: True | False (default).
+
+        If True the director will attempt to keep going with controller
+        exceptions. All exceptions get logged regardless.
 
         """
         self.controllers = []
@@ -63,7 +66,7 @@ class Manager(object):
         else:
             self.signals = None
         self.nameLookup = {}
-        self.eat_agent_exceptions = eat_agent_exceptions
+        self.eat_agent_exceptions = eat_exceptions
 
     def keep_going_on_exceptions(self):
         """Return the state of eat_agent_exceptions True | False."""
