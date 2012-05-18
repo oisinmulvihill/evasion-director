@@ -17,7 +17,7 @@ except ImportError:
 
 Name='evasion-director'
 ProjectUrl="http://github.com/oisinmulvihill/evasion-director/tarball/master#egg=evasion_director"
-Version='1.1.4'
+Version='1.1.5'
 Author='Oisin Mulvihill'
 AuthorEmail='oisinmulvihill at gmail dot com'
 Maintainer=' Oisin Mulvihill'
@@ -32,7 +32,7 @@ needed = [
     # third party deps:
     'configobj',
     'mako',
-    'evasion-agency==1.1.4',
+    'evasion-agency==1.1.5',
 ]
 
 SETUP_REQUIRES = [
