@@ -42,12 +42,10 @@ The most basic example is using the minimal configuration "app.ini"::
 This can then be run from the command line::
 
     $ director --config app.ini
-    2012-05-27 15:56:13,955 root WARNING No valid logging found in configuration. Using console logging.
-    2012-05-27 15:56:14,001 evasion.director.manager.Manager WARNING Messaging disable as evasion-messenger is not installed.
-    2012-05-27 15:56:14,001 evasion.director.manager.Manager INFO main: running.
-    2012-05-27 15:56:14,001 evasion.director.manager.Manager INFO controllerSetup: loading controllers from config.
-    2012-05-27 15:56:14,001 evasion.director.manager.Manager INFO controllerSetup: 1 controller(s) recovered.
-    2012-05-27 15:56:15,576 evasion.director.manager.Manager WARNING Ctrl-C, Exiting.
+    evasion.director.manager.Manager INFO main: running.
+    evasion.director.manager.Manager INFO controllerSetup: loading controllers from config.
+    evasion.director.manager.Manager INFO controllerSetup: 1 controller(s) recovered.
+    evasion.director.manager.Manager WARNING Ctrl-C, Exiting.
     $
 
 The only controller load is the "director" controller. This isn't very useful
