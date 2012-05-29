@@ -55,7 +55,11 @@ as nothing is run.
 Run a program
 ~~~~~~~~~~~~~
 
-You can run and manage any type of command line program::
+You can run and manage any type of program using the commandline controller.
+For example::
+
+    [director]
+    messaging = 'no'
 
     [command_line_example]
     # Set this to 'yes' to stop this controller from being used.
