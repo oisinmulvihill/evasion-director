@@ -25,8 +25,7 @@ to use ZeroMQ. Old versions used a combination of PyDispatch, Stomp, Morbid
 Broker and Twisted. This messaging is entirely optional.
 
 Note: The evasion-agency project has been merged with the director code base.
-The "evasion.agency" namespace is now provided by the evasion-director code
-base.
+The "evasion.agency" package is now provided by the evasion-director code base.
 
 
 Basic Examples
