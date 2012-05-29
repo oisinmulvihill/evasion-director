@@ -10,5 +10,3 @@
 
 """
 import fake
-
-

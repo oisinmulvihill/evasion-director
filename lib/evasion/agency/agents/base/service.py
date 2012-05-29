@@ -28,8 +28,6 @@ import SimpleXMLRPCServer
 from evasion.agency import agent
 
 
-
-
 class ControlFrameRequest(SocketServer.StreamRequestHandler):
     """Handle a viewpoint control frame request.
     """
@@ -75,7 +73,6 @@ class StoppableTCPServer(SocketServer.TCPServer):
                 pass
 
 
-
 class StoppableXMLRPCServer(
         SocketServer.ThreadingMixIn,
         SimpleXMLRPCServer.SimpleXMLRPCServer
@@ -117,7 +114,6 @@ class StoppableXMLRPCServer(
                 pass
 
 
-
 class ServiceDevice(agent.Base):
     """An XML-RPC interface agent.
 
@@ -140,7 +136,6 @@ class ServiceDevice(agent.Base):
     def __init__(self):
         self.config = None
 
-
     def registerInterface(self):
         """Register an instances who's members form the XML-RPC interace.
 
@@ -157,7 +152,6 @@ class ServiceDevice(agent.Base):
 
         """
         raise NotImplemented("Please implement this method!")
-
 
     def setUp(self, config):
         """Create the XML-RPC services. It won't be started until
@@ -190,12 +184,10 @@ class ServiceDevice(agent.Base):
 
         self.server.register_instance(self.registerInterface())
 
-
     def tearDown(self):
         """Stop the service.
         """
         self.stop()
-
 
     def start(self):
         """Start xmlrpc interface.
@@ -203,7 +195,7 @@ class ServiceDevice(agent.Base):
         def _start(data=0):
             i = self.config.get('interface')
             p = self.config.get('port')
-            self.log.info("XML-RPC Service URI 'http://%s:%s'" % (i,p))
+            self.log.info("XML-RPC Service URI 'http://%s:%s'" % (i, p))
             try:
                 self.server.serve_forever()
             except TypeError:
@@ -212,13 +204,11 @@ class ServiceDevice(agent.Base):
 
         thread.start_new_thread(_start, (0,))
 
-
     def stop(self):
         """Stop xmlrpc interface.
         """
         if self.server:
             self.server.stop()
-
 
 
 class WebServerAgent(agent.Base, SimpleHTTPServer.SimpleHTTPRequestHandler):
@@ -249,12 +239,16 @@ class WebServerAgent(agent.Base, SimpleHTTPServer.SimpleHTTPRequestHandler):
             instead, passing in the re
             """
             parent = self
+
             def do_GET(self):
                 self.parent.do_GET(self)
+
             def do_POST(self):
                 self.parent.do_POST(self)
+
             def do_PUT(self):
                 self.parent.do_PUT(self)
+
             def do_DELETE(self):
                 self.parent.do_DELETE(self)
 
@@ -282,13 +276,11 @@ class WebServerAgent(agent.Base, SimpleHTTPServer.SimpleHTTPRequestHandler):
 
             time.sleep(1)
 
-
     def tearDown(self):
         """Stop the service.
         """
         self.log.info("stop: Stopping Web Service.")
         self.stop()
-
 
     def defaultResponseHandler(self, request_handler):
         """A reference for how you can respond to a do_* request.
@@ -332,13 +324,11 @@ class WebServerAgent(agent.Base, SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         return data
 
-
     def do_GET(self, request_handler):
         """Handle a GET request, override to implement.
         """
         self.log.info("do_GET: received request, responding.")
         self.defaultResponseHandler(request_handler)
-
 
     def do_POST(self, request_handler):
         """Handle a GET request, override to implement.
@@ -346,13 +336,11 @@ class WebServerAgent(agent.Base, SimpleHTTPServer.SimpleHTTPRequestHandler):
         self.log.info("do_POST: received request, responding.")
         self.defaultResponseHandler(request_handler)
 
-
     def do_PUT(self, request_handler):
         """Handle a PUT request, override to implement.
         """
         self.log.info("do_PUT: received request, responding.")
         self.defaultResponseHandler(request_handler)
-
 
     def do_DELETE(self, request_handler):
         """Handle a DELETE request, override to implement.
@@ -360,14 +348,13 @@ class WebServerAgent(agent.Base, SimpleHTTPServer.SimpleHTTPRequestHandler):
         self.log.info("do_DELETE: received request, responding.")
         self.defaultResponseHandler(request_handler)
 
-
     def start(self):
         """Start HTTP Web Server.
         """
         def _start(data=0):
             i = self.config.get('interface')
             p = self.config.get('port')
-            self.log.info("Web Service URI 'http://%s:%s'" % (i,p))
+            self.log.info("Web Service URI 'http://%s:%s'" % (i, p))
             try:
                 self.server.serve_forever()
             except TypeError:
@@ -375,7 +362,6 @@ class WebServerAgent(agent.Base, SimpleHTTPServer.SimpleHTTPRequestHandler):
                 pass
 
         thread.start_new_thread(_start, (0,))
-
 
     def stop(self):
         """Stop HTTP Web Server.

@@ -85,5 +85,5 @@ setup(
     package_dir={'': 'lib'},
     eager_resources=EagerResources,
     entry_points=EntryPoints,
-    namespace_packages=['evasion', 'evasion.agency', 'evasion.director'],
+    namespace_packages=['evasion'],
 )

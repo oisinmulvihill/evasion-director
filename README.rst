@@ -114,6 +114,65 @@ running all "controllers" that make up the program.
 Use the Agency
 ~~~~~~~~~~~~~~
 
+The minimal Agency configuration is::
+
+    [director]
+    messaging = 'no'
+
+    [agency]
+    #disabled = 'yes'
+    controller = 'evasion.director.controllers.agencyctrl'
+
+
+If this is run you would see::
+
+    $ director --config ../app.ini
+    evasion.director.manager.Manager INFO main: running.
+    evasion.director.manager.Manager INFO controllerSetup: loading controllers from config.
+    evasion.director.manager.Manager INFO controllerSetup: 2 controller(s) recovered.
+    evasion.director.controllers.agencyctrl INFO setUp: setting up the agency and recovering agents.
+    evasion.agency.manager.Manager INFO load: 0 agent(s) present.
+    evasion.agency.manager.Manager WARNING There are no agents to set up.
+    evasion.director.controllers.agencyctrl INFO setUp: agents loaded '0'.
+    evasion.director.manager.Manager INFO appmain: The controller '<Agency: order:2 disabled:no>' needs to be started.
+    evasion.agency.manager.Manager WARNING There are no agents to start.
+    evasion.director.manager.Manager INFO appmain: Started ok 'agency'? 'True'
+    evasion.director.manager.Manager WARNING Ctrl-C, Exiting.
+    evasion.agency.manager.Manager WARNING There are no agents to stop.
+    evasion.agency.manager.Manager WARNING There are no agents to tear down.
+
+This loads the agency however there are no agents for it to manage.
+
+If we add the test agent to give the agency something to managed, the
+configuration would now look like::
+
+    [director]
+    messaging = 'no'
+
+    [agency]
+    #disabled = 'yes'
+    controller = 'evasion.director.controllers.agencyctrl'
+
+        # indent is convention to visually distinguish agents from controllers.
+        [testswipe]
+        cat = 'swipe'
+        agent = 'evasion.agency.agents.testing.fake'
+
+If this is run you would see::
+
+    $ director --config ../app.ini
+    2012-05-29 17:21:56,674 evasion.director.manager.Manager INFO main: running.
+    2012-05-29 17:21:56,675 evasion.director.manager.Manager INFO controllerSetup: loading controllers from config.
+    2012-05-29 17:21:56,711 evasion.director.manager.Manager INFO controllerSetup: 2 controller(s) recovered.
+    2012-05-29 17:21:56,711 evasion.director.controllers.agencyctrl INFO setUp: setting up the agency and recovering agents.
+    2012-05-29 17:21:56,712 evasion.agency.manager.Manager INFO load: 1 agent(s) present.
+    2012-05-29 17:21:56,712 evasion.director.controllers.agencyctrl INFO setUp: agents loaded '1'.
+    2012-05-29 17:21:56,712 evasion.director.manager.Manager INFO appmain: The controller '<Agency: order:2 disabled:no>' needs to be started.
+    2012-05-29 17:21:56,712 evasion.director.manager.Manager INFO appmain: Started ok 'agency'? 'True'
+    2012-05-29 17:21:58,134 evasion.director.manager.Manager WARNING Ctrl-C, Exiting.
+    $
+
+
 
 Development Process
 -------------------

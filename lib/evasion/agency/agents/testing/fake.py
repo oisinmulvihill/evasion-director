@@ -28,7 +28,7 @@ class Agent(agent.Base):
 
         [testswipe]
         cat = 'swipe'
-        agent = 'agency.testing.fake'
+        agent = 'evasion.agency.agents.testing.fake'
 
     If you set the parent object that implements the agent.Base
     methods, then you get callbacks for each time the methods
@@ -63,7 +63,3 @@ class Agent(agent.Base):
     def stop(self):
         if self._parent:
             self._parent.stop()
-
-
-
-
