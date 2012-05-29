@@ -11,7 +11,7 @@ from setuptools import setup, find_packages
 
 Name='evasion-director'
 ProjectUrl="http://github.com/oisinmulvihill/evasion-director/tarball/master#egg=evasion_director"
-Version='1.1.5'
+Version='1.1.6'
 Author='Oisin Mulvihill'
 AuthorEmail='oisinmulvihill at gmail dot com'
 Maintainer=' Oisin Mulvihill'

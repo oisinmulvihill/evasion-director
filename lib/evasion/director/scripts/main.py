@@ -61,8 +61,6 @@ outfile:
         sys.exit(1)
 
 
-
-
 def create_config(cfg_dict):
     """Create the default director.ini in the current directory based
     on a the template stored in director.templatecfg
@@ -224,7 +222,7 @@ def main():
 
     (options, args) = parser.parse_args()
 
-    log = logging.getLogger("evasion.director.scripts.main.main")
+    log = logging.getLogger()
 
     # Create the default app manager config:
     if options.create_config:

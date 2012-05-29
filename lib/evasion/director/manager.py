@@ -181,7 +181,7 @@ class Manager(object):
         c = config.get_cfg()
         poll_time = float(c.director.poll_time)
 
-        if not NO_MESSAGING:
+        if not c.director.messaging == 'no':
             # Set up all signals handlers provided by the director:
             self.signals.setup()
 

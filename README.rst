@@ -15,9 +15,10 @@ manages controllers in a similar fashion to init.d on linux. The evasion
 director starts up and loads each of the sections.
 
 The most common evasion-director controller used is the evasion-agency. This
-manages "agents" which load Python package or Module to control devices,
-services or anything. The agency provides a device tree of nodes which can be
-referred to in an abstract fashion.
+manages "agents". An agent is a Python package or Module. Agents are usually
+used to control hardware devices, services or other things the program needs to
+access. The agency provides a device tree of nodes which can be referred to in
+an abstract fashion.
 
 Message passing between Controllers, Agents and all interested parties can be
 done using the evasion-messenger. This project part is currently being
@@ -26,6 +27,91 @@ Morbid Broker and Twisted. This messaging is entirely optional.
 
 The evasion agency and director increment version in lock step. I'm currently
 thinking of merging the agency with the director repository.
+
+
+Basic Examples
+--------------
+
+Simplest configuration
+~~~~~~~~~~~~~~~~~~~~~~
+
+The most basic example is using the minimal configuration "app.ini"::
+
+    [director]
+    messaging = 'no'
+
+This can then be run from the command line::
+
+    $ director --config app.ini
+    2012-05-27 15:56:13,955 root WARNING No valid logging found in configuration. Using console logging.
+    2012-05-27 15:56:14,001 evasion.director.manager.Manager WARNING Messaging disable as evasion-messenger is not installed.
+    2012-05-27 15:56:14,001 evasion.director.manager.Manager INFO main: running.
+    2012-05-27 15:56:14,001 evasion.director.manager.Manager INFO controllerSetup: loading controllers from config.
+    2012-05-27 15:56:14,001 evasion.director.manager.Manager INFO controllerSetup: 1 controller(s) recovered.
+    2012-05-27 15:56:15,576 evasion.director.manager.Manager WARNING Ctrl-C, Exiting.
+    $
+
+The only controller load is the "director" controller. This isn't very useful
+as nothing is run.
+
+
+Run a program
+~~~~~~~~~~~~~
+
+You can run and manage any type of command line program::
+
+    [command_line_example]
+    # Set this to 'yes' to stop this controller from being used.
+    disabled = 'no'
+
+    # This is optional and allows the order in which controllers are started
+    # to be set.
+    order = 1
+
+    # Where the "Controller" class is to be found.
+    controller = 'evasion.director.controllers.commandline'
+
+    # The command line specific options:
+    #
+    # The command to run.
+    command = 'ls'
+    # Where the command is to be run from.
+    workingdir = '/tmp'
+
+Running this configuration gets::
+
+    $ director --config app.ini
+    root WARNING No valid logging found in configuration. Using console logging.
+    evasion.director.manager.Manager INFO main: running.
+    evasion.director.manager.Manager INFO controllerSetup: loading controllers from config.
+    evasion.director.manager.Manager INFO controllerSetup: 2 controller(s) recovered.
+    evasion.director.controllers.commandline DEBUG setUp: command <ls> workingdir </tmp>
+    evasion.director.manager.Manager INFO appmain: The controller '<Controller: order:1 name:command_line_example disabled:no>' needs to be started.
+    evasion.director.controllers.commandline INFO start:  'ls' running. PID 87808
+    evasion.director.manager.Manager INFO appmain: Started ok 'command_line_example'? 'True'
+    1564b4fc7dd26  ics41562  icssuis1316027648  launch-0FvLcQ  launch-7vMUyC  launch-9uZ0bO  launch-ASdWau  launch-RUjEPx  launchd-460.ZFsfn1
+    evasion.director.manager.Manager INFO appmain: The controller '<Controller: order:1 name:command_line_example disabled:no>' needs to be started.
+    evasion.director.controllers.commandline INFO start:  'ls' running. PID 87809
+    evasion.director.manager.Manager INFO appmain: Started ok 'command_line_example'? 'True'
+    1564b4fc7dd26  ics41562  icssuis1316027648  launch-0FvLcQ  launch-7vMUyC  launch-9uZ0bO  launch-ASdWau  launch-RUjEPx  launchd-460.ZFsfn1
+    evasion.director.manager.Manager INFO appmain: The controller '<Controller: order:1 name:command_line_example disabled:no>' needs to be started.
+    evasion.director.controllers.commandline INFO start:  'ls' running. PID 87810
+    evasion.director.manager.Manager INFO appmain: Started ok 'command_line_example'? 'True'
+    icssuis1316027648  launch-0FvLcQ  launch-7vMUyC  launch-9uZ0bO  launch-ASdWau  launch-RUjEPx  launchd-460.ZFsfn1
+    evasion.director.manager.Manager WARNING Ctrl-C, Exiting.
+    evasion.director.controllers.commandline INFO stop: stopping the process PID:'87810' and all its children.
+    evasion.director.tools.proc INFO kill: pid <87810>
+    evasion.director.controllers.commandline WARNING pkill: call failure [Errno 3] No such process
+    $
+
+The director loads the controllers. It then sees the commandline controller
+needs to be start and it runs it. The "ls" command lists the contents of the
+"/tmp" directory. The director then notices that the command needs running again
+and the process repeats.
+
+The director will keep running all the parts that make up the program.
+
+
 
 
 Development Process
