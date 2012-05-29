@@ -9,16 +9,16 @@ Oisin Mulvihill
 """
 from setuptools import setup, find_packages
 
-Name='evasion-director'
-ProjectUrl="http://github.com/oisinmulvihill/evasion-director/tarball/master#egg=evasion_director"
-Version='1.1.6'
-Author='Oisin Mulvihill'
-AuthorEmail='oisinmulvihill at gmail dot com'
-Maintainer=' Oisin Mulvihill'
-Summary='This provides a daemon like running and monitoring application'
-License='Evasion Project CDDL License'
-ShortDescription=Summary
-Description=Summary
+Name = 'evasion-director'
+ProjectUrl = "http://github.com/oisinmulvihill/evasion-director/tarball/master#egg=evasion_director"
+Version = '1.1.6'
+Author = 'Oisin Mulvihill'
+AuthorEmail = 'oisinmulvihill at gmail dot com'
+Maintainer = ' Oisin Mulvihill'
+Summary = 'This provides a daemon like running and monitoring application'
+License = 'Evasion Project CDDL License'
+ShortDescription = Summary
+Description = Summary
 
 TestSuite = 'nose.collector'
 
@@ -26,7 +26,6 @@ needed = [
     # third party deps:
     'configobj',
     'mako',
-    'evasion-agency==1.1.5',
 ]
 
 SETUP_REQUIRES = [
@@ -83,8 +82,8 @@ setup(
     tests_require=TEST_REQUIRES,
     packages=find_packages('lib'),
     package_data=PackageData,
-    package_dir = {'': 'lib'},
-    eager_resources = EagerResources,
-    entry_points = EntryPoints,
-    namespace_packages = ['evasion'],
+    package_dir={'': 'lib'},
+    eager_resources=EagerResources,
+    entry_points=EntryPoints,
+    namespace_packages=['evasion', 'evasion.agency', 'evasion.director'],
 )

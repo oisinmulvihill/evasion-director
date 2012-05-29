@@ -14,19 +14,19 @@ It is given all the configuration inside its section. The evasion-director
 manages controllers in a similar fashion to init.d on linux. The evasion
 director starts up and loads each of the sections.
 
-The most common evasion-director controller used is the evasion-agency. This
-manages "agents". An agent is a Python package or Module. Agents are usually
-used to control hardware devices, services or other things the program needs to
-access. The agency provides a device tree of nodes which can be referred to in
-an abstract fashion.
+The most common evasion-director controller used is the evasion agency. This
+manages "agents". An agent is a Python package or Module. Agents are used to
+control hardware devices or services. The agency provides a device tree of
+nodes which can be referred to in an abstract fashion.
 
 Message passing between Controllers, Agents and all interested parties can be
-done using the evasion-messenger. This project part is currently being
-rewritten to use ZeroMQ. Old versions used a combination of PyDispatch, Stomp,
-Morbid Broker and Twisted. This messaging is entirely optional.
+done using the evasion-messenger. This project part is currently being rewritten
+to use ZeroMQ. Old versions used a combination of PyDispatch, Stomp, Morbid
+Broker and Twisted. This messaging is entirely optional.
 
-The evasion agency and director increment version in lock step. I'm currently
-thinking of merging the agency with the director repository.
+Note: The evasion-agency project has been merged with the director code base.
+The "evasion.agency" namespace is now provided by the evasion-director code
+base.
 
 
 Basic Examples
@@ -104,14 +104,15 @@ Running this configuration gets::
     evasion.director.controllers.commandline WARNING pkill: call failure [Errno 3] No such process
     $
 
-The director loads the controllers. It then sees the commandline controller
-needs to be start and it runs it. The "ls" command lists the contents of the
-"/tmp" directory. The director then notices that the command needs running again
-and the process repeats.
+The director loads the controller sections. Th commandline controller is
+started. The "ls" command lists the contents of the "/tmp" directory. The
+output is captured and logged. The director then notices that the command has
+exited needs running again and the process repeats. The director will keep
+running all "controllers" that make up the program.
 
-The director will keep running all the parts that make up the program.
 
-
+Use the Agency
+~~~~~~~~~~~~~~
 
 
 Development Process
@@ -149,6 +150,15 @@ EvasionProject Wiki
 
 Release Notes
 -------------
+
+1.1.6
+~~~~~
+
+The evasion-agency repository code has been merged with the evasion-director.
+What this means in practice is the evasion-director now provides the
+"evasion.agency" namespace. The director no longer depends on the
+"evasion-agency".
+
 
 1.1.5:
 ~~~~~~
