@@ -222,7 +222,8 @@ def main():
 
     (options, args) = parser.parse_args()
 
-    log = logging.getLogger()
+    root_log = logging.getLogger()
+    log = logging.getLogger('evasion')
 
     # Create the default app manager config:
     if options.create_config:

@@ -132,5 +132,3 @@ def call(cmd):
         get_log().info("call: command <%s> run %s" % (cmd, rc))
 
     return (rc, out, err)
-
-

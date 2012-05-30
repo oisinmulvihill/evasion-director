@@ -28,8 +28,6 @@ This module provides the director configuration parsing and handling.
 
 
 """
-import logging
-
 all = [
     'SectionError', 'Director', 'Broker', 'WebAdmin',
     'Controller', 'Agency', 'Agent', 'Container',
@@ -63,28 +61,24 @@ class Base(object):
         # Set by the director so it knows this was deliberately stopped.
         self.wasStopped = False
 
-
     def __str__(self):
         """Print out who were representing and some unique identifier."""
         #print "self:", self.__dict__
         return "<%s: order %s>" % (self.name, self.order)
 
-
     def __repr__(self):
         """This is a string the represents us, can be used as a dict key."""
         return self.__str__()
 
-
     def export(self):
         """Called to return an exportable dict representing this object"""
         return dict(
-            type = self.type,
-            name = self.name,
-            order = self.order,
-            disabled = self.disabled,
-            config = self.config,
+            type=self.type,
+            name=self.name,
+            order=self.order,
+            disabled=self.disabled,
+            config=self.config,
         )
-
 
     def validate(self):
         """Called to check that all the required fields have been provided.
@@ -177,37 +171,47 @@ class Director(Base):
             """Based on director.controllers.base:Base but
             there is no point importing it just for this.
             """
-            def setUp(self, config): pass
-            def start(self): pass
-            def isStarted(self): return True
-            def stop(self): return True
-            def isStopped(self): return True
-            def tearDown(self): pass
-        self.mod = F()
+            def setUp(self, config):
+                pass
 
+            def start(self):
+                pass
+
+            def isStarted(self):
+                return True
+
+            def stop(self):
+                return True
+
+            def isStopped(self):
+                return True
+
+            def tearDown(self):
+                pass
+
+        self.mod = F()
 
     def export(self):
         """Called to return an exportable dict representing this object"""
         return dict(
-            type = self.type,
-            name = self.name,
-            order = self.order,
-            disabled = self.disabled,
-            messaging = self.messaging,
-            config = self.config,
-            poll_time = self.poll_time,
-            msg_host = self.msg_host,
-            msg_port = self.msg_port,
-            msg_username = self.msg_username,
-            msg_password = self.msg_password,
-            msg_channel = self.msg_channel,
-            msg_interface = self.msg_interface,
-            internal_broker = self.internal_broker,
-            disable_broker = self.disable_broker,
-            noproxydispatch = self.noproxydispatch,
-            proxy_dispatch_port = self.proxy_dispatch_port,
+            type=self.type,
+            name=self.name,
+            order=self.order,
+            disabled=self.disabled,
+            messaging=self.messaging,
+            config=self.config,
+            poll_time=self.poll_time,
+            msg_host=self.msg_host,
+            msg_port=self.msg_port,
+            msg_username=self.msg_username,
+            msg_password=self.msg_password,
+            msg_channel=self.msg_channel,
+            msg_interface=self.msg_interface,
+            internal_broker=self.internal_broker,
+            disable_broker=self.disable_broker,
+            noproxydispatch=self.noproxydispatch,
+            proxy_dispatch_port=self.proxy_dispatch_port,
         )
-
 
     def __str__(self):
         return "<Director: order:%s>" % (self.order)
@@ -249,19 +253,17 @@ class Broker(Base):
         self.command = "morbidsvr -p 61613 -i 127.0.0.1"
         self.workingdir = ""
 
-
     def export(self):
         """Called to return an exportable dict representing this object"""
         return dict(
-            type = self.type,
-            name = self.name,
-            order = self.order,
-            disabled = self.disabled,
-            config = self.config,
-            controller = self.controller,
-            command = self.command,
+            type=self.type,
+            name=self.name,
+            order=self.order,
+            disabled=self.disabled,
+            config=self.config,
+            controller=self.controller,
+            command=self.command,
         )
-
 
     def __str__(self):
         return "<Broker: order:%s disabled:%s>" % (self.order, self.disabled)
@@ -297,22 +299,21 @@ class Agency(Base):
         self.controller = 'evasion.director.controllers.agencyctrl'
         self.agents = []
 
-
     def export(self):
-        """Called to return an exportable dict representing this object"""
-
+        """Called to return an exportable dict representing this object.
+        """
         agents = []
         if self.agents:
             agents = [a.export() for a in self.agents]
 
         return dict(
-            type = self.type,
-            name = self.name,
-            order = self.order,
-            disabled = self.disabled,
-            config = self.config,
-            controller = self.controller,
-            agents = agents,
+            type=self.type,
+            name=self.name,
+            order=self.order,
+            disabled=self.disabled,
+            config=self.config,
+            controller=self.controller,
+            agents=agents,
         )
 
     def __str__(self):
@@ -357,21 +358,19 @@ class Agent(Base):
         # This will be set if its not provided:
         self.order = None
         # alias is no longer required.
-        self.required = ['name','agent', 'cat']
-
+        self.required = ['name', 'agent', 'cat']
 
     def export(self):
         """Called to return an exportable dict representing this object"""
         return dict(
-            type = self.type,
-            name = self.name,
-            order = self.order,
-            disabled = self.disabled,
-            config = self.config,
-            cat = self.cat,
-            alias = self.alias,
+            type=self.type,
+            name=self.name,
+            order=self.order,
+            disabled=self.disabled,
+            config=self.config,
+            cat=self.cat,
+            alias=self.alias,
         )
-
 
     def __str__(self):
         return "<Agent: name:%s agent order:%s disabled:%s>" % (
@@ -405,7 +404,6 @@ class WebAdmin(Base):
         self.disabled = 'no'
         self.controller = 'evasion.director.controllers.webadminctrl'
 
-
     def __str__(self):
         return "<WebAdmin: order:%s disabled:%s>" % (self.order, self.disabled)
 
@@ -436,9 +434,8 @@ class Controller(Base):
 
     def __init__(self):
         Base.__init__(self)
-        self.required = ['name','order','controller']
+        self.required = ['name', 'order', 'controller']
         self.controller = None
-
 
     def __str__(self):
         return "<Controller: order:%s name:%s disabled:%s>" % (self.order, self.name, self.disabled)

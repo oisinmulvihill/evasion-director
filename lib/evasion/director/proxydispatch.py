@@ -19,7 +19,6 @@ class XmlRpcServer:
 
     log = logging.getLogger("evasion.director.proxydispatch.XmlRpcServer")
 
-
     def xmlrpc_ping(self):
         """Allow others to check we're running.
         """
@@ -28,7 +27,6 @@ class XmlRpcServer:
         self.log.debug("ping received: returning '%s'." % msg)
         return msg
 
-        
     def xmlrpc_dispatch(self, reply_evt, data):
         """Dispatch the given data as a reply event.
         """
@@ -38,7 +36,7 @@ class XmlRpcServer:
             self.log.debug("xmlrpc_dispatch: Send disabled in testing mode.")
         else:
             reply = messenger.EVT(reply_evt)
-            
+
             #This would require the waiting source to reply confirming receipt:
             #self.log.debug("xmlrpc_dispatch: sending, waiting for confirmation receipt.")
             # messenger.send_await(reply, data)
@@ -46,11 +44,10 @@ class XmlRpcServer:
             # This will just send without waiting.
             self.log.debug("xmlrpc_dispatch: sending (no reply looked for)")
             messenger.send(reply, data)
-            
+
             self.log.debug("xmlrpc_dispatch: sending (no reply looked for - SENT OK")
 
         return 0
-
 
     def xmlrpc_viewpoint_startup(self):
         """Broadcasts a EVT_VIEWPOINT_STARTUP message if anyone is listening they will react.
@@ -61,7 +58,6 @@ class XmlRpcServer:
 
         return 0
 
-
     def xmlrpc_viewpoint_shutdown(self):
         """Broadcasts a EVT_VIEWPOINT_SHUTDOWN message if anyone is listening they will react.
         """
@@ -70,7 +66,6 @@ class XmlRpcServer:
         self.log.debug("xmlrpc_shutdown: sent EVT_SHUTDOWN OK.")
 
         return 0
-
 
     def xmlrpc_exitall(self):
         """Sends a EVT_DIRECTOR_EXIT_ALL which will tell the director to shut all parts down
@@ -96,16 +91,16 @@ def setup(port, testing=False):
 
     log = logging.getLogger("evasion.director.proxydispatch.setup")
 
-    from twisted.web import xmlrpc    
-    
+    from twisted.web import xmlrpc
+
     class Tw(xmlrpc.XMLRPC, XmlRpcServer):
         """Hack, to avoid import time select install in twisted"""
         pass
-    
+
     x = Tw()
     x.testing = testing
     site = server.Site(x)
-    
+
     reactor.listenTCP(port, site)
     log.info("XML-RPC proxy dispatch server setup ok (port:%s)" % (port))
 
@@ -117,9 +112,9 @@ if __name__ == "__main__":
     from director import utils
     utils.log_init(logging.DEBUG)
     log = logging.getLogger("test proxydispatch.")
-    
+
     setup(9001, testing=True)
     log.info("started on port 9001")
-    
+
     from twisted.internet import reactor
-    reactor.run()     
+    reactor.run()

@@ -26,7 +26,7 @@ except ImportError:
     # disable messaging, this will get logged later.
     # The evasion-messenger is not installed.
     NO_MESSAGING = True
-    sys.stdout.write("evasion.messenger not present. Messaging disabled.\n")
+    #sys.stdout.write("evasion.messenger not present.\n")
 
 from evasion.director import config
 
@@ -48,8 +48,6 @@ class Manager(object):
     For more on this see director.configobjs.Director doc string.
 
     """
-    log = logging.getLogger("evasion.director.manager.Manager")
-
     def __init__(self, eat_exceptions=False):
         """
 
@@ -59,6 +57,8 @@ class Manager(object):
         exceptions. All exceptions get logged regardless.
 
         """
+        self.log = logging.getLogger("evasion.director.manager.Manager")
+
         self.controllers = []
         if not NO_MESSAGING:
             self.log.warn("Messaging disable as evasion-messenger is not installed.")
@@ -123,9 +123,9 @@ class Manager(object):
                 try:
                     if ctl.disabled == 'no':
                         controller.setUp(ctl.config)
-                except:
-                    self.log.exception("%s setUp error: " % ctl)
-                    sys.stderr.write("%s setUp error: %s" % (ctl, self.formatError()))
+                except Exception as e:
+                    self.log.error("'%s' setUp error: %s" % (ctl, str(e)))
+                    #sys.stderr.write("%s setUp error: %s" % (ctl, self.formatError()))
                     if not self.keep_going_on_exceptions():
                         # Stop!
                         raise
@@ -147,9 +147,9 @@ class Manager(object):
                 continue
             try:
                 controller.stop()
-            except:
-                self.log.exception("%s stop error: " % ctl)
-                sys.stderr.write("%s stop error: %s" % (ctl, self.formatError()))
+            except Exception as e:
+                self.log.error("'%s' stop error: %s" % (ctl, str(e)))
+                #sys.stderr.write("%s stop error: %s" % (ctl, self.formatError()))
                 if not self.keep_going_on_exceptions():
                     # Stop!
                     raise
@@ -162,9 +162,9 @@ class Manager(object):
                 continue
             try:
                 controller.tearDown()
-            except:
-                self.log.exception("%s tearDown error: " % ctl)
-                sys.stderr.write("%s tearDown error: %s" % (ctl, self.formatError()))
+            except Exception as e:
+                self.log.error("'%s' tearDown error: %s" % (ctl, str(e)))
+                #sys.stderr.write("%s tearDown error: %s" % (ctl, self.formatError()))
                 if not self.keep_going_on_exceptions():
                     # Stop!
                     raise
@@ -213,9 +213,9 @@ class Manager(object):
                         self.log.info("appmain: Started ok '%s'? '%s'" % (ctl.name, rc))
                 except (SystemExit, KeyboardInterrupt):
                     raise
-                except:
-                    self.log.exception("%s appmain error: " % ctl)
-                    sys.stderr.write("%s appmain error: %s" % (ctl, self.formatError()))
+                except Exception as e:
+                    self.log.error("'%s' appmain error: %s" % (ctl, str(e)))
+                    #sys.stderr.write("%s appmain error: %s" % (ctl, self.formatError()))
                     if not self.keep_going_on_exceptions():
                         # Stop!
                         self.log.exception("Shutting down now on exception in: %s " % ctl)

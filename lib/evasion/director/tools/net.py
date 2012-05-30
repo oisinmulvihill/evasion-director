@@ -74,7 +74,7 @@ def get_free_port(exclude_ports=[], retries=PORT_RETRIES):
                 s.close()
             except:
                 pass
-        except socket.error, e:
+        except socket.error:
             # port not free, retry.
             get_log().info("getFreePort: port not free %s, retrying with another port." % free_port)
 
@@ -121,8 +121,8 @@ def wait_for_service(host, port, retries=0, retry_period=5.0):
         returned = False
         try:
             s.connect((host, port))
-        except socket.error, e:
-            pass # not ready yet.
+        except socket.error:
+            pass  # not ready yet.
         else:
             returned = True
 # not py24 friendly:
@@ -181,18 +181,18 @@ def wait_for_ready(uri, retries=PORT_RETRIES):
         retries -= 1
         try:
             # Just get the headers and not the body to speed things up.
-            conn.request("HEAD",'/')
+            conn.request("HEAD", '/')
             res = conn.getresponse()
             if res.status == httplib.OK:
                 # success, its ready.
                 returned = True
-                break;
+                break
 
             elif res.status == httplib.NOT_IMPLEMENTED:
                 # HEAD not supported try a GET instead:
                 try:
                     urllib.urlopen(URI)
-                except IOError, e:
+                except IOError:
                     # Not ready yet. I should check the exception to
                     # make sure its socket error or we could be looping
                     # forever. I'll need to use a state machine if this
@@ -202,9 +202,9 @@ def wait_for_ready(uri, retries=PORT_RETRIES):
                 else:
                     # success, its ready.
                     returned = True
-                    break;
+                    break
 
-        except socket.error, e:
+        except socket.error:
             # Not ready yet. I should check the exception to
             # make sure its socket error or we could be looping
             # forever. I'll need to use a state machine if this

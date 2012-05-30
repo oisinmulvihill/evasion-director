@@ -31,8 +31,9 @@ class FailedToStart(Exception):
 
     The isStarted method of a Controller instance will usually
     raise this.
-    
+
     """
+
 
 class FailedToStop(Exception):
     """
@@ -50,8 +51,8 @@ class Controller(object):
     This class represents a 'process' which the director will manage.
     This class is really an interface which all who wish to be loaded
     must derive from.
-    
-    """        
+
+    """
     def setUp(self, config):
         """
         This is called after the controller has been created to perform
@@ -64,10 +65,9 @@ class Controller(object):
         the configuration was parsed.
 
         :return: None
-        
+
         """
         self.config = config
-        
 
     def start(self):
         """
@@ -82,9 +82,8 @@ class Controller(object):
         bear this in mind.
 
         :return: None
-        
-        """
 
+        """
 
     def isStarted(self):
         """
@@ -95,10 +94,9 @@ class Controller(object):
         it is acceptable to block waiting.
 
         :return: True if the process is running otherwise False
-        
+
         """
         return False
-    
 
     def stop(self):
         """
@@ -109,10 +107,9 @@ class Controller(object):
         bear this in mind.
 
         :return: None
-        
+
         """
         return False
-
 
     def isStopped(self):
         """
@@ -122,9 +119,8 @@ class Controller(object):
         it is acceptable to block waiting.
 
         :return: True if the process has stopped otherwise False
-        
-        """
 
+        """
 
     def tearDown(self):
         """
@@ -133,6 +129,5 @@ class Controller(object):
         process only needs to free or perform and needed clean up here.
 
         :return: None
-        
-        """
 
+        """

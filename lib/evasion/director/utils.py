@@ -15,4 +15,3 @@ def log_init(level):
     log.addHandler(hdlr)
     log.setLevel(level)
     log.propagate = 0
-

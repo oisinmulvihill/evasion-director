@@ -22,7 +22,6 @@
 """
 import uuid
 import time
-import pprint
 import logging
 import traceback
 
@@ -33,7 +32,6 @@ from evasion.director import config
 
 # Default time in seconds before raising timeout:
 DEFAULT_TIMEOUT = 60
-
 
 
 class SignalTimeout(Exception):
@@ -53,7 +51,6 @@ class SignalsSender(object):
     """
     def __init__(self):
         self.log = logging.getLogger('evasion.director.signals.SignalsSender')
-
 
     def ping(self, timeout=10, testing=None):
         """
@@ -85,7 +82,6 @@ class SignalsSender(object):
 
         except messenger.EventTimeout:
             raise SignalTimeout("Director presence check failed! Is it running?")
-
 
     def exitAll(self, timeout=10):
         """
@@ -144,7 +140,6 @@ class SignalsSender(object):
 
         return rc
 
-
     def controllerStart(self, name, timeout=DEFAULT_TIMEOUT):
         """
         Called to tell a controller to start running.
@@ -178,7 +173,6 @@ class SignalsSender(object):
 
         return rc
 
-
     def controllerStop(self, name, timeout=DEFAULT_TIMEOUT):
         """
         Called to tell a controller to stop running.
@@ -211,7 +205,6 @@ class SignalsSender(object):
             rc = rc['data']
 
         return rc
-
 
     def controllerReload(self, name, new_config, timeout=DEFAULT_TIMEOUT):
         """
@@ -252,7 +245,6 @@ class SignalsSender(object):
             rc = rc['data']
 
         return rc
-
 
     def configuration(self, timeout=DEFAULT_TIMEOUT):
         """
@@ -301,7 +293,6 @@ class SignalsReceiver(object):
         self.log = logging.getLogger('evasion.director.signals.SignalsReceiver')
         self.manager = manager
 
-
     def resultDict(self, data, result='ok'):
         """
         Return an empty signal response which will be filled out
@@ -314,11 +305,10 @@ class SignalsReceiver(object):
         """
         result = result.lower()
 
-        if result not in ['ok','error']:
+        if result not in ['ok', 'error']:
             raise ValueError("Incorrect result value '%s'." % result)
 
         return dict(result=result, data=data)
-
 
     def formatError(self):
         """Return a string representing the last traceback.
@@ -326,7 +316,6 @@ class SignalsReceiver(object):
         exception, instance, tb = traceback.sys.exc_info()
         error = "".join(traceback.format_tb(tb))
         return error
-
 
     def signalPing(self, signal, sender, **data):
         """
@@ -349,7 +338,6 @@ class SignalsReceiver(object):
         rtoken = data['data']
         self.log.debug("main: EVT_DIRECTOR_PING received token '%s' replying with same." % (rtoken))
         messenger.reply(signal, self.resultDict(rtoken))
-
 
     def signalControllerState(self, signal, sender, **data):
         """
@@ -420,7 +408,6 @@ class SignalsReceiver(object):
         self.log.debug("controllerState: replying to request (sig id %s) - " % signal.uid)
         messenger.reply(signal, rc)
 
-
     def signalControllerStart(self, signal, sender, **data):
         """
         Called to handle the EVT_DIRECTOR_CTRLSTART signal, which
@@ -479,7 +466,6 @@ class SignalsReceiver(object):
         self.log.debug("signalControllerStart: replying to request (sig id %s) - " % signal.uid)
         messenger.reply(signal, rc)
 
-
     def signalControllerStop(self, signal, sender, **data):
         """
         Called to handle the EVT_DIRECTOR_CTRLSTOP signal, which
@@ -524,8 +510,6 @@ class SignalsReceiver(object):
                         ctrl.wasStopped = True
                         ctrl.mod.stop()
                         msg = "Service '%s' stop called." % ctrl.name
-
-
                     break
 
         except:
@@ -538,7 +522,6 @@ class SignalsReceiver(object):
 
         self.log.debug("signalControllerStop: replying to request (sig id %s) - " % signal.uid)
         messenger.reply(signal, rc)
-
 
     def signalControllerReload(self, signal, sender, **data):
         """
@@ -595,7 +578,6 @@ class SignalsReceiver(object):
         self.log.debug("signalControllerReload: replying to request (sig id %s) - " % signal.uid)
         messenger.reply(signal, rc)
 
-
     def signalConfiguration(self, signal, sender, **data):
         """
         Called to handle the EVT_DIRECTOR_CONFIGURATION signal, which
@@ -635,7 +617,6 @@ class SignalsReceiver(object):
         self.log.debug("signalConfiguration: replying to request (sig id %s) - " % signal.uid)
         messenger.reply(signal, rc)
 
-
     def signalExit(self, signal, sender, **data):
         """
         Called to handle the EVT_DIRECTOR_EXIT_ALL signal, which tells
@@ -652,7 +633,6 @@ class SignalsReceiver(object):
         self.log.warn("signalExit: calling manager exit.")
         self.manager.exit()
         self.log.warn("signalExit: bye, bye.")
-
 
     def setup(self):
         """
@@ -699,4 +679,3 @@ class SignalsReceiver(object):
         )
 
         self.log.info("signalSetup: signals set up ok.")
-

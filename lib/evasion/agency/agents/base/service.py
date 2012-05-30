@@ -37,7 +37,10 @@ class ControlFrameRequest(SocketServer.StreamRequestHandler):
         """
 
 
-class StoppableTCPServer(SocketServer.TCPServer):
+class StoppableTCPServer(
+        SocketServer.ThreadingMixIn,
+        SocketServer.TCPServer
+    ):
     """Handle requests but check for the exit flag setting periodically.
     """
     log = logging.getLogger('evasion.agency.agents.base.service.StoppableTCPServer')
@@ -207,7 +210,7 @@ class ServiceDevice(agent.Base):
     def stop(self):
         """Stop xmlrpc interface.
         """
-        if self.server:
+        if hasattr(self, 'server') and self.server:
             self.server.stop()
 
 
@@ -222,6 +225,9 @@ class WebServerAgent(agent.Base, SimpleHTTPServer.SimpleHTTPRequestHandler):
         # Where to to bind the server to:
         interface = 0.0.0.0
         port = 39475
+
+    The methods do_GET, do_POST, do_PUT and do_DELETE can be overridden
+    to handle REST method actions in derived agents.
 
     """
 
@@ -366,5 +372,5 @@ class WebServerAgent(agent.Base, SimpleHTTPServer.SimpleHTTPRequestHandler):
     def stop(self):
         """Stop HTTP Web Server.
         """
-        if self.server:
+        if hasattr(self, 'server') and self.server:
             self.server.stop()

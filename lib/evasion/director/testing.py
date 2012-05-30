@@ -18,7 +18,6 @@ import threading
 from pydispatch import dispatcher
 
 
-
 class FakeViewpoint(object):
     """This provides a 'viewpoint' signal handler you can use
     in test to receive events that would normally be handled
@@ -60,12 +59,10 @@ class FakeViewpoint(object):
         )
         self.replaceOccured = threading.Event()
 
-
     def __del__(self):
         dispatcher.disconnect(self.onGetUri)
         dispatcher.disconnect(self.onSetUri)
         dispatcher.disconnect(self.onReplace)
-
 
     def reply(self, messenger_event, data):
         """Called to handle the reply for a VIEWPOINT_* command event.
@@ -86,7 +83,6 @@ class FakeViewpoint(object):
 
         messenger.reply(messenger_event, data)
 
-
     def onGetUri(self, signal, sender, **kw):
         """Call to handle the VIEWPOINT_GET_URI event.
         """
@@ -95,7 +91,6 @@ class FakeViewpoint(object):
 
         # Indicate that we received an get uri event:
         self.getUriOccured.set()
-
 
     def onSetUri(self, signal, sender, **kw):
         """Call to handle the VIEWPOINT_SET_URI event.
@@ -112,7 +107,6 @@ class FakeViewpoint(object):
 
         # Indicate that we received an set uri event:
         self.setUriOccured.set()
-
 
     def onReplace(self, signal, sender, **kw):
         """Call to handle the VIEWPOINT_REPLACE event.
@@ -177,7 +171,7 @@ def director_setup(test_config, **kw):
     broker_interface = kw.get('broker_interface', '127.0.0.1')
     broker_port = kw.get('broker_port', net.get_free_port())
     broker_channel = kw.get('broker_channel', 'evasion')
-    proxy_port = net.get_free_port(exclude_ports=[broker_port,])
+    proxy_port = net.get_free_port(exclude_ports=[broker_port])
     proxy_port = kw.get('proxy_port', proxy_port)
 
     # load this configuration into the director:
@@ -190,7 +184,7 @@ def director_setup(test_config, **kw):
     #
     m = manager.Manager()
     m.main(director_testing=True)
-    m.appmainSetup() # need this as mainloop is not in main now.
+    m.appmainSetup()  # need this as mainloop is not in main now.
 
     return dict(
         manager=m,
@@ -199,4 +193,3 @@ def director_setup(test_config, **kw):
         broker_channel=broker_channel,
         proxy_port=proxy_port,
     )
-

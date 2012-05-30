@@ -50,7 +50,7 @@ from configobjs import *
 
 
 def get_log():
-    return logging.getLogger('evasion.director.config')
+    return logging.getLogger(__name__)
 
 
 class ConfigInvalid(Exception):
@@ -58,9 +58,11 @@ class ConfigInvalid(Exception):
     other things we require.
     """
 
+
 class ConfigNotSetup(Exception):
     """Raised when set_cfg hasn't been called to set up the configuration.
     """
+
 
 class ConfigError(Exception):
     """This is raised for problems with loading and using the configuration.
@@ -125,7 +127,6 @@ class ConfigStore:
         self.agency = None
         self.webadmin = None
         self.findInstances()
-
 
     def findInstances(self):
         """
@@ -253,14 +254,14 @@ def save_cfg(filename=None):
         __configLock.release()
 
 
-
 MAPPED_SECTIONS = dict(
     # (Default order, class to store details in)
-    director = (0, Director),
-    broker = (1, Broker),
-    agency = (2, Agency),
-    webadmin = (3, WebAdmin),
+    director=(0, Director),
+    broker=(1, Broker),
+    agency=(2, Agency),
+    webadmin=(3, WebAdmin),
 )
+
 
 def recover_objects(config):
     """
@@ -377,7 +378,7 @@ def recover_objects(config):
             else:
                 # Ignore so I can have logging as part of the director
                 # configuration.
-                get_log().info("recover_objects: unknown section, skipping '%s'." % (section))
+                get_log().debug("recover_objects: unknown section, skipping '%s'." % (section))
                 skip = True
                 # if 'drignore' in cfg[section]:
                     # get_log().info("recover_objects: skipping section '%s' as 'drignore' is present." % (section))
@@ -403,7 +404,7 @@ def recover_objects(config):
         # sort the agents first:
         r.agents.sort()
         # strip the order and return just the agents in that order:
-        r.agency.agents = [a for o,a in r.agents]
+        r.agency.agents = [a for (o, a) in r.agents]
 
     # Sort all except agents which are part of the agency:
     r.returned.sort()
@@ -459,7 +460,7 @@ def import_module(import_type, obj):
             #print "imported_agent: ", imported_agent
 
     except ImportError, e:
-        get_log().error("Error loading '%s', it raised the error: '%s'." % (importmod, str(e)))
+        get_log().error("%s Error loading '%s'." % (str(e), importmod))
         raise ImportError("The controller '%s' from '%s' could not be imported! %s" % (
             importmod,
             obj,
@@ -531,11 +532,9 @@ def load_controllers(config_objs, ignore_exceptions=False):
             else:
                 obj.mod = import_module(obj.type, obj)
 
-
     [doimp(obj) for obj in config_objs]
 
     return config_objs
-
 
 
 def reload_controller(name, new_config):
@@ -631,7 +630,7 @@ def reload_controller(name, new_config):
     get_log().debug("reload_controller: Removing old controller '%s' from system config." % ctrl)
     c = get_cfg()
     current_list = c.cfg
-    new_list = [container,]
+    new_list = [container]
     for c in current_list:
         if c.name != name:
             new_list.append(c)
@@ -675,12 +674,12 @@ def export_configuration():
     c = get_cfg()
 
     returned = dict(
-        cfg = [co.export() for co in c.cfg],
-        filename = c.filename,
-        director = '',
-        agency = '',
-        broker = '',
-        webadmin = '',
+        cfg=[co.export() for co in c.cfg],
+        filename=c.filename,
+        director='',
+        agency='',
+        broker='',
+        webadmin='',
     )
 
     if c.director:
