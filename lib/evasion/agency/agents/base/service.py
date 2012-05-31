@@ -134,10 +134,9 @@ class ServiceDevice(agent.Base):
         'http://interface:port/'
 
     """
-    log = logging.getLogger('evasion.agency.base.service.ServiceDevice')
-
     def __init__(self):
         self.config = None
+        self.log = logging.getLogger("%s.ServiceDevice" % __name__)
 
     def registerInterface(self):
         """Register an instances who's members form the XML-RPC interace.
@@ -230,6 +229,8 @@ class WebServerAgent(agent.Base, SimpleHTTPServer.SimpleHTTPRequestHandler):
     to handle REST method actions in derived agents.
 
     """
+    def __init__(self):
+        self.log = logging.getLogger("%s.WebServerAgent" % __name__)
 
     def setUp(self, config):
         """Create the services. It won't be started until
