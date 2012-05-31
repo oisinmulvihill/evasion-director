@@ -7,6 +7,8 @@ Oisin Mulvihill
 2008-12-23
 
 """
+import os
+import os.path
 from setuptools import setup, find_packages
 
 Name = 'evasion-director'
@@ -15,10 +17,17 @@ Version = '1.1.6'
 Author = 'Oisin Mulvihill'
 AuthorEmail = 'oisinmulvihill at gmail dot com'
 Maintainer = ' Oisin Mulvihill'
-Summary = 'This provides a daemon like running and monitoring application'
+Summary = 'The evasion-director allows the creation of programs from configuration.'
 License = 'Evasion Project CDDL License'
 ShortDescription = Summary
-Description = Summary
+
+# Add the README text if the file is present (not in egg).
+detailed = Summary
+if os.path.isfile("README.rst"):
+    with file("README.rst", "r") as fd:
+        detailed = fd.read()
+
+Description = detailed
 
 TestSuite = 'nose.collector'
 

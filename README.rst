@@ -27,6 +27,27 @@ Broker and Twisted. This messaging is entirely optional.
 Note: The evasion-agency project has been merged with the director code base.
 The "evasion.agency" package is now provided by the evasion-director code base.
 
+Github:
+ * https://github.com/oisinmulvihill/evasion-director
+
+
+Other Docs
+----------
+
+I'm in the process of bring together various documents. For the moment
+information can be found here:
+
+EvasionProject code documentation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  * http://www.evasionproject.com/apidocs/
+
+EvasionProject Wiki
+~~~~~~~~~~~~~~~~~~~
+
+  * http://www.evasionproject.com/
+
+
 
 Basic Examples
 --------------
@@ -190,22 +211,6 @@ Issues
 
 All issues for the other evasion-* project parts should be logged on the
 evasion-director project.
-
-Other Docs
-----------
-
-I'm in the process of bring together various documents. For the moment
-information can be found here:
-
-EvasionProject code documentation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  * http://www.evasionproject.com/apidocs/
-
-EvasionProject Wiki
-~~~~~~~~~~~~~~~~~~~
-
-  * http://www.evasionproject.com/
 
 
 Release Notes
